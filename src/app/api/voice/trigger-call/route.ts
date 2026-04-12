@@ -176,6 +176,7 @@ export async function POST(request: Request) {
     // If status check constraint fails, try without status (use DB default)
     if (insertError?.message?.includes("voice_calls_status_check")) {
       console.log("[voice] 'ringing' rejected by check constraint, retrying without status");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { status: _s, ...recordWithoutStatus } = callRecord;
       const retry = await supabase
         .from("voice_calls")
