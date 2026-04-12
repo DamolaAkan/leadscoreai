@@ -16,6 +16,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "LeadscoreAI",
   description: "Multi-tenant quiz funnel platform",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
