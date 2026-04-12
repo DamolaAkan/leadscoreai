@@ -241,7 +241,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
         <div className="w-full h-2 bg-gray-200">
           <div
             className="h-full transition-all duration-300"
-            style={{ width: `${progress}%`, backgroundColor: accent }}
+            style={{ width: `${progress}%`, backgroundColor: "#D4A017" }}
           />
         </div>
       )}
