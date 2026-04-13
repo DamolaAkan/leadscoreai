@@ -24,6 +24,23 @@ export async function GET(request: Request) {
   const search = url.searchParams.get("search") || "";
   const appointment = url.searchParams.get("appointment") || "";
 
+  console.log("[dashboard/calls] orgId:", user.organizationId);
+
+  // First: raw count of ALL voice_calls for this org (no filters)
+  const { count: rawCount, error: rawError } = await supabase
+    .from("voice_calls")
+    .select("*", { count: "exact", head: true })
+    .eq("organization_id", user.organizationId);
+
+  console.log("[dashboard/calls] Raw count for org:", rawCount, "error:", rawError?.message ?? "none");
+
+  // Also check total rows in table regardless of org
+  const { count: allCount } = await supabase
+    .from("voice_calls")
+    .select("*", { count: "exact", head: true });
+
+  console.log("[dashboard/calls] Total rows in voice_calls table:", allCount);
+
   let query = supabase
     .from("voice_calls")
     .select("*", { count: "exact" })
@@ -50,6 +67,8 @@ export async function GET(request: Request) {
   query = query.range(from, from + pageSize - 1);
 
   const { data: calls, error, count } = await query;
+
+  console.log("[dashboard/calls] Query result — count:", count, "rows:", calls?.length, "error:", error?.message ?? "none");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
