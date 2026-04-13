@@ -3,9 +3,13 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(req: Request) {
-  console.log("has secret", !!process.env.VAPI_SERVER_SECRET);
-  const secret = process.env.VAPI_SERVER_SECRET!;
+  const secret = process.env.VAPI_SERVER_SECRET ?? "";
   const sig = req.headers.get("x-vapi-signature") ?? "";
+
+  console.log("[vapi-webhook] Secret present:", !!secret);
+  console.log("[vapi-webhook] Secret length:", secret.length);
+  console.log("[vapi-webhook] Signature received:", sig);
+  console.log("[vapi-webhook] Signature length:", sig.length);
 
   // Read raw body ONCE — never call req.json() or req.text() again after this
   const rawBody = await req.text();
