@@ -1,45 +1,14 @@
 import type { Metadata } from "next";
 import "./homepage.css";
 
-const CALENDLY_URL = "https://calendly.com/leadscoreai";
+const CALENDLY_URL = "https://calendly.com/akanbidamola";
 
 export const metadata: Metadata = {
-  title: "LeadscoreAI — A Full Pipeline of Pre-Qualified Buyers. Built and Running in 7 Days.",
+  title:
+    "LeadscoreAI — A Full Pipeline of Pre-Qualified Buyers. Built and Running in 7 Days.",
   description:
     "Complete with automated lead scoring, AI voice calls, and email sequences that nurture your leads into paying clients — without you lifting a finger.",
 };
-
-function FunnelStep({
-  title,
-  sub,
-  tag,
-  tagClass,
-  showConnector = true,
-}: {
-  title: string;
-  sub: string;
-  tag: string;
-  tagClass: string;
-  showConnector?: boolean;
-}) {
-  return (
-    <div className="hp-funnel-step">
-      <div className="hp-funnel-line">
-        <div className="hp-funnel-dot">
-          <div className="hp-funnel-dot-inner" />
-        </div>
-        {showConnector && <div className="hp-funnel-connector" />}
-      </div>
-      <div className="hp-funnel-card">
-        <div>
-          <div className="hp-funnel-card-title">{title}</div>
-          <div className="hp-funnel-card-sub">{sub}</div>
-        </div>
-        <span className={`hp-tag ${tagClass}`}>{tag}</span>
-      </div>
-    </div>
-  );
-}
 
 function IncludedCard({
   num,
@@ -87,7 +56,7 @@ export default function HomePage() {
           <a href="#how-it-works">How it works</a>
           <a href="#included">What&apos;s included</a>
           <a href="#pricing">Pricing</a>
-          <a href="#cta" className="hp-btn">
+          <a href="#cta" className="hp-nav-cta">
             Book a strategy call
           </a>
         </div>
@@ -109,11 +78,11 @@ export default function HomePage() {
         </p>
         <p className="hp-hero-tagline">Stop selling to the wrong people.</p>
         <div className="hp-hero-cta">
-          <a href="#cta" className="hp-btn hp-btn-lg">
+          <a href="#cta" className="hp-btn-primary">
             Book a strategy call
           </a>
-          <a href="#included" className="hp-btn-ghost">
-            See what&apos;s included
+          <a href="#how-it-works" className="hp-btn-ghost">
+            See how it works
           </a>
         </div>
         <div className="hp-hero-features">
@@ -136,57 +105,213 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* How it works */}
+      {/* How it works — Story Flow */}
       <section className="hp-section gray" id="how-it-works">
-        <div className="hp-section-inner">
-          <div className="hp-label">The complete funnel</div>
+        <div className="hp-section-inner-narrow">
+          <div className="hp-label">How it works</div>
           <h2 className="hp-h2">
             One system. From click
             <br />
             to <em>qualified conversation.</em>
           </h2>
           <p className="hp-sub">
-            Every piece is built for you, custom to your business, and running
-            automatically from day one.
+            Every piece runs automatically. Your team only gets involved when a
+            lead is already warm.
           </p>
+
           <div className="hp-funnel">
-            <FunnelStep
-              title="Custom AI marketing quiz"
-              sub="Built around your product, your buyers, and your specific objections"
-              tag="Quiz"
-              tagClass="hp-t-purple"
-            />
-            <FunnelStep
-              title="Instant AI lead scoring — 98% accuracy"
-              sub="Every response qualified as hot, warm, or cold in real time"
-              tag="Scoring"
-              tagClass="hp-t-purple"
-            />
-            <FunnelStep
-              title="Personalised results page"
-              sub="Prospects see branded insights specific to their answers — not a generic score"
-              tag="Results"
-              tagClass="hp-t-amber"
-            />
-            <FunnelStep
-              title="AI voice call — within 60 seconds"
-              sub="Maya calls hot and warm leads automatically while they are still engaged"
-              tag="Voice AI"
-              tagClass="hp-t-green"
-            />
-            <FunnelStep
-              title="Automated email sequences"
-              sub="10–14 day nurture tracks by lead tier — written for your brand, automated from day one"
-              tag="Email"
-              tagClass="hp-t-amber"
-            />
-            <FunnelStep
-              title="Live analytics dashboard"
-              sub="Every lead, score, call transcript, and conversion visible in real time"
-              tag="Dashboard"
-              tagClass="hp-t-blue"
-              showConnector={false}
-            />
+            {/* Step 1 — Quiz */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector" />
+              </div>
+              <div className="hp-funnel-card">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    Prospect takes your custom quiz
+                  </div>
+                  <div className="hp-tag hp-t-purple">Quiz</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  They answer questions built around your product, your buyers,
+                  and the objections they face. Takes about 3 minutes.
+                </div>
+                <div className="hp-funnel-card-story">
+                  Sarah lands on your quiz page. She answers every question.
+                  She&apos;s curious what her results say.
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2 — Scoring */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector" />
+              </div>
+              <div className="hp-funnel-card">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    AI scores and qualifies instantly
+                  </div>
+                  <div className="hp-tag hp-t-purple">Scoring</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  Every response is scored in real time. Sarah is classified as
+                  HOT, WARM, or COLD at 98% accuracy — before she even sees her
+                  results.
+                </div>
+                <div className="hp-funnel-card-story">
+                  Sarah scores 78/100. She&apos;s a Warm Lead. The system knows
+                  exactly what she needs next.
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 — Contact */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot amber">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector amber" />
+              </div>
+              <div className="hp-funnel-card amber">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    She submits her contact details
+                  </div>
+                  <div className="hp-tag hp-t-amber">Contact</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  To unlock her personalised results, Sarah enters her name,
+                  email, and phone number. This is where the automation begins.
+                </div>
+                <div className="hp-funnel-card-story amber">
+                  She hits submit. Her results page loads. The clock starts.
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 — Email */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot amber">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector amber" />
+              </div>
+              <div className="hp-funnel-card amber">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    Her results land in her inbox immediately
+                  </div>
+                  <div className="hp-tag hp-t-amber">Email</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  A branded results email arrives with her score, personalised
+                  insights, and a clear next step — written specifically for her
+                  tier.
+                </div>
+                <div className="hp-funnel-card-story amber">
+                  Sarah opens her inbox. There is already an email from your
+                  brand waiting. It knows exactly what she answered.
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5 — Voice AI */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot green">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector green" />
+              </div>
+              <div className="hp-funnel-card green">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    Maya calls her phone — 60 seconds later
+                  </div>
+                  <div className="hp-tag hp-t-green">Voice AI</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  An AI voice agent calls Sarah while she is still reading her
+                  results. Maya already knows her score, her answers, and her
+                  name. The conversation is warm from the first word.
+                </div>
+                <div className="hp-funnel-card-story green">
+                  &ldquo;Hi Sarah, this is Maya — an AI assistant from [your
+                  company]. I saw you just completed our assessment and scored 78
+                  out of 100. Is now an okay time for a couple of quick
+                  questions?&rdquo;
+                </div>
+                <div className="hp-timer-badge">
+                  <div className="hp-timer-dot" />
+                  60 seconds after form submit
+                </div>
+              </div>
+            </div>
+
+            {/* Step 6 — Nurture */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot green">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+                <div className="hp-funnel-connector green" />
+              </div>
+              <div className="hp-funnel-card green">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    Email sequence nurtures her over 14 days
+                  </div>
+                  <div className="hp-tag hp-t-green">Nurture</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  If Sarah doesn&apos;t convert immediately, she enters a 14-day
+                  email sequence tailored to her score. Hot, warm, and cold leads
+                  get completely different journeys.
+                </div>
+                <div className="hp-funnel-card-story green">
+                  Day 5 — Sarah gets an email referencing her specific answers.
+                  Day 10 — a soft CTA. Day 14 — a final nudge. Each one feels
+                  personal.
+                </div>
+              </div>
+            </div>
+
+            {/* Step 7 — Dashboard */}
+            <div className="hp-funnel-step">
+              <div className="hp-funnel-line">
+                <div className="hp-funnel-dot blue">
+                  <div className="hp-funnel-dot-inner" />
+                </div>
+              </div>
+              <div className="hp-funnel-card blue">
+                <div className="hp-funnel-card-top">
+                  <div className="hp-funnel-card-title">
+                    Your team sees everything in the dashboard
+                  </div>
+                  <div className="hp-tag hp-t-blue">Dashboard</div>
+                </div>
+                <div className="hp-funnel-card-sub">
+                  Score, call transcript, email status, conversion — all visible
+                  in real time. Your team only picks up the phone when a lead is
+                  already warm and ready.
+                </div>
+                <div className="hp-funnel-card-story blue">
+                  Your sales rep opens the dashboard Monday morning. Sarah is
+                  flagged as interested. The call transcript shows she said yes
+                  to the budget question. They call her first.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -239,7 +364,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Value Stack + Pricing */}
       <section className="hp-section dark" id="pricing">
         <div className="hp-section-inner">
           <div className="hp-label white">The value stack</div>
@@ -256,14 +381,46 @@ export default function HomePage() {
 
           <div className="hp-value-stack">
             {[
-              ["Custom quiz design and development", "strategy, build, scoring logic", "$8,000 one-time"],
-              ["Enterprise CRM and lead scoring", "HubSpot / Salesforce equivalent", "$1,500/month"],
-              ["Branded results page", "UX design and custom development", "$3,500 one-time"],
-              ["Custom analytics dashboard", "design, build, and data integration", "$12,000 one-time"],
-              ["Email marketing and automation", "platform plus copywriting", "$1,200/month"],
-              ["AI outbound voice qualification", "enterprise voice AI platform", "$2,500/month"],
-              ["Dedicated agency management", "strategy, ops, and optimisation", "$4,000/month"],
-              ["Custom AI prompt engineering", "per campaign and persona build", "$3,000 one-time"],
+              [
+                "Custom quiz design and development",
+                "strategy, build, scoring logic",
+                "$8,000 one-time",
+              ],
+              [
+                "Enterprise CRM and lead scoring",
+                "HubSpot / Salesforce equivalent",
+                "$1,500/month",
+              ],
+              [
+                "Branded results page",
+                "UX design and custom development",
+                "$3,500 one-time",
+              ],
+              [
+                "Custom analytics dashboard",
+                "design, build, and data integration",
+                "$12,000 one-time",
+              ],
+              [
+                "Email marketing and automation",
+                "platform plus copywriting",
+                "$1,200/month",
+              ],
+              [
+                "AI outbound voice qualification",
+                "enterprise voice AI platform",
+                "$2,500/month",
+              ],
+              [
+                "Dedicated agency management",
+                "strategy, ops, and optimisation",
+                "$4,000/month",
+              ],
+              [
+                "Custom AI prompt engineering",
+                "per campaign and persona build",
+                "$3,000 one-time",
+              ],
             ].map(([title, desc, price]) => (
               <div className="hp-value-row" key={title}>
                 <div className="hp-value-item">
@@ -404,8 +561,7 @@ export default function HomePage() {
           href={CALENDLY_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="hp-btn hp-btn-white"
-          style={{ fontSize: 16, padding: "18px 48px" }}
+          className="hp-btn-white"
         >
           Book your free strategy call
         </a>

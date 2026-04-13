@@ -1,4 +1,6 @@
 /* LeadscoreAI Homepage */
+html { scroll-behavior: smooth; }
+
 .hp-body { font-family: 'DM Sans', sans-serif; background: #fff; color: #1A1A2E; line-height: 1.6; }
 
 .hp-nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; border-bottom: 1px solid #EEE9FE; background: #fff; position: sticky; top: 0; z-index: 100; }
@@ -6,11 +8,13 @@
 .hp-logo span { color: #7C3AED; }
 .hp-nav-links { display: flex; gap: 32px; align-items: center; }
 .hp-nav-links a { font-size: 14px; color: #718096; text-decoration: none; }
-.hp-btn { background: #7C3AED; color: #fff; font-size: 14px; font-weight: 700; padding: 10px 24px; border-radius: 50px; text-decoration: none; display: inline-block; cursor: pointer; border: none; }
-.hp-btn:hover { background: #6D28D9; }
-.hp-btn-lg { font-size: 15px; padding: 16px 36px; }
-.hp-btn-white { background: #fff; color: #7C3AED; }
+.hp-nav-cta { background: #7C3AED !important; color: #fff !important; font-size: 14px !important; font-weight: 700 !important; padding: 10px 24px !important; border-radius: 50px !important; text-decoration: none !important; display: inline-block !important; }
+.hp-nav-cta:hover { background: #6D28D9 !important; }
+
+.hp-btn-primary { background: #7C3AED; color: #fff; font-size: 15px; font-weight: 700; padding: 16px 36px; border-radius: 50px; text-decoration: none; display: inline-block; cursor: pointer; border: none; }
+.hp-btn-primary:hover { background: #6D28D9; }
 .hp-btn-ghost { color: #7C3AED; font-size: 15px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; background: none; border: none; }
+.hp-btn-white { background: #fff; color: #7C3AED; font-size: 16px; font-weight: 700; padding: 18px 48px; border-radius: 50px; text-decoration: none; display: inline-block; }
 .hp-btn-amethyst { background: #A78BFA; color: #0F0F1A; font-size: 14px; font-weight: 700; padding: 14px 32px; border-radius: 50px; cursor: pointer; display: inline-block; text-decoration: none; }
 
 .hp-hero { padding: 100px 48px 80px; max-width: 900px; margin: 0 auto; text-align: center; }
@@ -27,6 +31,7 @@
 .hp-section.gray { background: #FAFAFA; }
 .hp-section.dark { background: #0F0F1A; border-top: none; }
 .hp-section-inner { max-width: 960px; margin: 0 auto; }
+.hp-section-inner-narrow { max-width: 720px; margin: 0 auto; }
 .hp-label { font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #7C3AED; margin-bottom: 16px; }
 .hp-label.white { color: #A78BFA; }
 .hp-h2 { font-family: 'Instrument Serif', serif; font-size: 40px; line-height: 1.1; color: #1A1A2E; letter-spacing: -1px; margin-bottom: 14px; }
@@ -35,27 +40,46 @@
 .hp-h2.white em { color: #A78BFA; }
 .hp-sub { font-size: 16px; color: #718096; line-height: 1.7; max-width: 600px; margin-bottom: 48px; }
 
-.hp-funnel { display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; }
+/* STORY FLOW */
+.hp-funnel { display: flex; flex-direction: column; }
 .hp-funnel-step { display: flex; align-items: stretch; }
-.hp-funnel-line { display: flex; flex-direction: column; align-items: center; width: 48px; flex-shrink: 0; }
-.hp-funnel-dot { width: 20px; height: 20px; border-radius: 50%; background: #7C3AED; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.hp-funnel-dot-inner { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
-.hp-funnel-connector { width: 2px; background: #EEE9FE; flex: 1; min-height: 24px; }
-.hp-funnel-card { flex: 1; background: #fff; border: 1px solid #EEE9FE; border-radius: 14px; padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.hp-funnel-card-title { font-size: 15px; font-weight: 700; color: #1A1A2E; margin-bottom: 4px; }
-.hp-funnel-card-sub { font-size: 13px; color: #718096; }
+.hp-funnel-line { display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0; }
+.hp-funnel-dot { width: 24px; height: 24px; border-radius: 50%; background: #7C3AED; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hp-funnel-dot-inner { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.hp-funnel-dot.green { background: #3B6D11; }
+.hp-funnel-dot.amber { background: #854F0B; }
+.hp-funnel-dot.blue { background: #185FA5; }
+.hp-funnel-connector { width: 2px; background: #EEE9FE; flex: 1; min-height: 28px; }
+.hp-funnel-connector.green { background: #C0DD97; }
+.hp-funnel-connector.amber { background: #FAC775; }
+.hp-funnel-connector.blue { background: #B5D4F4; }
+.hp-funnel-card { flex: 1; background: #fff; border: 1px solid #EEE9FE; border-radius: 16px; padding: 24px 28px; margin-bottom: 14px; }
+.hp-funnel-card.amber { border-color: #FAC775; }
+.hp-funnel-card.green { border-color: #C0DD97; }
+.hp-funnel-card.blue { border-color: #B5D4F4; }
+.hp-funnel-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.hp-funnel-card-title { font-size: 16px; font-weight: 700; color: #1A1A2E; }
+.hp-funnel-card-sub { font-size: 14px; color: #718096; line-height: 1.6; }
+.hp-funnel-card-story { font-size: 13px; color: #A0AEC0; line-height: 1.6; margin-top: 10px; padding-top: 10px; border-top: 1px solid #F0EBFF; font-style: italic; }
+.hp-funnel-card-story.amber { border-top-color: #FAEEDA; }
+.hp-funnel-card-story.green { border-top-color: #EAF3DE; }
+.hp-funnel-card-story.blue { border-top-color: #E6F1FB; }
 .hp-tag { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 50px; white-space: nowrap; }
 .hp-t-purple { background: #F3EFFE; color: #534AB7; }
 .hp-t-green { background: #EAF3DE; color: #3B6D11; }
 .hp-t-amber { background: #FAEEDA; color: #854F0B; }
 .hp-t-blue { background: #E6F1FB; color: #185FA5; }
+.hp-timer-badge { display: inline-flex; align-items: center; gap: 6px; background: #EAF3DE; border: 1px solid #C0DD97; color: #3B6D11; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 50px; margin-top: 10px; }
+.hp-timer-dot { width: 6px; height: 6px; border-radius: 50%; background: #3B6D11; }
 
+/* INCLUDED */
 .hp-included-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .hp-included-card { background: #fff; border: 1px solid #EEE9FE; border-radius: 14px; padding: 28px; }
 .hp-included-num { font-size: 40px; font-weight: 900; color: #7C3AED; letter-spacing: -2px; line-height: 1; margin-bottom: 10px; }
 .hp-included-title { font-size: 15px; font-weight: 700; color: #1A1A2E; margin-bottom: 8px; }
 .hp-included-sub { font-size: 13px; color: #718096; line-height: 1.6; }
 
+/* VALUE STACK */
 .hp-value-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
 .hp-value-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); gap: 16px; }
 .hp-value-item { font-size: 14px; color: #A0AEC0; }
@@ -66,6 +90,7 @@
 .hp-value-total-num { font-size: 36px; font-weight: 900; color: #A78BFA; letter-spacing: -1.5px; }
 .hp-value-note { font-size: 13px; color: #4A5568; text-align: center; margin-bottom: 56px; }
 
+/* PRICING */
 .hp-pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 .hp-plan { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column; }
 .hp-plan.featured { background: #7C3AED; border-color: #7C3AED; }
@@ -107,7 +132,7 @@
 
 @media (max-width: 768px) {
   .hp-nav { padding: 16px 24px; }
-  .hp-nav-links a:not(.hp-btn) { display: none; }
+  .hp-nav-links a:not(.hp-nav-cta) { display: none; }
   .hp-hero { padding: 60px 24px 60px; }
   .hp-hero h1 { font-size: 36px; letter-spacing: -1px; }
   .hp-hero-sub { font-size: 16px; }
@@ -122,6 +147,7 @@
   .hp-cta-section { padding: 64px 24px; }
   .hp-cta-section h2 { font-size: 36px; }
   .hp-funnel-card { flex-direction: column; align-items: flex-start; }
+  .hp-funnel-card-top { flex-wrap: wrap; gap: 8px; }
 }
 @media (max-width: 480px) {
   .hp-pricing-grid { grid-template-columns: 1fr; }
