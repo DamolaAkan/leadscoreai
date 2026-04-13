@@ -13,151 +13,82 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { message } = body;
+    console.log("[vapi-webhook] Received:", JSON.stringify(body, null, 2));
 
-    if (!message?.type) {
-      return NextResponse.json({ ok: true });
+    const message = body.message;
+    if (!message || message.type !== "end-of-call-report") {
+      return NextResponse.json({ received: true });
     }
 
-    const supabase = createServiceClient();
-    const callId = message.call?.id;
+    const supabaseAdmin = createServiceClient();
 
-    if (!callId) {
-      return NextResponse.json({ ok: true });
+    const call = message.call;
+    const callId = call?.id;
+    const transcript = call?.artifact?.transcript ?? "";
+    const recordingUrl = call?.artifact?.recordingUrl ?? null;
+    const endedReason = call?.endedReason ?? null;
+    const startedAt = call?.startedAt ?? null;
+    const endedAt = call?.endedAt ?? null;
+    const structured = call?.analysis?.structuredData ?? {};
+
+    // Calculate duration
+    let durationSeconds = null;
+    if (startedAt && endedAt) {
+      durationSeconds = Math.round(
+        (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000
+      );
     }
 
-    switch (message.type) {
-      case "status-update": {
-        const status = message.status;
-        const updates: Record<string, unknown> = {
-          status,
-          updated_at: new Date().toISOString(),
-        };
+    // Determine status
+    const status =
+      endedReason === "customer-did-not-answer" ||
+      endedReason === "no-answer"
+        ? "no_answer"
+        : "completed";
 
-        if (status === "in-progress") {
-          updates.started_at = new Date().toISOString();
-        }
-        if (status === "ended") {
-          updates.ended_at = new Date().toISOString();
-          if (message.endedReason) {
-            updates.ended_reason = message.endedReason;
-          }
-        }
-
-        await supabase
-          .from("voice_calls")
-          .update(updates)
-          .eq("vapi_call_id", callId);
-
-        console.log("[voice-webhook] Status update:", { callId, status });
-        break;
-      }
-
-      case "end-of-call-report": {
-        const updates: Record<string, unknown> = {
-          status: "ended",
-          ended_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        if (message.transcript) {
-          updates.transcript = message.transcript;
-        }
-        if (message.summary) {
-          updates.summary = message.summary;
-        }
-        if (message.recordingUrl) {
-          updates.recording_url = message.recordingUrl;
-        }
-        if (typeof message.cost === "number") {
-          updates.cost_cents = Math.round(message.cost * 100);
-        }
-        if (typeof message.duration === "number") {
-          updates.duration_seconds = message.duration;
-        }
-        if (message.endedReason) {
-          updates.ended_reason = message.endedReason;
-        }
-
-        // Detect if appointment was booked
-        const transcript: string = message.transcript || "";
-        const transcriptLower = transcript.toLowerCase();
-        const appointmentBooked =
-          transcriptLower.includes("i've got you down for") ||
-          transcriptLower.includes("i have you down for") ||
-          transcriptLower.includes("locked that in") ||
-          transcriptLower.includes("consultant will call you") ||
-          transcriptLower.includes("got you booked");
-
-        let appointmentDatetime: string | null = null;
-
-        if (appointmentBooked && process.env.OPENAI_API_KEY) {
-          try {
-            const extractionResponse = await fetch(
-              "https://api.openai.com/v1/chat/completions",
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  model: "gpt-4o",
-                  messages: [
-                    {
-                      role: "system",
-                      content:
-                        'Extract the confirmed appointment date and time from this call transcript. Return ONLY a JSON object like: {"datetime": "2026-04-17T14:00:00"} using ISO 8601 format. If no clear date/time was confirmed, return {"datetime": null}. Do not include any other text.',
-                    },
-                    { role: "user", content: transcript },
-                  ],
-                  max_tokens: 100,
-                }),
-              }
-            );
-
-            const extractionData = await extractionResponse.json();
-            const raw = extractionData.choices[0].message.content
-              .replace(/```json|```/g, "")
-              .trim();
-            const parsed = JSON.parse(raw);
-            appointmentDatetime = parsed.datetime ?? null;
-          } catch {
-            console.error(
-              "[vapi-webhook] Failed to parse appointment datetime"
-            );
-          }
-        }
-
-        updates.appointment_booked = appointmentBooked;
-        updates.appointment_datetime = appointmentDatetime;
-
-        await supabase
-          .from("voice_calls")
-          .update(updates)
-          .eq("vapi_call_id", callId);
-
-        console.log("[voice-webhook] End of call report:", {
-          callId,
-          duration: message.duration,
-          appointmentBooked,
-          appointmentDatetime,
-        });
-        break;
-      }
-
-      case "transcript": {
-        // Live transcript updates — we store the final one in end-of-call-report
-        break;
-      }
-
-      default:
-        break;
+    // Build appointment datetime if booked
+    let appointmentDatetime = null;
+    if (
+      structured.appointment_booked &&
+      structured.appointment_date &&
+      structured.appointment_time
+    ) {
+      appointmentDatetime = `${structured.appointment_date} at ${structured.appointment_time}`;
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("[voice-webhook] Error:", err);
-    return NextResponse.json({ ok: true }); // Always return 200 to avoid retries
+    // Update voice_calls row
+    const { error } = await supabaseAdmin
+      .from("voice_calls")
+      .update({
+        status,
+        transcript,
+        recording_url: recordingUrl,
+        ended_reason: endedReason,
+        started_at: startedAt,
+        ended_at: endedAt,
+        duration_seconds: durationSeconds,
+        appointment_booked: structured.appointment_booked ?? false,
+        appointment_date: structured.appointment_date ?? null,
+        appointment_time: structured.appointment_time ?? null,
+        appointment_datetime: appointmentDatetime,
+        interest_level: structured.interest_level ?? null,
+        structured_data: structured,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("vapi_call_id", callId);
+
+    if (error) {
+      console.error("[vapi-webhook] DB update error:", error);
+    } else {
+      console.log("[vapi-webhook] Call updated successfully:", callId);
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("[vapi-webhook] Error:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    );
   }
 }
