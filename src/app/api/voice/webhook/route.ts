@@ -1,108 +1,82 @@
-import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(req: Request) {
-  const secret = process.env.VAPI_SERVER_SECRET ?? "";
-  const sig = req.headers.get("x-vapi-signature") ?? "";
-  const rawBody = await req.text();
+  try {
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
 
-  console.log("[vapi-webhook] Secret present:", !!secret);
-  console.log("[vapi-webhook] Secret length:", secret.length);
-  console.log("[vapi-webhook] Sig received:", sig.substring(0, 20) + "...");
-  console.log("[vapi-webhook] Sig length:", sig.length);
-  console.log("[vapi-webhook] Body length:", rawBody.length);
-  console.log("[vapi-webhook] Body preview:", rawBody.substring(0, 100));
+    console.log("[vapi-webhook] Received:", body.message?.type);
 
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(rawBody, "utf8")
-    .digest("hex");
+    const message = body.message;
+    if (!message || message.type !== "end-of-call-report") {
+      return NextResponse.json({ received: true });
+    }
 
-  console.log("[vapi-webhook] Expected sig:", expected.substring(0, 20) + "...");
-  console.log("[vapi-webhook] Expected length:", expected.length);
+    const call = message.call;
+    const callId = call?.id;
+    const transcript = call?.artifact?.transcript ?? "";
+    const recordingUrl = call?.artifact?.recordingUrl ?? null;
+    const endedReason = call?.endedReason ?? null;
+    const startedAt = call?.startedAt ?? null;
+    const endedAt = call?.endedAt ?? null;
+    const structured = call?.analysis?.structuredData ?? {};
 
-  const sigBuf = Buffer.from(sig, "hex");
-  const expBuf = Buffer.from(expected, "hex");
+    let durationSeconds = null;
+    if (startedAt && endedAt) {
+      durationSeconds = Math.round(
+        (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000
+      );
+    }
 
-  console.log("[vapi-webhook] sigBuf length:", sigBuf.length);
-  console.log("[vapi-webhook] expBuf length:", expBuf.length);
+    const status =
+      endedReason === "customer-did-not-answer" || endedReason === "no-answer"
+        ? "no_answer"
+        : "completed";
 
-  const valid =
-    sigBuf.length === expBuf.length &&
-    crypto.timingSafeEqual(sigBuf, expBuf);
+    let appointmentDatetime = null;
+    if (
+      structured.appointment_booked &&
+      structured.appointment_date &&
+      structured.appointment_time
+    ) {
+      appointmentDatetime = `${structured.appointment_date} at ${structured.appointment_time}`;
+    }
 
-  if (!valid) {
-    console.error("[vapi-webhook] Signature mismatch — rejecting");
-    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
-  }
+    const supabaseAdmin = createServiceClient();
 
-  const body = JSON.parse(rawBody);
-  const message = body.message;
+    const { error } = await supabaseAdmin
+      .from("voice_calls")
+      .update({
+        status,
+        transcript,
+        recording_url: recordingUrl,
+        ended_reason: endedReason,
+        started_at: startedAt,
+        ended_at: endedAt,
+        duration_seconds: durationSeconds,
+        appointment_booked: structured.appointment_booked ?? false,
+        appointment_date: structured.appointment_date ?? null,
+        appointment_time: structured.appointment_time ?? null,
+        appointment_datetime: appointmentDatetime,
+        interest_level: structured.interest_level ?? null,
+        structured_data: structured,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("vapi_call_id", callId);
 
-  console.log("[vapi-webhook] Verified. Type:", message?.type);
+    if (error) {
+      console.error("[vapi-webhook] DB update error:", error);
+    } else {
+      console.log("[vapi-webhook] Updated successfully:", callId);
+    }
 
-  if (!message || message.type !== "end-of-call-report") {
     return NextResponse.json({ received: true });
-  }
-
-  const call = message.call;
-  const callId = call?.id;
-  const transcript = call?.artifact?.transcript ?? "";
-  const recordingUrl = call?.artifact?.recordingUrl ?? null;
-  const endedReason = call?.endedReason ?? null;
-  const startedAt = call?.startedAt ?? null;
-  const endedAt = call?.endedAt ?? null;
-  const structured = call?.analysis?.structuredData ?? {};
-
-  let durationSeconds = null;
-  if (startedAt && endedAt) {
-    durationSeconds = Math.round(
-      (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000
+  } catch (error) {
+    console.error("[vapi-webhook] Error:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
     );
   }
-
-  const status =
-    endedReason === "customer-did-not-answer" || endedReason === "no-answer"
-      ? "no_answer"
-      : "completed";
-
-  let appointmentDatetime = null;
-  if (
-    structured.appointment_booked &&
-    structured.appointment_date &&
-    structured.appointment_time
-  ) {
-    appointmentDatetime = `${structured.appointment_date} at ${structured.appointment_time}`;
-  }
-
-  const supabaseAdmin = createServiceClient();
-
-  const { error } = await supabaseAdmin
-    .from("voice_calls")
-    .update({
-      status,
-      transcript,
-      recording_url: recordingUrl,
-      ended_reason: endedReason,
-      started_at: startedAt,
-      ended_at: endedAt,
-      duration_seconds: durationSeconds,
-      appointment_booked: structured.appointment_booked ?? false,
-      appointment_date: structured.appointment_date ?? null,
-      appointment_time: structured.appointment_time ?? null,
-      appointment_datetime: appointmentDatetime,
-      interest_level: structured.interest_level ?? null,
-      structured_data: structured,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("vapi_call_id", callId);
-
-  if (error) {
-    console.error("[vapi-webhook] DB update error:", error);
-  } else {
-    console.log("[vapi-webhook] Updated successfully:", callId);
-  }
-
-  return NextResponse.json({ received: true });
 }
