@@ -1,73 +1,75 @@
-const VAPI_BASE = "https://api.vapi.ai";
-
-interface PlaceCallParams {
-  apiKey: string;
-  phoneNumberId: string;
-  customerPhone: string;
-  assistantConfig: {
-    firstMessage: string;
-    systemPrompt: string;
-    voiceId: string;
-    voiceProvider: string;
-  };
-  metadata?: Record<string, string>;
-}
-
-interface VapiCallResponse {
-  id: string;
-  status: string;
-  [key: string]: unknown;
-}
-
 export async function placeOutboundCall({
-  apiKey,
+  phoneNumber,
+  prospectName,
+  score,
+  percentage,
+  qualification,
+  quizAnswersSummary,
+  organizationName,
+  responseId,
+  organizationId,
+  assistantId,
   phoneNumberId,
-  customerPhone,
-  assistantConfig,
-  metadata,
-}: PlaceCallParams): Promise<VapiCallResponse> {
-  const body = {
-    phoneNumberId,
-    customer: {
-      number: customerPhone,
-    },
-    assistant: {
-      firstMessage: assistantConfig.firstMessage,
-      model: {
-        provider: "anthropic",
-        model: "claude-sonnet-4-20250514",
-        messages: [
-          {
-            role: "system",
-            content: assistantConfig.systemPrompt,
-          },
-        ],
-      },
-      voice: {
-        provider: assistantConfig.voiceProvider,
-        voiceId: assistantConfig.voiceId,
-      },
-      endCallFunctionEnabled: true,
-      recordingEnabled: true,
-    },
-    metadata: metadata || {},
-  };
+}: {
+  phoneNumber: string;
+  prospectName: string;
+  score: number;
+  percentage: number;
+  qualification: string;
+  quizAnswersSummary: string;
+  organizationName: string;
+  responseId: string;
+  organizationId: string;
+  assistantId: string;
+  phoneNumberId: string;
+}): Promise<string | null> {
+  const firstName = prospectName.split(" ")[0];
 
-  console.log("[vapi] Request body:", JSON.stringify(body, null, 2));
+  const tierLabel =
+    ({
+      HOT_LEAD: "Peak Performer",
+      WARM_LEAD: "High Potential",
+      COLD_LEAD: "Building Momentum",
+      NOT_QUALIFIED: "Early Stage",
+    } as Record<string, string>)[qualification] ?? "High Potential";
 
-  const res = await fetch(`${VAPI_BASE}/call`, {
+  const response = await fetch("https://api.vapi.ai/call", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${process.env.VAPI_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      phoneNumberId,
+      assistantId,
+      assistantOverrides: {
+        variableValues: {
+          firstName,
+          score,
+          percentage,
+          tierLabel,
+          organizationName,
+          quizAnswersSummary,
+        },
+      },
+      customer: {
+        number: phoneNumber,
+        name: firstName,
+      },
+      metadata: {
+        responseId,
+        organizationId,
+      },
+    }),
   });
 
-  if (!res.ok) {
-    const errorBody = await res.text();
-    throw new Error(`Vapi API error ${res.status}: ${errorBody}`);
+  if (!response.ok) {
+    const error = await response.text();
+    console.error("[vapi] Call failed:", error);
+    return null;
   }
 
-  return res.json();
+  const data = await response.json();
+  console.log("[vapi] Call placed successfully:", data.id);
+  return data.id ?? null;
 }
