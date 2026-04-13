@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { placeOutboundCall } from "@/lib/vapi";
+import { TIER_LABELS } from "@/lib/sequence-config";
 
 const DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // ElevenLabs Rachel
 const DEFAULT_VOICE_PROVIDER = "11labs";
@@ -91,28 +92,79 @@ export async function POST(request: Request) {
     const firstName = (response.contact_name || "there").split(" ")[0];
     const score = response.score || 0;
     const percentage = response.percentage || 0;
+    const tierLabel =
+      TIER_LABELS[response.qualification || ""] || response.qualification || "";
+    const organizationName = org?.name || "our company";
+
+    // Build quiz answers summary from response_answers
+    let quizAnswersSummary = "";
+    try {
+      const { data: answers } = await supabase
+        .from("response_answers")
+        .select("question_order, answer_value, points_awarded")
+        .eq("response_id", responseId)
+        .order("question_order", { ascending: true });
+
+      if (answers && answers.length > 0) {
+        // Also fetch the question texts
+        const { data: questions } = await supabase
+          .from("quiz_questions")
+          .select("id, question_text, question_order")
+          .eq("quiz_id", response.quiz_id)
+          .order("question_order", { ascending: true });
+
+        const qMap = new Map(
+          (questions || []).map((q) => [q.question_order, q.question_text])
+        );
+
+        quizAnswersSummary = answers
+          .map((a) => {
+            const qText = qMap.get(a.question_order) || `Q${a.question_order}`;
+            const ansVal =
+              typeof a.answer_value === "object"
+                ? JSON.stringify(a.answer_value)
+                : String(a.answer_value);
+            return `- ${qText}: ${ansVal} (${a.points_awarded} pts)`;
+          })
+          .join("\n");
+      }
+    } catch {
+      console.error("[voice] Failed to build quiz answers summary");
+    }
+
+    // Replace variables — supports both {var} and {{var}} formats
+    const replaceVars = (text: string) => {
+      return text
+        ?.replace(/\{\{firstName\}\}|\{firstName\}/g, firstName)
+        ?.replace(/\{\{score\}\}|\{score\}/g, String(score))
+        ?.replace(/\{\{percentage\}\}|\{percentage\}/g, String(percentage))
+        ?.replace(/\{\{tierLabel\}\}|\{tierLabel\}/g, tierLabel)
+        ?.replace(
+          /\{\{orgName\}\}|\{orgName\}|\{\{organizationName\}\}|\{organizationName\}/g,
+          organizationName
+        )
+        ?.replace(
+          /\{\{quizAnswersSummary\}\}|\{quizAnswersSummary\}/g,
+          quizAnswersSummary
+        )
+        ?.replace(
+          /\{\{qualification\}\}|\{qualification\}/g,
+          response.qualification || ""
+        );
+    };
 
     // Build the system prompt with dynamic values
     const rawPrompt =
       features.voice_system_prompt ||
-      `You are Maya, a friendly and professional performance consultant from ${org?.name || "our company"}. You're calling {{firstName}} who just completed a performance assessment and scored {{percentage}}%.`;
+      `You are Maya, a friendly and professional performance consultant from {organizationName}. You're calling {firstName} who just completed a performance assessment and scored {percentage}%.`;
 
-    const systemPrompt = rawPrompt
-      .replace(/\{\{firstName\}\}/g, firstName)
-      .replace(/\{\{score\}\}/g, String(score))
-      .replace(/\{\{percentage\}\}/g, String(percentage))
-      .replace(/\{\{orgName\}\}/g, org?.name || "our company")
-      .replace(/\{\{qualification\}\}/g, response.qualification || "");
+    const systemPrompt = replaceVars(rawPrompt);
 
     const rawFirstMessage =
       features.voice_first_message ||
-      `Hi {{firstName}}, this is Maya from ${org?.name || "our company"}. I'm calling because you just completed our performance assessment and I noticed some really interesting results. Do you have a quick moment to chat?`;
+      `Hi {firstName}, this is Maya from {organizationName}. I'm calling because you just completed our performance assessment and I noticed some really interesting results. Do you have a quick moment to chat?`;
 
-    const firstMessage = rawFirstMessage
-      .replace(/\{\{firstName\}\}/g, firstName)
-      .replace(/\{\{score\}\}/g, String(score))
-      .replace(/\{\{percentage\}\}/g, String(percentage))
-      .replace(/\{\{orgName\}\}/g, org?.name || "our company");
+    const firstMessage = replaceVars(rawFirstMessage);
 
     const phoneNumberId =
       features.vapi_phone_number_id ||

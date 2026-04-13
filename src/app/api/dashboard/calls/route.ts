@@ -22,6 +22,7 @@ export async function GET(request: Request) {
   const pageSize = parseInt(url.searchParams.get("pageSize") || "20");
   const status = url.searchParams.get("status") || "";
   const search = url.searchParams.get("search") || "";
+  const appointment = url.searchParams.get("appointment") || "";
 
   let query = supabase
     .from("voice_calls")
@@ -37,6 +38,12 @@ export async function GET(request: Request) {
     query = query.or(
       `contact_name.ilike.%${search}%,phone_number.ilike.%${search}%`
     );
+  }
+
+  if (appointment === "booked") {
+    query = query.eq("appointment_booked", true);
+  } else if (appointment === "none") {
+    query = query.or("appointment_booked.is.null,appointment_booked.eq.false");
   }
 
   const from = (page - 1) * pageSize;
@@ -59,6 +66,12 @@ export async function GET(request: Request) {
     .select("*", { count: "exact", head: true })
     .eq("organization_id", user.organizationId)
     .eq("status", "ended");
+
+  const { count: appointmentsBooked } = await supabase
+    .from("voice_calls")
+    .select("*", { count: "exact", head: true })
+    .eq("organization_id", user.organizationId)
+    .eq("appointment_booked", true);
 
   const { data: durationData } = await supabase
     .from("voice_calls")
@@ -84,6 +97,38 @@ export async function GET(request: Request) {
       totalCalls: totalCalls || 0,
       completedCalls: completedCalls || 0,
       avgDurationSeconds: avgDuration,
+      appointmentsBooked: appointmentsBooked || 0,
     },
   });
+}
+
+export async function PATCH(request: Request) {
+  const sessionId = getSessionIdFromRequest(request);
+  if (!sessionId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await validateSession(sessionId);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { callId, action } = await request.json();
+
+  if (action === "confirm_appointment" && callId) {
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from("voice_calls")
+      .update({ appointment_confirmed_by: user.username })
+      .eq("id", callId)
+      .eq("organization_id", user.organizationId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, confirmedBy: user.username });
+  }
+
+  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }

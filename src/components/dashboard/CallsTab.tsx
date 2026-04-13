@@ -21,12 +21,16 @@ interface VoiceCall {
   recording_url: string | null;
   cost_cents: number | null;
   created_at: string;
+  appointment_booked: boolean | null;
+  appointment_datetime: string | null;
+  appointment_confirmed_by: string | null;
 }
 
 interface CallsKPIs {
   totalCalls: number;
   completedCalls: number;
   avgDurationSeconds: number;
+  appointmentsBooked: number;
 }
 
 interface CallsTabProps {
@@ -35,7 +39,115 @@ interface CallsTabProps {
   getAuthHeaders: () => Record<string, string>;
 }
 
+function formatAppointmentDate(datetime: string | null) {
+  if (!datetime) return "\u2014";
+  const d = new Date(datetime);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const day = days[d.getDay()];
+  const date = d.getDate();
+  const month = months[d.getMonth()];
+  const hours = d.getHours();
+  const minutes = d.getMinutes();
+  const ampm = hours >= 12 ? "pm" : "am";
+  const h = hours % 12 || 12;
+  const min = minutes > 0 ? `:${minutes.toString().padStart(2, "0")}` : "";
+  return `${day} ${date} ${month}, ${h}${min}${ampm}`;
+}
+
+function formatAppointmentDateFull(datetime: string | null) {
+  if (!datetime) return "";
+  const d = new Date(datetime);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const day = days[d.getDay()];
+  const date = d.getDate();
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  const hours = d.getHours();
+  const minutes = d.getMinutes();
+  const ampm = hours >= 12 ? "pm" : "am";
+  const h = hours % 12 || 12;
+  const min = minutes > 0 ? `:${minutes.toString().padStart(2, "0")}` : "";
+  return `${day} ${date} ${month} ${year} at ${h}${min}${ampm}`;
+}
+
+interface TranscriptLine {
+  speaker: string;
+  text: string;
+}
+
+function parseTranscript(
+  transcript: string,
+  contactName: string
+): TranscriptLine[] | null {
+  // Try to detect speaker labels like "AI:", "User:", "Maya:", "Bot:", or name-based labels
+  const speakerPattern =
+    /^(AI|User|Maya|Bot|Assistant|Agent|Human|Customer|[A-Z][a-z]+)\s*:\s*/;
+  const lines = transcript.split("\n").filter((l) => l.trim());
+
+  let parsed: TranscriptLine[] = [];
+  let currentSpeaker = "";
+  let currentText = "";
+
+  for (const line of lines) {
+    const match = line.match(speakerPattern);
+    if (match) {
+      if (currentSpeaker && currentText) {
+        parsed.push({ speaker: currentSpeaker, text: currentText.trim() });
+      }
+      const rawSpeaker = match[1];
+      // Normalize speaker labels
+      if (
+        ["AI", "Bot", "Assistant", "Agent", "Maya"].includes(rawSpeaker)
+      ) {
+        currentSpeaker = "Maya";
+      } else {
+        const firstName = (contactName || "Prospect").split(" ")[0];
+        currentSpeaker = firstName;
+      }
+      currentText = line.slice(match[0].length);
+    } else {
+      currentText += " " + line;
+    }
+  }
+  if (currentSpeaker && currentText) {
+    parsed.push({ speaker: currentSpeaker, text: currentText.trim() });
+  }
+
+  // If we couldn't parse any speaker labels, return null to indicate plain text
+  if (parsed.length === 0) return null;
+  return parsed;
+}
+
 export default function CallsTab({
+  user,
   accent,
   getAuthHeaders,
 }: CallsTabProps) {
@@ -44,13 +156,16 @@ export default function CallsTab({
     totalCalls: 0,
     completedCalls: 0,
     avgDurationSeconds: 0,
+    appointmentsBooked: 0,
   });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
+  const [appointmentFilter, setAppointmentFilter] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCall, setSelectedCall] = useState<VoiceCall | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const pageSize = 20;
 
   const fetchCalls = useCallback(async () => {
@@ -61,6 +176,7 @@ export default function CallsTab({
         pageSize: String(pageSize),
       });
       if (statusFilter) params.set("status", statusFilter);
+      if (appointmentFilter) params.set("appointment", appointmentFilter);
       if (search) params.set("search", search);
 
       const res = await fetch(`/api/dashboard/calls?${params}`, {
@@ -74,7 +190,7 @@ export default function CallsTab({
       // Ignore
     }
     setLoading(false);
-  }, [page, statusFilter, search, getAuthHeaders]);
+  }, [page, statusFilter, appointmentFilter, search, getAuthHeaders]);
 
   useEffect(() => {
     fetchCalls();
@@ -104,12 +220,44 @@ export default function CallsTab({
     }
   };
 
+  const handleConfirmAppointment = async (callId: string) => {
+    setConfirming(true);
+    try {
+      const res = await fetch("/api/dashboard/calls", {
+        method: "PATCH",
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ callId, action: "confirm_appointment" }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        // Update local state
+        const updated = {
+          ...selectedCall!,
+          appointment_confirmed_by: data.confirmedBy,
+        };
+        setSelectedCall(updated);
+        setCalls((prev) =>
+          prev.map((c) => (c.id === callId ? updated : c))
+        );
+      }
+    } catch {
+      // Ignore
+    }
+    setConfirming(false);
+  };
+
+  const contactFirstName = (name: string) =>
+    (name || "Prospect").split(" ")[0];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Voice Calls</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <KPICard
           label="Total Calls"
           value={kpis.totalCalls}
@@ -124,6 +272,11 @@ export default function CallsTab({
           label="Avg Duration"
           value={formatDuration(kpis.avgDurationSeconds)}
           accent={accent}
+        />
+        <KPICard
+          label="Appointments Booked"
+          value={kpis.appointmentsBooked}
+          accent="#16a34a"
         />
       </div>
 
@@ -142,6 +295,19 @@ export default function CallsTab({
           <option value="ringing">Ringing</option>
           <option value="in-progress">In Progress</option>
           <option value="ended">Ended</option>
+        </select>
+
+        <select
+          value={appointmentFilter}
+          onChange={(e) => {
+            setAppointmentFilter(e.target.value);
+            setPage(1);
+          }}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700"
+        >
+          <option value="">All Appointments</option>
+          <option value="booked">Booked</option>
+          <option value="none">None</option>
         </select>
 
         <input
@@ -171,6 +337,8 @@ export default function CallsTab({
                   <th className="px-4 py-3 font-medium">Phone</th>
                   <th className="px-4 py-3 font-medium">Qualification</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Appointment</th>
+                  <th className="px-4 py-3 font-medium">Scheduled for</th>
                   <th className="px-4 py-3 font-medium">Duration</th>
                   <th className="px-4 py-3 font-medium">Date</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
@@ -198,6 +366,20 @@ export default function CallsTab({
                       >
                         {call.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {call.appointment_booked ? (
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">
+                          Booked
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                          None
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 text-xs">
+                      {formatAppointmentDate(call.appointment_datetime)}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {formatDuration(call.duration_seconds)}
@@ -283,6 +465,43 @@ export default function CallsTab({
               </div>
 
               <div className="space-y-4">
+                {/* Appointment Box */}
+                {selectedCall.appointment_booked && (
+                  <div className="rounded-lg border-2 border-green-200 bg-green-50 p-4">
+                    <p className="text-sm font-bold text-green-800">
+                      Appointment Booked
+                    </p>
+                    {selectedCall.appointment_datetime && (
+                      <p className="text-sm text-green-700 mt-1">
+                        {formatAppointmentDateFull(
+                          selectedCall.appointment_datetime
+                        )}
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      {selectedCall.appointment_confirmed_by ? (
+                        <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-100 px-3 py-1.5 rounded-full">
+                          Confirmed by{" "}
+                          {selectedCall.appointment_confirmed_by}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleConfirmAppointment(selectedCall.id)
+                          }
+                          disabled={confirming}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+                          style={{ backgroundColor: accent }}
+                        >
+                          {confirming
+                            ? "Confirming..."
+                            : "Mark as Confirmed"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Contact</p>
@@ -345,8 +564,50 @@ export default function CallsTab({
                     <p className="text-sm font-medium text-gray-700 mb-1">
                       Transcript
                     </p>
-                    <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                      {selectedCall.transcript}
+                    <div className="bg-gray-50 rounded-lg p-3 max-h-96 overflow-y-auto">
+                      {(() => {
+                        const parsed = parseTranscript(
+                          selectedCall.transcript!,
+                          selectedCall.contact_name
+                        );
+                        if (!parsed) {
+                          return (
+                            <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                              {selectedCall.transcript}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-3">
+                            {parsed.map((line, i) => {
+                              const isMaya = line.speaker === "Maya";
+                              return (
+                                <div
+                                  key={i}
+                                  className={`pl-3 border-l-2 ${
+                                    isMaya
+                                      ? "border-purple-400"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-semibold mb-0.5 ${
+                                      isMaya
+                                        ? "text-purple-600"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    {line.speaker}
+                                  </p>
+                                  <p className="text-sm text-gray-700">
+                                    {line.text}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}

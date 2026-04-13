@@ -79,6 +79,59 @@ export async function POST(request: Request) {
           updates.ended_reason = message.endedReason;
         }
 
+        // Detect if appointment was booked
+        const transcript: string = message.transcript || "";
+        const transcriptLower = transcript.toLowerCase();
+        const appointmentBooked =
+          transcriptLower.includes("i've got you down for") ||
+          transcriptLower.includes("i have you down for") ||
+          transcriptLower.includes("locked that in") ||
+          transcriptLower.includes("consultant will call you") ||
+          transcriptLower.includes("got you booked");
+
+        let appointmentDatetime: string | null = null;
+
+        if (appointmentBooked && process.env.OPENAI_API_KEY) {
+          try {
+            const extractionResponse = await fetch(
+              "https://api.openai.com/v1/chat/completions",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "gpt-4o",
+                  messages: [
+                    {
+                      role: "system",
+                      content:
+                        'Extract the confirmed appointment date and time from this call transcript. Return ONLY a JSON object like: {"datetime": "2026-04-17T14:00:00"} using ISO 8601 format. If no clear date/time was confirmed, return {"datetime": null}. Do not include any other text.',
+                    },
+                    { role: "user", content: transcript },
+                  ],
+                  max_tokens: 100,
+                }),
+              }
+            );
+
+            const extractionData = await extractionResponse.json();
+            const raw = extractionData.choices[0].message.content
+              .replace(/```json|```/g, "")
+              .trim();
+            const parsed = JSON.parse(raw);
+            appointmentDatetime = parsed.datetime ?? null;
+          } catch {
+            console.error(
+              "[vapi-webhook] Failed to parse appointment datetime"
+            );
+          }
+        }
+
+        updates.appointment_booked = appointmentBooked;
+        updates.appointment_datetime = appointmentDatetime;
+
         await supabase
           .from("voice_calls")
           .update(updates)
@@ -87,6 +140,8 @@ export async function POST(request: Request) {
         console.log("[voice-webhook] End of call report:", {
           callId,
           duration: message.duration,
+          appointmentBooked,
+          appointmentDatetime,
         });
         break;
       }
