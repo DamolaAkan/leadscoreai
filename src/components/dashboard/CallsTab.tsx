@@ -112,7 +112,7 @@ function parseTranscript(
     /^(AI|User|Maya|Bot|Assistant|Agent|Human|Customer|[A-Z][a-z]+)\s*:\s*/;
   const lines = transcript.split("\n").filter((l) => l.trim());
 
-  let parsed: TranscriptLine[] = [];
+  const parsed: TranscriptLine[] = [];
   let currentSpeaker = "";
   let currentText = "";
 
@@ -147,7 +147,6 @@ function parseTranscript(
 }
 
 export default function CallsTab({
-  user,
   accent,
   getAuthHeaders,
 }: CallsTabProps) {
@@ -249,8 +248,6 @@ export default function CallsTab({
     setConfirming(false);
   };
 
-  const contactFirstName = (name: string) =>
-    (name || "Prospect").split(" ")[0];
 
   return (
     <div className="space-y-6">
