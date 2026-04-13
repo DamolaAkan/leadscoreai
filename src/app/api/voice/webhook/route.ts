@@ -5,30 +5,35 @@ import { createServiceClient } from "@/lib/supabase";
 export async function POST(req: Request) {
   const secret = process.env.VAPI_SERVER_SECRET ?? "";
   const sig = req.headers.get("x-vapi-signature") ?? "";
+  const rawBody = await req.text();
 
   console.log("[vapi-webhook] Secret present:", !!secret);
   console.log("[vapi-webhook] Secret length:", secret.length);
-  console.log("[vapi-webhook] Signature received:", sig);
-  console.log("[vapi-webhook] Signature length:", sig.length);
+  console.log("[vapi-webhook] Sig received:", sig.substring(0, 20) + "...");
+  console.log("[vapi-webhook] Sig length:", sig.length);
+  console.log("[vapi-webhook] Body length:", rawBody.length);
+  console.log("[vapi-webhook] Body preview:", rawBody.substring(0, 100));
 
-  // Read raw body ONCE — never call req.json() or req.text() again after this
-  const rawBody = await req.text();
-
-  // Verify signature — HMAC SHA-256, hex encoded
   const expected = crypto
     .createHmac("sha256", secret)
     .update(rawBody, "utf8")
     .digest("hex");
 
+  console.log("[vapi-webhook] Expected sig:", expected.substring(0, 20) + "...");
+  console.log("[vapi-webhook] Expected length:", expected.length);
+
   const sigBuf = Buffer.from(sig, "hex");
   const expBuf = Buffer.from(expected, "hex");
+
+  console.log("[vapi-webhook] sigBuf length:", sigBuf.length);
+  console.log("[vapi-webhook] expBuf length:", expBuf.length);
 
   const valid =
     sigBuf.length === expBuf.length &&
     crypto.timingSafeEqual(sigBuf, expBuf);
 
   if (!valid) {
-    console.error("[vapi-webhook] Invalid signature");
+    console.error("[vapi-webhook] Signature mismatch — rejecting");
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
