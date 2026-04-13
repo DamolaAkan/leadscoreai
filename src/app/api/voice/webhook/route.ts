@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(req: Request) {
+  console.log("has secret", !!process.env.VAPI_SERVER_SECRET);
   const secret = process.env.VAPI_SERVER_SECRET!;
   const sig = req.headers.get("x-vapi-signature") ?? "";
 
