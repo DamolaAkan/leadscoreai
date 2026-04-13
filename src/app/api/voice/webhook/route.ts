@@ -1,19 +1,44 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
-    // Verify webhook secret if configured
-    const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const authHeader = request.headers.get("x-vapi-secret");
-      if (authHeader !== webhookSecret) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    const rawBody = await request.text();
+    const signature = request.headers.get("x-vapi-signature");
+    const secret = process.env.VAPI_WEBHOOK_SECRET;
+
+    if (!secret) {
+      console.error("[vapi-webhook] VAPI_WEBHOOK_SECRET not set");
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 }
+      );
     }
 
-    const body = await request.json();
-    console.log("[vapi-webhook] Received:", JSON.stringify(body, null, 2));
+    if (!signature) {
+      console.error("[vapi-webhook] No signature header present");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify HMAC signature
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody)
+      .digest("hex");
+
+    const trusted = crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+
+    if (!trusted) {
+      console.error("[vapi-webhook] Invalid signature");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
+    console.log("[vapi-webhook] Verified and received:", body.message?.type);
 
     const message = body.message;
     if (!message || message.type !== "end-of-call-report") {
