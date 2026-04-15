@@ -42,6 +42,7 @@ interface CallsTabProps {
 function formatAppointmentDate(datetime: string | null) {
   if (!datetime) return "\u2014";
   const d = new Date(datetime);
+  if (isNaN(d.getTime())) return datetime; // fallback: show raw string
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
     "Jan",
@@ -71,6 +72,7 @@ function formatAppointmentDate(datetime: string | null) {
 function formatAppointmentDateFull(datetime: string | null) {
   if (!datetime) return "";
   const d = new Date(datetime);
+  if (isNaN(d.getTime())) return datetime;
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
     "Jan",
