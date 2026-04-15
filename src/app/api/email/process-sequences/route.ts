@@ -108,7 +108,7 @@ export async function POST() {
       });
 
       const apiKey = decrypt(features.resend_api_key);
-      const messageId = await sendSequenceEmail({
+      const { id: messageId, error: sendError } = await sendSequenceEmail({
         to: seq.email_address,
         subject: step.subject,
         html,
@@ -117,11 +117,12 @@ export async function POST() {
         fromName: features.resend_from_name,
       });
 
-      console.log("[email] Sequence step sent:", {
+      console.log("[email] Sequence step result:", {
         sequenceId: seq.id,
         step: seq.current_step,
         to: seq.email_address,
         messageId,
+        sendError,
       });
 
       // Log the send

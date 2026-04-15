@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const step0 = steps[0];
     const html = step0.getHtml({ firstName, score, percentage, tierLabel });
 
-    const messageId = await sendSequenceEmail({
+    const { id: messageId, error: sendError } = await sendSequenceEmail({
       to: response.contact_email,
       subject: step0.subject,
       html,
@@ -92,10 +92,11 @@ export async function POST(request: Request) {
       fromName: features.resend_from_name,
     });
 
-    console.log("[email] Step 0 sent:", {
+    console.log("[email] Step 0 result:", {
       to: response.contact_email,
       qualification,
       messageId,
+      sendError,
     });
 
     // Calculate next send date
@@ -171,6 +172,7 @@ export async function POST(request: Request) {
       sequenceId: seq.id,
       messageId,
       track: qualification,
+      ...(sendError && { sendError }),
     });
   } catch (err) {
     console.error("[email] Trigger sequence error:", err);

@@ -20,7 +20,7 @@ interface VoiceCall {
   summary: string | null;
   recording_url: string | null;
   cost_cents: number | null;
-  created_at: string;
+  triggered_at: string;
   appointment_booked: boolean | null;
   appointment_datetime: string | null;
   appointment_confirmed_by: string | null;
@@ -207,6 +207,7 @@ export default function CallsTab({
   const statusColor = (status: string) => {
     switch (status) {
       case "ended":
+      case "completed":
         return "bg-green-100 text-green-700";
       case "in-progress":
         return "bg-blue-100 text-blue-700";
@@ -291,6 +292,7 @@ export default function CallsTab({
           <option value="queued">Queued</option>
           <option value="ringing">Ringing</option>
           <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
           <option value="ended">Ended</option>
         </select>
 
@@ -382,7 +384,7 @@ export default function CallsTab({
                       {formatDuration(call.duration_seconds)}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {new Date(call.created_at).toLocaleDateString()}
+                      {new Date(call.triggered_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
                       {(call.transcript || call.summary) && (

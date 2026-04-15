@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     .from("voice_calls")
     .select("*", { count: "exact" })
     .eq("organization_id", user.organizationId)
-    .order("created_at", { ascending: false });
+    .order("triggered_at", { ascending: false });
 
   if (status) {
     query = query.eq("status", status);
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
     .from("voice_calls")
     .select("*", { count: "exact", head: true })
     .eq("organization_id", user.organizationId)
-    .eq("status", "ended");
+    .in("status", ["ended", "completed"]);
 
   const { count: appointmentsBooked } = await supabase
     .from("voice_calls")
