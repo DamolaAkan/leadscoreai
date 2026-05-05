@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/invoices/process-recurring",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}
