@@ -91,7 +91,7 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
           {error}
         </div>
       )}
@@ -99,12 +99,12 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
       {/* Client & Send Day */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Client</label>
+          <label className="block text-sm font-medium text-[#111827] mb-1">Client</label>
           <select
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
             required
-            className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+            className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
           >
             <option value="">Select a client...</option>
             {clients.map((c) => (
@@ -115,7 +115,7 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Send Day (1-28)</label>
+          <label className="block text-sm font-medium text-[#111827] mb-1">Send Day (1-28)</label>
           <input
             type="number"
             value={sendDay}
@@ -123,14 +123,14 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
             min={1}
             max={28}
             required
-            className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+            className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
           />
         </div>
       </div>
 
       {/* Line Items */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Line Items</label>
+        <label className="block text-sm font-medium text-[#111827] mb-2">Line Items</label>
         <div className="space-y-3">
           {lineItems.map((item, index) => (
             <div key={index} className="grid grid-cols-12 gap-2 items-center">
@@ -140,7 +140,7 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
                 value={item.description}
                 onChange={(e) => updateLineItem(index, "description", e.target.value)}
                 required
-                className="col-span-5 bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+                className="col-span-5 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
               />
               <input
                 type="number"
@@ -149,7 +149,7 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
                 onChange={(e) => updateLineItem(index, "quantity", Number(e.target.value))}
                 min={1}
                 required
-                className="col-span-2 bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+                className="col-span-2 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
               />
               <input
                 type="number"
@@ -159,12 +159,12 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
                 min={0}
                 step={0.01}
                 required
-                className="col-span-3 bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+                className="col-span-3 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
               />
               <button
                 type="button"
                 onClick={() => removeLineItem(index)}
-                className="col-span-2 text-red-400 hover:text-red-300 text-sm px-2 py-2"
+                className="col-span-2 text-red-500 hover:text-red-600 text-sm px-2 py-2"
               >
                 Remove
               </button>
@@ -174,7 +174,7 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
         <button
           type="button"
           onClick={addLineItem}
-          className="mt-3 text-[#7C3AED] hover:text-[#A78BFA] text-sm font-medium"
+          className="mt-3 text-[#7C3AED] hover:text-[#6D28D9] text-sm font-medium"
         >
           + Add Line Item
         </button>
@@ -182,48 +182,48 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
 
       {/* Bank Details */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Bank Details</label>
+        <label className="block text-sm font-medium text-[#111827] mb-2">Bank Details</label>
         <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
             placeholder="Bank Name"
             value={bankDetails.bank_name || ""}
             onChange={(e) => setBankDetails({ ...bankDetails, bank_name: e.target.value })}
-            className="bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+            className="bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
           />
           <input
             type="text"
             placeholder="Account Name"
             value={bankDetails.account_name || ""}
             onChange={(e) => setBankDetails({ ...bankDetails, account_name: e.target.value })}
-            className="bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+            className="bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
           />
           <input
             type="text"
             placeholder="Account Number"
             value={bankDetails.account_number || ""}
             onChange={(e) => setBankDetails({ ...bankDetails, account_number: e.target.value })}
-            className="bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+            className="bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
           />
           <input
             type="text"
             placeholder="Sort Code"
             value={bankDetails.sort_code || ""}
             onChange={(e) => setBankDetails({ ...bankDetails, sort_code: e.target.value })}
-            className="bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED]"
+            className="bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
           />
         </div>
       </div>
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Payment terms, additional info..."
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED] resize-none"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED] resize-none"
         />
       </div>
 
@@ -232,14 +232,14 @@ export default function RecurringForm({ getAuthHeaders }: RecurringFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-[#7C3AED] text-white font-medium rounded-lg hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
+          className="px-6 py-2.5 bg-[#7C3AED] text-white font-medium rounded-full hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
         >
           {loading ? "Creating..." : "Create Template"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+          className="px-4 py-2.5 text-gray-500 hover:text-[#111827] transition-colors"
         >
           Cancel
         </button>

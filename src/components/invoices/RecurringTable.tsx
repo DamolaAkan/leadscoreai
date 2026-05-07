@@ -41,7 +41,7 @@ export default function RecurringTable({ templates: initialTemplates }: Recurrin
 
   if (templates.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-black/50">
         <p>No recurring templates yet.</p>
         <Link href="/invoices/recurring/new" className="text-[#7C3AED] hover:underline text-sm mt-2 inline-block">
           Create your first template
@@ -54,22 +54,22 @@ export default function RecurringTable({ templates: initialTemplates }: Recurrin
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-[#2a2a3d]">
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Client</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Amount</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Schedule</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Last Sent</th>
+          <tr className="border-b border-black/[0.08]">
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Client</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Amount</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Schedule</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Status</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Last Sent</th>
           </tr>
         </thead>
         <tbody>
           {templates.map((t) => (
-            <tr key={t.id} className="border-b border-[#2a2a3d]/50 hover:bg-[#1a1a2e]/50 transition-colors">
-              <td className="py-3 px-4 text-sm text-white font-medium">{t.client?.name || "—"}</td>
-              <td className="py-3 px-4 text-sm text-white">{formatCurrency(t.subtotal, t.currency)}</td>
+            <tr key={t.id} className="border-b border-black/[0.04] hover:bg-gray-50 transition-colors">
+              <td className="py-3 px-4 text-sm text-[#111827] font-medium">{t.client?.name || "—"}</td>
+              <td className="py-3 px-4 text-sm text-[#111827]">{formatCurrency(t.subtotal, t.currency)}</td>
               <td className="py-3 px-4">
-                <span className="text-sm text-gray-300">Day {t.send_day}</span>
-                <span className="block text-xs text-gray-500 mt-0.5">
+                <span className="text-sm text-gray-700">Day {t.send_day}</span>
+                <span className="block text-xs text-black/50 mt-0.5">
                   Sends on Day {t.send_day} of every month at 8:00 AM WAT
                 </span>
               </td>
@@ -79,24 +79,24 @@ export default function RecurringTable({ templates: initialTemplates }: Recurrin
                     <>
                       <span
                         className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: "rgba(45,198,83,0.1)", color: "#2dc653" }}
+                        style={{ backgroundColor: "rgba(45,198,83,0.1)", color: "#16a34a" }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2dc653]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
                         Active
                       </span>
                       <button
                         onClick={() => handleToggle(t.id, false)}
                         disabled={togglingId === t.id}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#e63946]/30 text-[#e63946] text-xs font-medium hover:bg-[#e63946]/10 disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
                       >
-                        Pause ⏸
+                        Pause
                       </button>
                     </>
                   ) : (
                     <>
                       <span
                         className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#9ca3af" }}
+                        style={{ backgroundColor: "rgba(0,0,0,0.06)", color: "#6b7280" }}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                         Paused
@@ -104,15 +104,15 @@ export default function RecurringTable({ templates: initialTemplates }: Recurrin
                       <button
                         onClick={() => handleToggle(t.id, true)}
                         disabled={togglingId === t.id}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#2dc653]/30 text-[#2dc653] text-xs font-medium hover:bg-[#2dc653]/10 disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-green-200 text-green-600 text-xs font-medium hover:bg-green-50 disabled:opacity-50 transition-colors"
                       >
-                        Activate ▶
+                        Activate
                       </button>
                     </>
                   )}
                 </div>
               </td>
-              <td className="py-3 px-4 text-sm text-gray-400">
+              <td className="py-3 px-4 text-sm text-gray-500">
                 {t.last_sent_at ? formatDate(t.last_sent_at) : "Never"}
               </td>
             </tr>

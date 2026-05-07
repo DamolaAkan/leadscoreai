@@ -21,7 +21,7 @@ export function getStatusColor(status: string): string {
     case "sent":
       return "#3b82f6";
     case "paid":
-      return "#7C3AED";
+      return "#22c55e";
     case "overdue":
       return "#ef4444";
     default:

@@ -30,7 +30,7 @@ export default function InvoiceDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-[#111827] mb-6">Dashboard</h1>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -61,10 +61,10 @@ export default function InvoiceDashboard() {
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors ${
+            className={`px-3 py-1.5 text-sm rounded-full capitalize transition-colors ${
               filter === s
-                ? "bg-[#7C3AED]/10 text-[#7C3AED] font-medium"
-                : "text-gray-400 hover:text-white hover:bg-[#1a1a2e]"
+                ? "bg-[#7C3AED] text-white font-medium"
+                : "text-gray-500 hover:text-[#111827] hover:bg-gray-50"
             }`}
           >
             {s}
@@ -73,7 +73,7 @@ export default function InvoiceDashboard() {
       </div>
 
       {/* Invoice Table */}
-      <div className="bg-[#141425] border border-[#2a2a3d] rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm">
         <InvoiceTable invoices={invoices} />
       </div>
     </div>

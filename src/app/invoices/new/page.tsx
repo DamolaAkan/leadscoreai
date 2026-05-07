@@ -10,7 +10,7 @@ function getAuthHeaders(): Record<string, string> {
 export default function NewInvoicePage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-6">New Invoice</h1>
+      <h1 className="text-2xl font-bold text-[#111827] mb-6">New Invoice</h1>
       <InvoiceForm getAuthHeaders={getAuthHeaders} />
     </div>
   );

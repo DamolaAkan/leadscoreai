@@ -43,52 +43,52 @@ export default function ClientForm({ getAuthHeaders }: ClientFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Name *</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           placeholder="Client name"
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Company</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Company</label>
         <input
           type="text"
           value={company}
           onChange={(e) => setCompany(e.target.value)}
           placeholder="Company name (optional)"
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Email *</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="client@example.com"
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Currency</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Currency</label>
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#7C3AED]"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] focus:outline-none focus:border-[#7C3AED]"
         >
           <option value="USD">USD - US Dollar</option>
           <option value="GBP">GBP - British Pound</option>
@@ -99,13 +99,13 @@ export default function ClientForm({ getAuthHeaders }: ClientFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+        <label className="block text-sm font-medium text-[#111827] mb-1">Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Additional notes..."
-          className="w-full bg-[#0d0d1a] border border-[#2a2a3d] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C3AED] resize-none"
+          className="w-full bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED] resize-none"
         />
       </div>
 
@@ -113,14 +113,14 @@ export default function ClientForm({ getAuthHeaders }: ClientFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2.5 bg-[#7C3AED] text-white font-medium rounded-lg hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
+          className="px-6 py-2.5 bg-[#7C3AED] text-white font-medium rounded-full hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
         >
           {loading ? "Adding..." : "Add Client"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2.5 text-gray-400 hover:text-white transition-colors"
+          className="px-4 py-2.5 text-gray-500 hover:text-[#111827] transition-colors"
         >
           Cancel
         </button>

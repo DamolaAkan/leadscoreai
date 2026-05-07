@@ -12,7 +12,7 @@ interface InvoiceTableProps {
 export default function InvoiceTable({ invoices }: InvoiceTableProps) {
   if (invoices.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-black/50">
         <p>No invoices yet.</p>
         <Link href="/invoices/new" className="text-[#7C3AED] hover:underline text-sm mt-2 inline-block">
           Create your first invoice
@@ -25,32 +25,32 @@ export default function InvoiceTable({ invoices }: InvoiceTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-[#2a2a3d]">
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">#</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Client</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Amount</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Date</th>
-            <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Actions</th>
+          <tr className="border-b border-black/[0.08]">
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">#</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Client</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Amount</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Status</th>
+            <th className="text-left py-3 px-4 text-xs font-medium text-black/50 uppercase">Date</th>
+            <th className="text-right py-3 px-4 text-xs font-medium text-black/50 uppercase">Actions</th>
           </tr>
         </thead>
         <tbody>
           {invoices.map((invoice) => (
-            <tr key={invoice.id} className="border-b border-[#2a2a3d]/50 hover:bg-[#1a1a2e]/50 transition-colors">
-              <td className="py-3 px-4 text-sm text-white font-medium">{invoice.invoice_number}</td>
-              <td className="py-3 px-4 text-sm text-gray-300">
+            <tr key={invoice.id} className="border-b border-black/[0.04] hover:bg-gray-50 transition-colors">
+              <td className="py-3 px-4 text-sm text-[#111827] font-medium">{invoice.invoice_number}</td>
+              <td className="py-3 px-4 text-sm text-gray-700">
                 {invoice.client?.name || "—"}
                 {invoice.client?.company && (
-                  <span className="text-gray-500 text-xs block">{invoice.client.company}</span>
+                  <span className="text-black/50 text-xs block">{invoice.client.company}</span>
                 )}
               </td>
-              <td className="py-3 px-4 text-sm text-white font-medium">
+              <td className="py-3 px-4 text-sm text-[#111827] font-medium">
                 {formatCurrency(invoice.subtotal, invoice.currency)}
               </td>
               <td className="py-3 px-4">
                 <StatusBadge status={invoice.status} />
               </td>
-              <td className="py-3 px-4 text-sm text-gray-400">{formatDate(invoice.issue_date)}</td>
+              <td className="py-3 px-4 text-sm text-gray-500">{formatDate(invoice.issue_date)}</td>
               <td className="py-3 px-4 text-right">
                 <Link
                   href={`/invoices/${invoice.id}`}

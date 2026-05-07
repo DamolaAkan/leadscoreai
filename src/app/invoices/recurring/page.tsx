@@ -22,15 +22,15 @@ export default function RecurringPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Recurring Templates</h1>
+        <h1 className="text-2xl font-bold text-[#111827]">Recurring Templates</h1>
         <Link
           href="/invoices/recurring/new"
-          className="px-4 py-2 bg-[#7C3AED] text-white font-medium rounded-lg hover:bg-[#6D28D9] text-sm"
+          className="px-4 py-2 bg-[#7C3AED] text-white font-medium rounded-full hover:bg-[#6D28D9] text-sm"
         >
           New Template
         </Link>
       </div>
-      <div className="bg-[#141425] border border-[#2a2a3d] rounded-xl overflow-hidden">
+      <div className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm">
         <RecurringTable templates={templates} />
       </div>
     </div>
