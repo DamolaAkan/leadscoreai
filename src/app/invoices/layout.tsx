@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useInvoiceAuth } from "@/lib/useInvoiceAuth";
 import InvoiceSidebar from "@/components/invoices/InvoiceSidebar";
@@ -8,7 +8,6 @@ import InvoiceSidebar from "@/components/invoices/InvoiceSidebar";
 export default function InvoicesLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useInvoiceAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const isLoginPage = pathname === "/invoices/login";
 
   useEffect(() => {
