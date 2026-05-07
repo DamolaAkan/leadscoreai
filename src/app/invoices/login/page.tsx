@@ -1,30 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useInvoiceAuth } from "@/lib/useInvoiceAuth";
+import { useState, useEffect } from "react";
 
 const STORAGE_KEY = "lsai-admin-session";
 
 export default function InvoiceLoginPage() {
-  const router = useRouter();
-  const { user, loading: authLoading } = useInvoiceAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  // If already authenticated (validated via API), redirect immediately
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // If already has a valid session, redirect immediately
+  useEffect(() => {
+    const sessionId = localStorage.getItem(STORAGE_KEY);
+    if (!sessionId) {
+      setChecking(false);
+      return;
+    }
 
-  if (user) {
-    router.replace("/invoices");
+    fetch("/api/invoices/auth", {
+      headers: { Authorization: `Bearer ${sessionId}` },
+    })
+      .then((res) => {
+        if (res.ok) {
+          // Valid session — full redirect so layout remounts with auth
+          window.location.href = "/invoices";
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+          setChecking(false);
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        setChecking(false);
+      });
+  }, []);
+
+  if (checking) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />
@@ -44,15 +57,16 @@ export default function InvoiceLoginPage() {
     });
 
     const data = await res.json();
-    setLoading(false);
 
     if (!res.ok) {
+      setLoading(false);
       setError(data.error || "Login failed");
       return;
     }
 
     localStorage.setItem(STORAGE_KEY, data.session_id);
-    router.replace("/invoices");
+    // Full page redirect — forces layout to remount and pick up the new session
+    window.location.href = "/invoices";
   }
 
   return (
