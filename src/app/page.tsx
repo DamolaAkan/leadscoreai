@@ -1,41 +1,117 @@
 import type { Metadata } from "next";
 import "./homepage.css";
+import VideoPlayer from "./VideoPlayer";
+import MobileMenu from "./MobileMenu";
 
 const CALENDLY_URL = "https://calendly.com/akanbidamola";
 
 export const metadata: Metadata = {
-  title:
-    "LeadscoreAI — A Full Pipeline of Pre-Qualified Buyers. Built and Running in 7 Days.",
+  title: "LeadScoreAI — Know which leads convert before you chase them",
   description:
-    "Complete with automated lead scoring, AI voice calls, and email sequences that nurture your leads into paying clients — without you lifting a finger.",
+    "LeadScoreAI scores every lead the moment they raise their hand, sorts them Hot, Warm, Cold, and learns which answers actually predict a sale — so your team spends time only on the people who'll say yes.",
+  openGraph: {
+    title: "LeadScoreAI — Know which leads convert before you chase them",
+    description:
+      "LeadScoreAI scores every lead the moment they raise their hand, sorts them Hot, Warm, Cold, and learns which answers actually predict a sale.",
+    type: "website",
+    siteName: "LeadScoreAI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LeadScoreAI — Know which leads convert before you chase them",
+    description:
+      "Predictive lead scoring that tells you who'll convert before you pick up the phone.",
+  },
+  keywords: [
+    "lead scoring",
+    "lead qualification",
+    "predictive analytics",
+    "sales pipeline",
+    "AI lead scoring",
+    "conversion prediction",
+    "lead management",
+    "sales automation",
+  ],
 };
 
-function IncludedCard({
-  num,
-  title,
-  sub,
-}: {
-  num: string;
-  title: string;
-  sub: string;
-}) {
+function LogoSvg({ size = 25 }: { size?: number }) {
   return (
-    <div className="hp-included-card">
-      <div className="hp-included-num">{num}</div>
-      <div className="hp-included-title">{title}</div>
-      <div className="hp-included-sub">{sub}</div>
-    </div>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden="true"
+      style={{ display: "block" }}
+    >
+      <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626" />
+      <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb" />
+      <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409" />
+      <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a" />
+    </svg>
   );
 }
 
-function PlanFeature({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="hp-plan-feature">
-      <div className="hp-plan-dot" />
-      {children}
-    </div>
-  );
-}
+const PIPELINE = [
+  {
+    n: "01",
+    title: "Scorecard",
+    body: "A custom assessment, built around your offer, that prospects complete in under a minute.",
+  },
+  {
+    n: "02",
+    title: "Qualify",
+    body: "Every answer is scored in real time and sorted Hot / Warm / Cold before they see a result.",
+  },
+  {
+    n: "03",
+    title: "Dashboard",
+    body: "Every lead, score, and status in one live view your team works from each morning.",
+  },
+  {
+    n: "04",
+    title: "Analytics",
+    body: "Understand your whole market — by answer, segment, and region — continuously.",
+  },
+  {
+    n: "05",
+    title: "Predictive",
+    body: "The system learns which answers precede real sales and tells you who\u2019ll convert next.",
+  },
+];
+
+const ICPS = [
+  {
+    tag: "FN",
+    title: "Financing & asset lenders",
+    body: "Vehicle, equipment, solar, BNPL. Know who can actually keep up payments before you commit the asset.",
+  },
+  {
+    tag: "IN",
+    title: "Insurance & credit",
+    body: "Qualify applicants on intent and fit before your agents spend a day on the phone.",
+  },
+  {
+    tag: "CO",
+    title: "Coaches, consultants & B2B",
+    body: "High-ticket offers where one good call is worth a hundred bad ones. Talk only to ready buyers.",
+  },
+  {
+    tag: "AG",
+    title: "Agent & distribution networks",
+    body: "Hundreds of reps, thousands of leads. Get attribution and a live read on every market at once.",
+  },
+  {
+    tag: "RE",
+    title: "Real estate & high-value sales",
+    body: "Long sales cycles where chasing the wrong lead costs weeks. Prioritise on evidence, not gut.",
+  },
+  {
+    tag: "QC",
+    title: "Any qualify-then-close motion",
+    body: "If a conversation stands between a lead and a sale, scoring that lead first changes your economics.",
+  },
+];
 
 export default function HomePage() {
   return (
@@ -43,533 +119,1686 @@ export default function HomePage() {
       {/* Google Fonts */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
-        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;700;900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
         rel="stylesheet"
       />
 
-      {/* Nav */}
+      {/* Tier accent strip */}
+      <div style={{ display: "flex", height: 4 }}>
+        <div style={{ flex: 1, background: "#16a34a" }} />
+        <div style={{ flex: 1, background: "#d99409" }} />
+        <div style={{ flex: 1, background: "#2563eb" }} />
+        <div style={{ flex: 1, background: "#dc2626" }} />
+        <div style={{ flex: 4, background: "#6d28d9" }} />
+      </div>
+
+      {/* NAV */}
       <nav className="hp-nav">
-        <a href="/" className="hp-logo">
-          Leadscore<span>AI</span>
-        </a>
-        <div className="hp-nav-links">
-          <a href="#how-it-works">How it works</a>
-          <a href="#included">What&apos;s included</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#cta" className="hp-nav-cta">
-            Book a strategy call
+        <div className="hp-nav-inner">
+          <a href="#top" className="hp-nav-logo">
+            <LogoSvg />
+            <span className="hp-nav-logo-text">
+              LeadScore<span>AI</span>
+            </span>
           </a>
+          <div className="hp-nav-links">
+            <a href="#problem" className="hp-nav-link">
+              why
+            </a>
+            <a href="#pipeline" className="hp-nav-link">
+              how
+            </a>
+            <a href="#predictive" className="hp-nav-link">
+              predictive
+            </a>
+            <a href="#pricing" className="hp-nav-link">
+              pricing
+            </a>
+            <a href="#book" className="hp-nav-cta">
+              Book a call &rarr;
+            </a>
+          </div>
+          <MobileMenu calendlyUrl={CALENDLY_URL} />
         </div>
       </nav>
 
-      {/* Hero */}
-      <div className="hp-hero">
-        <h1>
-          A full pipeline of
-          <br />
-          <em>pre-qualified buyers.</em>
-          <br />
-          Built and running in 7 days.
+      {/* HERO */}
+      <header
+        id="top"
+        className="hp-hero-inner"
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "78px 32px 0",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "12.5px",
+            fontWeight: 500,
+            letterSpacing: ".16em",
+            textTransform: "uppercase" as const,
+            color: "#6b6577",
+          }}
+        >
+          Lead qualification{" "}
+          <span style={{ color: "#6d28d9" }}>&times;</span> predictive scoring
+        </div>
+        <h1
+          style={{
+            fontFamily: "'Archivo'",
+            fontWeight: 800,
+            fontSize: "clamp(40px,6vw,78px)",
+            lineHeight: 0.98,
+            letterSpacing: "-0.035em",
+            color: "#15131c",
+            maxWidth: "15ch",
+            marginTop: 26,
+          }}
+        >
+          Know which leads convert{" "}
+          <span
+            style={{
+              color: "#6d28d9",
+              textDecoration: "underline",
+              textDecorationThickness: "3px",
+              textUnderlineOffset: "6px",
+            }}
+          >
+            before
+          </span>{" "}
+          you chase them.
         </h1>
-        <p className="hp-hero-sub">
-          Complete with automated lead scoring, AI voice calls, and email
-          sequences that nurture your leads into paying clients — without you
-          lifting a finger.
+        <p
+          style={{
+            fontSize: "clamp(17px,1.7vw,20px)",
+            color: "#6b6577",
+            maxWidth: "54ch",
+            marginTop: 28,
+            lineHeight: 1.55,
+          }}
+        >
+          LeadScoreAI scores every lead the moment they raise their hand, sorts
+          them{" "}
+          <strong style={{ color: "#15131c", fontWeight: 600 }}>
+            Hot, Warm, Cold
+          </strong>
+          , and learns which answers actually predict a sale — so your team
+          spends time only on the people who&apos;ll say yes.
         </p>
-        <p className="hp-hero-tagline">Stop selling to the wrong people.</p>
-        <div className="hp-hero-cta">
-          <a href="#cta" className="hp-btn-primary">
-            Book a strategy call
+        <div
+          className="hp-hero-btns"
+          style={{
+            display: "flex",
+            gap: 12,
+            marginTop: 34,
+            flexWrap: "wrap" as const,
+          }}
+        >
+          <a href="#book" className="hp-btn-primary">
+            Book a strategy call &rarr;
           </a>
-          <a href="#how-it-works" className="hp-btn-ghost">
+          <a href="#pipeline" className="hp-btn-secondary">
             See how it works
           </a>
         </div>
-        <div className="hp-hero-features">
-          <div className="hp-hero-feat">
-            <div className="hp-hero-feat-dot" />
-            Custom quiz built for your business
+
+        {/* Conversion by tier chart */}
+        <div
+          className="hp-chart-wrapper"
+          style={{
+            marginTop: 60,
+            border: "1px solid #ebe8f1",
+            borderRadius: 6,
+            background: "#faf9fc",
+            display: "flex",
+            flexWrap: "wrap" as const,
+          }}
+        >
+          <div
+            style={{
+              flex: "1 1 460px",
+              padding: "30px 34px",
+              borderRight: "1px solid #ebe8f1",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: 16,
+                flexWrap: "wrap" as const,
+                marginBottom: 30,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase" as const,
+                  color: "#3a3545",
+                }}
+              >
+                Conversion by tier
+              </div>
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: "11.5px",
+                  color: "#928da0",
+                }}
+              >
+                live deployment &middot; n=1,040
+              </div>
+            </div>
+            {/* Bars */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 20,
+                borderBottom: "2px solid #15131c",
+                paddingTop: 6,
+              }}
+            >
+              {[
+                { pct: "44%", h: 150, color: "#16a34a" },
+                { pct: "23.8%", h: 81, color: "#d99409" },
+                { pct: "6.4%", h: 22, color: "#2563eb" },
+                { pct: "0%", h: 3, color: "#dc2626" },
+              ].map((bar) => (
+                <div
+                  key={bar.color}
+                  style={{
+                    flex: 1,
+                    minWidth: 50,
+                    display: "flex",
+                    flexDirection: "column" as const,
+                    justifyContent: "flex-end",
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "'Archivo'",
+                      fontWeight: 800,
+                      fontSize: "clamp(22px,2.6vw,32px)",
+                      lineHeight: 1,
+                      color: bar.color,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {bar.pct}
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: bar.h,
+                      background: bar.color,
+                      borderRadius: "2px 2px 0 0",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 20, marginTop: 13 }}>
+              {[
+                { color: "#16a34a", label: "Hot" },
+                { color: "#d99409", label: "Warm" },
+                { color: "#2563eb", label: "Cold" },
+                { color: "#dc2626", label: "Not q." },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    flex: 1,
+                    minWidth: 50,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      background: item.color,
+                      borderRadius: 2,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: "'IBM Plex Mono',monospace",
+                      fontSize: "11.5px",
+                      letterSpacing: ".04em",
+                      textTransform: "uppercase" as const,
+                      color: "#3a3545",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="hp-hero-feat">
-            <div className="hp-hero-feat-dot" />
-            AI voice calls within 60 seconds
-          </div>
-          <div className="hp-hero-feat">
-            <div className="hp-hero-feat-dot" />
-            Automated email nurture sequences
-          </div>
-          <div className="hp-hero-feat">
-            <div className="hp-hero-feat-dot" />
-            Live analytics dashboard
+          <div
+            style={{
+              flex: "1 1 220px",
+              padding: "30px 34px",
+              display: "flex",
+              flexDirection: "column" as const,
+              justifyContent: "center",
+              gap: 18,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: "clamp(30px,4vw,44px)",
+                  lineHeight: 1,
+                  color: "#6d28d9",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                7 days
+              </div>
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: "11.5px",
+                  letterSpacing: ".04em",
+                  textTransform: "uppercase" as const,
+                  color: "#6b6577",
+                  marginTop: 8,
+                }}
+              >
+                From kickoff to live
+              </div>
+            </div>
+            <div style={{ height: 1, background: "#ebe8f1" }} />
+            <p
+              style={{ fontSize: "13.5px", lineHeight: 1.5, color: "#6b6577" }}
+            >
+              The score predicts who pays{" "}
+              <strong style={{ color: "#15131c", fontWeight: 600 }}>
+                before anyone picks up the phone
+              </strong>
+              .
+            </p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* How it works — Story Flow */}
-      <section className="hp-section gray" id="how-it-works">
-        <div className="hp-section-inner-narrow">
-          <div className="hp-label">How it works</div>
-          <h2 className="hp-h2">
-            One system. From click
-            <br />
-            to <em>qualified conversation.</em>
-          </h2>
-          <p className="hp-sub">
-            Every piece runs automatically. Your team only gets involved when a
-            lead is already warm.
+      {/* PROBLEM */}
+      <section
+        id="problem"
+        style={{
+          background: "#faf9fc",
+          borderTop: "1px solid #ebe8f1",
+          borderBottom: "1px solid #ebe8f1",
+          marginTop: 96,
+          padding: "clamp(74px,9vw,108px) 0",
+        }}
+      >
+        <div
+          className="hp-section-padded"
+          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
+        >
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              letterSpacing: ".1em",
+              textTransform: "uppercase" as const,
+              color: "#6b6577",
+            }}
+          >
+            <span style={{ color: "#6d28d9" }}>01</span>
+            <span style={{ color: "#cdc7da" }}> / </span>The problem
+          </div>
+          <p
+            style={{
+              fontFamily: "'Archivo'",
+              fontWeight: 700,
+              fontSize: "clamp(26px,3.6vw,42px)",
+              lineHeight: 1.18,
+              letterSpacing: "-0.02em",
+              color: "#15131c",
+              maxWidth: "24ch",
+              marginTop: 26,
+            }}
+          >
+            Your team pours hours into leads that were never going to buy — and
+            you only find out{" "}
+            <span
+              style={{
+                color: "#dc2626",
+                textDecoration: "line-through",
+                textDecorationThickness: "2px",
+              }}
+            >
+              after
+            </span>{" "}
+            you&apos;ve spent the time.{" "}
+            <span style={{ color: "#6d28d9" }}>
+              It should be the other way round.
+            </span>
           </p>
-
-          <div className="hp-funnel">
-            {/* Step 1 — Quiz */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector" />
-              </div>
-              <div className="hp-funnel-card">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    Prospect takes your custom quiz
-                  </div>
-                  <div className="hp-tag hp-t-purple">Quiz</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  They answer questions built around your product, your buyers,
-                  and the objections they face. Takes about 3 minutes.
-                </div>
-                <div className="hp-funnel-card-story">
-                  Sarah lands on your quiz page. She answers every question.
-                  She&apos;s curious what her results say.
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2 — Scoring */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector" />
-              </div>
-              <div className="hp-funnel-card">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    AI scores and qualifies instantly
-                  </div>
-                  <div className="hp-tag hp-t-purple">Scoring</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  Every response is scored in real time. Sarah is classified as
-                  HOT, WARM, or COLD at 98% accuracy — before she even sees her
-                  results.
-                </div>
-                <div className="hp-funnel-card-story">
-                  Sarah scores 78/100. She&apos;s a Warm Lead. The system knows
-                  exactly what she needs next.
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 — Contact */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot amber">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector amber" />
-              </div>
-              <div className="hp-funnel-card amber">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    She submits her contact details
-                  </div>
-                  <div className="hp-tag hp-t-amber">Contact</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  To unlock her personalised results, Sarah enters her name,
-                  email, and phone number. This is where the automation begins.
-                </div>
-                <div className="hp-funnel-card-story amber">
-                  She hits submit. Her results page loads. The clock starts.
-                </div>
-              </div>
-            </div>
-
-            {/* Step 4 — Email */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot amber">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector amber" />
-              </div>
-              <div className="hp-funnel-card amber">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    Her results land in her inbox immediately
-                  </div>
-                  <div className="hp-tag hp-t-amber">Email</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  A branded results email arrives with her score, personalised
-                  insights, and a clear next step — written specifically for her
-                  tier.
-                </div>
-                <div className="hp-funnel-card-story amber">
-                  Sarah opens her inbox. There is already an email from your
-                  brand waiting. It knows exactly what she answered.
-                </div>
-              </div>
-            </div>
-
-            {/* Step 5 — Voice AI */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot green">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector green" />
-              </div>
-              <div className="hp-funnel-card green">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    Maya calls her phone — 60 seconds later
-                  </div>
-                  <div className="hp-tag hp-t-green">Voice AI</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  An AI voice agent calls Sarah while she is still reading her
-                  results. Maya already knows her score, her answers, and her
-                  name. The conversation is warm from the first word.
-                </div>
-                <div className="hp-funnel-card-story green">
-                  &ldquo;Hi Sarah, this is Maya — an AI assistant from [your
-                  company]. I saw you just completed our assessment and scored 78
-                  out of 100. Is now an okay time for a couple of quick
-                  questions?&rdquo;
-                </div>
-                <div className="hp-timer-badge">
-                  <div className="hp-timer-dot" />
-                  60 seconds after form submit
-                </div>
-              </div>
-            </div>
-
-            {/* Step 6 — Nurture */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot green">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-                <div className="hp-funnel-connector green" />
-              </div>
-              <div className="hp-funnel-card green">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    Email sequence nurtures her over 14 days
-                  </div>
-                  <div className="hp-tag hp-t-green">Nurture</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  If Sarah doesn&apos;t convert immediately, she enters a 14-day
-                  email sequence tailored to her score. Hot, warm, and cold leads
-                  get completely different journeys.
-                </div>
-                <div className="hp-funnel-card-story green">
-                  Day 5 — Sarah gets an email referencing her specific answers.
-                  Day 10 — a soft CTA. Day 14 — a final nudge. Each one feels
-                  personal.
-                </div>
-              </div>
-            </div>
-
-            {/* Step 7 — Dashboard */}
-            <div className="hp-funnel-step">
-              <div className="hp-funnel-line">
-                <div className="hp-funnel-dot blue">
-                  <div className="hp-funnel-dot-inner" />
-                </div>
-              </div>
-              <div className="hp-funnel-card blue">
-                <div className="hp-funnel-card-top">
-                  <div className="hp-funnel-card-title">
-                    Your team sees everything in the dashboard
-                  </div>
-                  <div className="hp-tag hp-t-blue">Dashboard</div>
-                </div>
-                <div className="hp-funnel-card-sub">
-                  Score, call transcript, email status, conversion — all visible
-                  in real time. Your team only picks up the phone when a lead is
-                  already warm and ready.
-                </div>
-                <div className="hp-funnel-card-story blue">
-                  Your sales rep opens the dashboard Monday morning. Sarah is
-                  flagged as interested. The call transcript shows she said yes
-                  to the budget question. They call her first.
-                </div>
-              </div>
-            </div>
+          <div
+            className="hp-problem-cols"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+              gap: 40,
+              marginTop: 40,
+              maxWidth: 880,
+            }}
+          >
+            <p
+              style={{ fontSize: "16.5px", lineHeight: 1.65, color: "#3a3545" }}
+            >
+              Every business that closes through a conversation has the same
+              leak: leads come in, and someone guesses which ones are worth
+              calling. Most of that guessing is wrong. Your best people burn
+              their week on tyre-kickers while ready buyers go cold in the
+              queue.
+            </p>
+            <p
+              style={{ fontSize: "16.5px", lineHeight: 1.65, color: "#3a3545" }}
+            >
+              The information to tell them apart already exists — it&apos;s in{" "}
+              <em
+                style={{
+                  fontStyle: "normal",
+                  color: "#15131c",
+                  fontWeight: 600,
+                }}
+              >
+                how people answer
+              </em>{" "}
+              before they ever speak to you. LeadScoreAI turns that answer into
+              a score, the score into a priority, and the outcome into a
+              prediction that sharpens every month.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* What's included */}
-      <section className="hp-section" id="included">
-        <div className="hp-section-inner">
-          <div className="hp-label">What&apos;s included</div>
-          <h2 className="hp-h2">
-            Everything built for you.
-            <br />
-            <em>Nothing to figure out.</em>
-          </h2>
-          <p className="hp-sub">
-            This is a done-for-you consulting service. We build every piece
-            custom to your business — you just speak to qualified leads.
-          </p>
-          <div className="hp-included-grid">
-            <IncludedCard
-              num="01"
-              title="Custom quiz built in 7 days"
-              sub="Questions, scoring logic, and qualification tiers designed specifically for your product and ideal buyer."
+      {/* PIPELINE */}
+      <section
+        id="pipeline"
+        className="hp-section-padded"
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "clamp(74px,9vw,108px) 32px",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "12.5px",
+            fontWeight: 600,
+            letterSpacing: ".1em",
+            textTransform: "uppercase" as const,
+            color: "#6b6577",
+          }}
+        >
+          <span style={{ color: "#6d28d9" }}>02</span>
+          <span style={{ color: "#cdc7da" }}> / </span>How it works
+        </div>
+        <h2
+          style={{
+            fontFamily: "'Archivo'",
+            fontWeight: 800,
+            fontSize: "clamp(28px,3.8vw,46px)",
+            lineHeight: 1.04,
+            letterSpacing: "-0.03em",
+            color: "#15131c",
+            maxWidth: "20ch",
+            marginTop: 22,
+          }}
+        >
+          One pipeline. From first click to{" "}
+          <span style={{ color: "#6d28d9" }}>predicted</span> sale.
+        </h2>
+        <p
+          style={{
+            fontSize: 17,
+            color: "#6b6577",
+            maxWidth: "58ch",
+            marginTop: 18,
+            lineHeight: 1.6,
+          }}
+        >
+          Every piece runs automatically. Your team only steps in when a lead is
+          already qualified — and the system tells you which ones to trust.
+        </p>
+        <div
+          className="hp-pipeline-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+            gap: 1,
+            background: "#ebe8f1",
+            border: "1px solid #ebe8f1",
+            borderRadius: 6,
+            overflow: "hidden",
+            marginTop: 46,
+          }}
+        >
+          {PIPELINE.map((step) => (
+            <div
+              key={step.n}
+              style={{
+                background: "#fff",
+                padding: "28px 24px",
+                display: "flex",
+                flexDirection: "column" as const,
+                gap: 13,
+                minHeight: 172,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'IBM Plex Mono',monospace",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#6d28d9",
+                  }}
+                >
+                  {step.n}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'IBM Plex Mono',monospace",
+                    fontSize: 13,
+                    color: "#d6d1e2",
+                  }}
+                >
+                  &rarr;
+                </span>
+              </div>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: "#15131c",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {step.title}
+              </div>
+              <div
+                style={{
+                  fontSize: "13.5px",
+                  color: "#6b6577",
+                  lineHeight: 1.55,
+                }}
+              >
+                {step.body}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SHOWCASE: dashboard + analytics */}
+      <section
+        style={{
+          background: "#f4f2f8",
+          borderTop: "1px solid #ebe8f1",
+          padding: "clamp(74px,9vw,108px) 0",
+        }}
+      >
+        <div
+          className="hp-section-padded"
+          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
+        >
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              letterSpacing: ".1em",
+              textTransform: "uppercase" as const,
+              color: "#6b6577",
+            }}
+          >
+            <span style={{ color: "#6d28d9" }}>03</span>
+            <span style={{ color: "#cdc7da" }}> / </span>The product
+          </div>
+          <div
+            className="hp-showcase-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 36,
+              alignItems: "start",
+              marginTop: 22,
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: "clamp(24px,2.8vw,32px)",
+                  lineHeight: 1.08,
+                  letterSpacing: "-0.025em",
+                  color: "#15131c",
+                }}
+              >
+                Every lead, scored and sorted — the moment they raise their
+                hand.
+              </h3>
+              <p
+                style={{
+                  fontSize: 16,
+                  color: "#6b6577",
+                  lineHeight: 1.6,
+                  marginTop: 16,
+                }}
+              >
+                No more staring at a flat list of names wondering who to call.
+                Each lead arrives with a score, a tier, and a place in the
+                queue. Your team works the warm ones first, and nothing slips
+                through.
+              </p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column" as const,
+                gap: 14,
+                paddingTop: 6,
+              }}
+            >
+              {[
+                "Real-time Hot / Warm / Cold scoring on every assessment",
+                "Funnel KPIs: conversion, qualification, time-to-close",
+                "One-click conversion tracking, end to end",
+              ].map((text, i) => (
+                <div key={i}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "'IBM Plex Mono',monospace",
+                        color: "#6d28d9",
+                        fontWeight: 600,
+                        fontSize: 15,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      +
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        color: "#3a3545",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {text}
+                    </span>
+                  </div>
+                  {i < 2 && (
+                    <div
+                      style={{
+                        height: 1,
+                        background: "#e4e0ee",
+                        marginTop: 14,
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dashboard screenshot */}
+          <div
+            style={{
+              border: "1px solid #e2def0",
+              borderRadius: 9,
+              overflow: "hidden",
+              boxShadow: "0 36px 70px -34px rgba(40,20,80,.32)",
+              marginTop: 40,
+              background: "#fff",
+            }}
+          >
+            <div className="hp-browser-bar">
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#e0654c",
+                }}
+              />
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#e0a23c",
+                }}
+              />
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#5bb46a",
+                }}
+              />
+              <span
+                style={{
+                  marginLeft: 14,
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 11,
+                  color: "#928da0",
+                }}
+              >
+                app.leadscoreai.com / dashboard
+              </span>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/dashboard-screenshot.png"
+              alt="LeadScoreAI dashboard"
+              style={{ display: "block", width: "100%" }}
             />
-            <IncludedCard
-              num="02"
-              title="Branded results page"
-              sub="A personalised report that reflects your brand and gives prospects insights that make them want to act."
-            />
-            <IncludedCard
-              num="03"
-              title="AI voice agent — Maya"
-              sub="Calls hot and warm leads within 60 seconds. Qualifies, warms, and books the next step automatically."
-            />
-            <IncludedCard
-              num="04"
-              title="Email sequences by tier"
-              sub="Hot, warm, and cold leads each get a different journey — written for your brand, automated from day one."
-            />
-            <IncludedCard
-              num="05"
-              title="Admin dashboard"
-              sub="See all leads, scores, call transcripts, email status, and conversions in one place. Export any time."
-            />
-            <IncludedCard
-              num="06"
-              title="Ongoing management"
-              sub="We monitor, optimise, and update your funnel as your business grows. You never touch the tech."
+          </div>
+
+          {/* Analytics section */}
+          <div
+            className="hp-showcase-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 36,
+              alignItems: "start",
+              marginTop: 72,
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: "clamp(24px,2.8vw,32px)",
+                  lineHeight: 1.08,
+                  letterSpacing: "-0.025em",
+                  color: "#15131c",
+                }}
+              >
+                Understand your market — not just your leads.
+              </h3>
+              <p
+                style={{
+                  fontSize: 16,
+                  color: "#6b6577",
+                  lineHeight: 1.6,
+                  marginTop: 16,
+                }}
+              >
+                Every answer your prospects give becomes market intelligence:
+                who they are, where they are, what they want, and what they
+                fear. Continuous insight built into the motion you already run.
+              </p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column" as const,
+                gap: 14,
+                paddingTop: 6,
+              }}
+            >
+              {[
+                "Score distribution and qualification mix at a glance",
+                "Volume by segment, region and month — tracked over time",
+                "Which answers correlate with a closed sale",
+              ].map((text, i) => (
+                <div key={i}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "'IBM Plex Mono',monospace",
+                        color: "#6d28d9",
+                        fontWeight: 600,
+                        fontSize: 15,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      +
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        color: "#3a3545",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {text}
+                    </span>
+                  </div>
+                  {i < 2 && (
+                    <div
+                      style={{
+                        height: 1,
+                        background: "#e4e0ee",
+                        marginTop: 14,
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Analytics screenshot */}
+          <div
+            style={{
+              border: "1px solid #e2def0",
+              borderRadius: 9,
+              overflow: "hidden",
+              boxShadow: "0 36px 70px -34px rgba(40,20,80,.32)",
+              marginTop: 40,
+              background: "#fff",
+            }}
+          >
+            <div className="hp-browser-bar">
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#e0654c",
+                }}
+              />
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#e0a23c",
+                }}
+              />
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: "#5bb46a",
+                }}
+              />
+              <span
+                style={{
+                  marginLeft: 14,
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 11,
+                  color: "#928da0",
+                }}
+              >
+                app.leadscoreai.com / analytics
+              </span>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/analytics-screenshot.png"
+              alt="LeadScoreAI analytics"
+              style={{ display: "block", width: "100%" }}
             />
           </div>
         </div>
       </section>
 
-      {/* Value Stack + Pricing */}
-      <section className="hp-section dark" id="pricing">
-        <div className="hp-section-inner">
-          <div className="hp-label white">The value stack</div>
-          <h2 className="hp-h2 white">
-            What this would cost
-            <br />
-            if you <em>built it yourself.</em>
+      {/* PREDICTIVE (dark) */}
+      <section
+        id="predictive"
+        style={{ background: "#0a0810", padding: "clamp(74px,9vw,108px) 0" }}
+      >
+        <div
+          className="hp-section-padded"
+          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
+        >
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              letterSpacing: ".1em",
+              textTransform: "uppercase" as const,
+              color: "#a78bfa",
+            }}
+          >
+            <span style={{ color: "#c4aef5" }}>04</span>
+            <span style={{ color: "#4a3f63" }}> / </span>The predictive layer
+          </div>
+          <h2
+            style={{
+              fontFamily: "'Archivo'",
+              fontWeight: 800,
+              fontSize: "clamp(28px,3.8vw,46px)",
+              lineHeight: 1.04,
+              letterSpacing: "-0.03em",
+              color: "#fff",
+              maxWidth: "20ch",
+              marginTop: 22,
+            }}
+          >
+            The score predicts who pays —{" "}
+            <span style={{ color: "#c4aef5" }}>before</span> a single call.
           </h2>
-          <p className="hp-sub" style={{ marginBottom: 40 }}>
-            We combined tools and services that businesses normally pay $50,000+
-            per year for — and built them into one custom system at a fraction of
-            the cost.
+          <p
+            style={{
+              fontSize: 17,
+              color: "#a39db4",
+              maxWidth: "60ch",
+              marginTop: 18,
+              lineHeight: 1.6,
+            }}
+          >
+            LeadScoreAI links every scorecard answer to what actually happened —
+            paid or not — and feeds it back. It doesn&apos;t just sort your
+            leads, it tells you which answers signal a buyer.
           </p>
 
-          <div className="hp-value-stack">
+          {/* VIDEO */}
+          <div style={{ marginTop: 40 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: ".06em",
+                textTransform: "uppercase" as const,
+                color: "#a78bfa",
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: "#6d28d9",
+                  boxShadow: "0 0 0 4px rgba(109,40,217,.28)",
+                }}
+              />
+              Watch &middot; how the predictive layer works
+            </div>
+            <VideoPlayer />
+          </div>
+
+          {/* Stats grid */}
+          <div
+            className="hp-stats-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+              gap: 16,
+              marginTop: 44,
+            }}
+          >
             {[
-              [
-                "Custom quiz design and development",
-                "strategy, build, scoring logic",
-                "$8,000 one-time",
-              ],
-              [
-                "Enterprise CRM and lead scoring",
-                "HubSpot / Salesforce equivalent",
-                "$1,500/month",
-              ],
-              [
-                "Branded results page",
-                "UX design and custom development",
-                "$3,500 one-time",
-              ],
-              [
-                "Custom analytics dashboard",
-                "design, build, and data integration",
-                "$12,000 one-time",
-              ],
-              [
-                "Email marketing and automation",
-                "platform plus copywriting",
-                "$1,200/month",
-              ],
-              [
-                "AI outbound voice qualification",
-                "enterprise voice AI platform",
-                "$2,500/month",
-              ],
-              [
-                "Dedicated agency management",
-                "strategy, ops, and optimisation",
-                "$4,000/month",
-              ],
-              [
-                "Custom AI prompt engineering",
-                "per campaign and persona build",
-                "$3,000 one-time",
-              ],
-            ].map(([title, desc, price]) => (
-              <div className="hp-value-row" key={title}>
-                <div className="hp-value-item">
-                  <strong>{title}</strong> — {desc}
+              { pct: "44%", label: "Hot leads converted", color: "#4ade80", border: "#4ade80" },
+              { pct: "23.8%", label: "Warm leads converted", color: "#fbbf24", border: "#fbbf24" },
+              { pct: "6.4%", label: "Cold leads converted", color: "#60a5fa", border: "#60a5fa" },
+              { pct: "0%", label: "Not-qualified converted", color: "#f87171", border: "#f87171" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                style={{
+                  borderTop: `3px solid ${stat.border}`,
+                  background: "rgba(255,255,255,.035)",
+                  padding: "24px 22px",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Archivo'",
+                    fontWeight: 800,
+                    fontSize: "clamp(30px,3.6vw,44px)",
+                    lineHeight: 1,
+                    color: stat.color,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {stat.pct}
                 </div>
-                <div className="hp-value-price-cross">{price}</div>
+                <div
+                  style={{
+                    fontFamily: "'IBM Plex Mono',monospace",
+                    fontSize: "11.5px",
+                    letterSpacing: ".04em",
+                    textTransform: "uppercase" as const,
+                    color: "#a39db4",
+                    marginTop: 10,
+                  }}
+                >
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
+          <p
+            style={{
+              fontSize: "14.5px",
+              color: "#c8c2d6",
+              marginTop: 28,
+              maxWidth: "64ch",
+              lineHeight: 1.6,
+            }}
+          >
+            Conversion climbs cleanly from{" "}
+            <b style={{ color: "#fff" }}>0%</b> for Not-Qualified to{" "}
+            <b style={{ color: "#fff" }}>44%</b> for Hot — proof the score
+            assigned{" "}
+            <em style={{ fontStyle: "normal", color: "#fff" }}>
+              before any contact
+            </em>{" "}
+            predicts who actually pays. The system even surfaces individual
+            signals: applicants comfortable with repayments converted at{" "}
+            <b style={{ color: "#fff" }}>25.2%</b> vs{" "}
+            <b style={{ color: "#fff" }}>19.2%</b> for those who weren&apos;t.
+          </p>
 
-          <div className="hp-value-total">
-            <div className="hp-value-total-label">Total market value</div>
-            <div className="hp-value-total-num">$50,000+/year</div>
+          {/* Predictive screenshots */}
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 9,
+              overflow: "hidden",
+              marginTop: 38,
+              boxShadow: "0 36px 70px -34px rgba(0,0,0,.6)",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/predictive-conversion.png"
+              alt="Predictive conversion"
+              style={{ display: "block", width: "100%" }}
+            />
           </div>
-          <div className="hp-value-note">
-            Conservative estimate based on mid-market agency and SaaS pricing —
-            enterprise rates are significantly higher.
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 9,
+              overflow: "hidden",
+              marginTop: 20,
+              boxShadow: "0 36px 70px -34px rgba(0,0,0,.6)",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/predictive-signals.png"
+              alt="Predictive signals"
+              style={{ display: "block", width: "100%" }}
+            />
           </div>
+        </div>
+      </section>
 
-          <div className="hp-label white" style={{ marginBottom: 24 }}>
-            Pricing
+      {/* WHO IT'S FOR */}
+      <section
+        className="hp-section-padded"
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "clamp(74px,9vw,108px) 32px",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "12.5px",
+            fontWeight: 600,
+            letterSpacing: ".1em",
+            textTransform: "uppercase" as const,
+            color: "#6b6577",
+          }}
+        >
+          <span style={{ color: "#6d28d9" }}>05</span>
+          <span style={{ color: "#cdc7da" }}> / </span>Who it&apos;s for
+        </div>
+        <h2
+          style={{
+            fontFamily: "'Archivo'",
+            fontWeight: 800,
+            fontSize: "clamp(28px,3.8vw,46px)",
+            lineHeight: 1.04,
+            letterSpacing: "-0.03em",
+            color: "#15131c",
+            maxWidth: "22ch",
+            marginTop: 22,
+          }}
+        >
+          If you qualify leads before you close, this is for you.
+        </h2>
+        <p
+          style={{
+            fontSize: 17,
+            color: "#6b6577",
+            maxWidth: "60ch",
+            marginTop: 18,
+            lineHeight: 1.6,
+          }}
+        >
+          Any business where a person decides who&apos;s worth pursuing — and
+          gets it wrong often enough to cost real money.
+        </p>
+        <div
+          className="hp-icp-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+            gap: 1,
+            background: "#ebe8f1",
+            border: "1px solid #ebe8f1",
+            borderRadius: 6,
+            overflow: "hidden",
+            marginTop: 46,
+          }}
+        >
+          {ICPS.map((icp) => (
+            <div
+              key={icp.tag}
+              className="hp-icp-card"
+              style={{
+                background: "#fff",
+                padding: "28px 26px",
+                display: "flex",
+                flexDirection: "column" as const,
+                gap: 11,
+                minHeight: 172,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  color: "#6d28d9",
+                  border: "1px solid #e4def7",
+                  background: "#f6f3fd",
+                  padding: "3px 8px",
+                  borderRadius: 3,
+                  alignSelf: "flex-start",
+                }}
+              >
+                {icp.tag}
+              </span>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: "#15131c",
+                  letterSpacing: "-0.01em",
+                  marginTop: 2,
+                }}
+              >
+                {icp.title}
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: "#6b6577",
+                  lineHeight: 1.55,
+                }}
+              >
+                {icp.body}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section
+        id="pricing"
+        style={{
+          background: "#faf9fc",
+          borderTop: "1px solid #ebe8f1",
+          borderBottom: "1px solid #ebe8f1",
+          padding: "clamp(74px,9vw,108px) 0",
+        }}
+      >
+        <div
+          className="hp-section-padded"
+          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
+        >
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              letterSpacing: ".1em",
+              textTransform: "uppercase" as const,
+              color: "#6b6577",
+            }}
+          >
+            <span style={{ color: "#6d28d9" }}>06</span>
+            <span style={{ color: "#cdc7da" }}> / </span>Pricing
           </div>
-          <h2 className="hp-h2 white" style={{ marginBottom: 40 }}>
-            Simple pricing.
-            <br />
-            <em>Serious results.</em>
+          <h2
+            style={{
+              fontFamily: "'Archivo'",
+              fontWeight: 800,
+              fontSize: "clamp(28px,3.8vw,46px)",
+              lineHeight: 1.04,
+              letterSpacing: "-0.03em",
+              color: "#15131c",
+              maxWidth: "20ch",
+              marginTop: 22,
+            }}
+          >
+            Consulting-led. Built for your business.
           </h2>
-
-          <div className="hp-pricing-grid">
+          <p
+            style={{
+              fontSize: 17,
+              color: "#6b6577",
+              maxWidth: "58ch",
+              marginTop: 18,
+              lineHeight: 1.6,
+            }}
+          >
+            Every engagement starts with a strategy call, because every business
+            qualifies differently. Annual billing saves 20%.
+          </p>
+          <div
+            className="hp-pricing-grid-new"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+              gap: 18,
+              marginTop: 46,
+              alignItems: "stretch",
+            }}
+          >
             {/* Starter */}
-            <div className="hp-plan">
-              <div className="hp-plan-name">Starter</div>
-              <div className="hp-plan-price">$500</div>
-              <div className="hp-plan-period">per month</div>
-              <div className="hp-plan-divider" />
-              <PlanFeature>Up to 100 responses/month</PlanFeature>
-              <PlanFeature>Custom quiz build</PlanFeature>
-              <PlanFeature>Lead scoring and qualification</PlanFeature>
-              <PlanFeature>Branded results page</PlanFeature>
-              <PlanFeature>Admin dashboard</PlanFeature>
-              <PlanFeature>Email sequences (all tiers)</PlanFeature>
-              <PlanFeature>Voice calls not included</PlanFeature>
-              <div className="hp-plan-annual">$4,800/yr — save 20%</div>
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #ebe8f1",
+                borderRadius: 6,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column" as const,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase" as const,
+                  color: "#6b6577",
+                }}
+              >
+                Starter
+              </div>
+              <p
+                style={{
+                  fontSize: "13.5px",
+                  color: "#6b6577",
+                  marginTop: 10,
+                  minHeight: 38,
+                  lineHeight: 1.45,
+                }}
+              >
+                Scorecard + qualification for a single offer.
+              </p>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: 40,
+                  color: "#15131c",
+                  marginTop: 8,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                $500
+                <span
+                  style={{
+                    fontSize: 15,
+                    color: "#928da0",
+                    fontWeight: 500,
+                  }}
+                >
+                  {" "}
+                  / mo
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 1,
+                  background: "#ebe8f1",
+                  margin: "22px 0",
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column" as const,
+                  gap: 12,
+                  flexGrow: 1,
+                }}
+              >
+                {[
+                  "Custom scorecard build",
+                  "Hot / Warm / Cold scoring",
+                  "Branded results page",
+                  "Admin dashboard & CSV export",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      fontSize: "14.5px",
+                      color: "#3a3545",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#6d28d9",
+                        fontFamily: "'IBM Plex Mono',monospace",
+                        fontWeight: 600,
+                      }}
+                    >
+                      +
+                    </span>
+                    {f}
+                  </div>
+                ))}
+              </div>
+              <a href="#book" className="hp-price-btn-outline">
+                Book a call
+              </a>
             </div>
 
-            {/* Growth */}
-            <div className="hp-plan featured">
-              <div className="hp-plan-badge">Most popular</div>
-              <div className="hp-plan-name">Growth</div>
-              <div className="hp-plan-price">$2,500</div>
-              <div className="hp-plan-period">per month</div>
-              <div className="hp-plan-divider" />
-              <PlanFeature>Up to 500 responses/month</PlanFeature>
-              <PlanFeature>Everything in Starter</PlanFeature>
-              <PlanFeature>AI voice calls — 200/month</PlanFeature>
-              <PlanFeature>Advanced analytics</PlanFeature>
-              <PlanFeature>Priority support</PlanFeature>
-              <div className="hp-plan-annual">$24,000/yr — save 20%</div>
-            </div>
-
-            {/* Scale */}
-            <div className="hp-plan">
-              <div className="hp-plan-name">Scale</div>
-              <div className="hp-plan-price">$5,000</div>
-              <div className="hp-plan-period">per month</div>
-              <div className="hp-plan-divider" />
-              <PlanFeature>Up to 2,000 responses/month</PlanFeature>
-              <PlanFeature>Everything in Growth</PlanFeature>
-              <PlanFeature>AI voice calls — 1,000/month</PlanFeature>
-              <PlanFeature>Agent attribution network</PlanFeature>
-              <PlanFeature>Custom email copy</PlanFeature>
-              <PlanFeature>Dedicated account manager</PlanFeature>
-              <div className="hp-plan-annual">$48,000/yr — save 20%</div>
+            {/* Scale (Most popular) */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #6d28d9",
+                boxShadow:
+                  "0 0 0 1px #6d28d9, 0 24px 50px -28px rgba(109,40,217,.4)",
+                borderRadius: 6,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column" as const,
+                position: "relative" as const,
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute" as const,
+                  top: -11,
+                  left: 32,
+                  background: "#6d28d9",
+                  color: "#fff",
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: "10.5px",
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase" as const,
+                  padding: "5px 12px",
+                  borderRadius: 3,
+                }}
+              >
+                Most popular
+              </span>
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase" as const,
+                  color: "#6d28d9",
+                }}
+              >
+                Scale
+              </div>
+              <p
+                style={{
+                  fontSize: "13.5px",
+                  color: "#6b6577",
+                  marginTop: 10,
+                  minHeight: 38,
+                  lineHeight: 1.45,
+                }}
+              >
+                Full analytics + predictive layer for teams.
+              </p>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: 40,
+                  color: "#15131c",
+                  marginTop: 8,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                $2,400
+                <span
+                  style={{
+                    fontSize: 15,
+                    color: "#928da0",
+                    fontWeight: 500,
+                  }}
+                >
+                  {" "}
+                  / mo
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 1,
+                  background: "#ebe8f1",
+                  margin: "22px 0",
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column" as const,
+                  gap: 12,
+                  flexGrow: 1,
+                }}
+              >
+                {[
+                  "Everything in Starter",
+                  "Unlimited scorecards & responses",
+                  "Market intelligence analytics",
+                  "Predictive conversion insights",
+                  "Agent-level attribution",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      fontSize: "14.5px",
+                      color: "#3a3545",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#6d28d9",
+                        fontFamily: "'IBM Plex Mono',monospace",
+                        fontWeight: 600,
+                      }}
+                    >
+                      +
+                    </span>
+                    {f}
+                  </div>
+                ))}
+              </div>
+              <a href="#book" className="hp-price-btn-primary">
+                Book a call
+              </a>
             </div>
 
             {/* Enterprise */}
-            <div className="hp-plan enterprise">
-              <div className="hp-plan-badge ent">Enterprise</div>
-              <div className="hp-plan-name">Revenue OS</div>
-              <div className="hp-plan-price">$10,000</div>
-              <div className="hp-plan-period">per month</div>
-              <div className="hp-plan-divider" />
-              <PlanFeature>Unlimited responses</PlanFeature>
-              <PlanFeature>Unlimited voice calls</PlanFeature>
-              <PlanFeature>Up to 5 custom quizzes</PlanFeature>
-              <PlanFeature>White-label — your brand only</PlanFeature>
-              <PlanFeature>Custom AI voice persona</PlanFeature>
-              <PlanFeature>CRM integration</PlanFeature>
-              <PlanFeature>Weekly strategy call</PlanFeature>
-              <div className="hp-plan-annual">
-                Annual contract — call to discuss
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #ebe8f1",
+                borderRadius: 6,
+                padding: 32,
+                display: "flex",
+                flexDirection: "column" as const,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase" as const,
+                  color: "#6b6577",
+                }}
+              >
+                Enterprise
               </div>
-            </div>
-          </div>
-
-          {/* Enterprise offer */}
-          <div className="hp-enterprise-offer">
-            <div>
-              <div className="hp-eo-tag">$10,000/month — Revenue OS</div>
-              <div className="hp-eo-title">
-                Not a tool.
-                <br />
-                An <em>AI revenue team</em> that never sleeps.
+              <p
+                style={{
+                  fontSize: "13.5px",
+                  color: "#6b6577",
+                  marginTop: 10,
+                  minHeight: 38,
+                  lineHeight: 1.45,
+                }}
+              >
+                White-label, bespoke build, dedicated team.
+              </p>
+              <div
+                style={{
+                  fontFamily: "'Archivo'",
+                  fontWeight: 800,
+                  fontSize: 40,
+                  color: "#15131c",
+                  marginTop: 8,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                $5,000
+                <span
+                  style={{
+                    fontSize: 15,
+                    color: "#928da0",
+                    fontWeight: 500,
+                  }}
+                >
+                  + / mo
+                </span>
               </div>
-              <div className="hp-eo-sub">
-                At $10,000/month you get a fully managed AI system that
-                qualifies every lead, calls every hot prospect within 60
-                seconds, nurtures every cold lead automatically, and gives your
-                team a live dashboard of exactly who to speak to and when.
-                Unlimited everything. Weekly strategy with our team. Your own
-                voice persona. Your own brand.
+              <div
+                style={{
+                  height: 1,
+                  background: "#ebe8f1",
+                  margin: "22px 0",
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column" as const,
+                  gap: 12,
+                  flexGrow: 1,
+                }}
+              >
+                {[
+                  "Everything in Scale",
+                  "White-label — your brand only",
+                  "Custom integrations & exports",
+                  "Dedicated account manager",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      fontSize: "14.5px",
+                      color: "#3a3545",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#6d28d9",
+                        fontFamily: "'IBM Plex Mono',monospace",
+                        fontWeight: 600,
+                      }}
+                    >
+                      +
+                    </span>
+                    {f}
+                  </div>
+                ))}
               </div>
-            </div>
-            <div className="hp-eo-right">
-              <div className="hp-eo-price">$10k</div>
-              <div className="hp-eo-period">per month</div>
-              <a href="#cta" className="hp-btn-amethyst">
-                Book an enterprise call
+              <a href="#book" className="hp-price-btn-outline">
+                Talk to us
               </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <div className="hp-cta-section" id="cta">
-        <h2>
-          Ready to fill your pipeline
-          <br />
-          with <em>buyers who are ready?</em>
-        </h2>
-        <p className="hp-cta-sub">
-          Book a free strategy call. We will walk through your business and show
-          you exactly what your LeadscoreAI funnel looks like — built and
-          running in 7 days.
-        </p>
-        <a
-          href={CALENDLY_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hp-btn-white"
+      {/* FINAL CTA */}
+      <section
+        id="book"
+        style={{
+          background: "#0a0810",
+          padding: "clamp(86px,11vw,128px) 0",
+          textAlign: "center" as const,
+        }}
+      >
+        <div
+          className="hp-section-padded"
+          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
         >
-          Book your free strategy call
-        </a>
-        <p className="hp-cta-note">
-          No setup fees. No long-term contracts on Starter and Growth. Cancel
-          anytime.
-        </p>
-      </div>
+          <h2
+            style={{
+              fontFamily: "'Archivo'",
+              fontWeight: 900,
+              fontSize: "clamp(34px,5.4vw,66px)",
+              lineHeight: 1,
+              letterSpacing: "-0.035em",
+              color: "#fff",
+              maxWidth: "16ch",
+              margin: "0 auto",
+            }}
+          >
+            Stop chasing.{" "}
+            <span style={{ color: "#c4aef5" }}>Start predicting.</span>
+          </h2>
+          <p
+            style={{
+              fontSize: 18,
+              color: "#a39db4",
+              margin: "24px auto 0",
+              maxWidth: "52ch",
+              lineHeight: 1.55,
+            }}
+          >
+            Book a 30-minute strategy call. We&apos;ll map your qualification
+            flow and show you exactly what we&apos;d build — live in 7 days.
+          </p>
+          <div style={{ marginTop: 36 }}>
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hp-cta-btn"
+            >
+              Book your strategy call &rarr;
+            </a>
+          </div>
+          <p
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 12,
+              color: "#6b6577",
+              marginTop: 20,
+              letterSpacing: ".03em",
+            }}
+          >
+            No commitment &middot; No pitch &middot; Just a conversation about
+            your leads
+          </p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          borderTop: "1px solid #1f1a2b",
+          background: "#0a0810",
+          padding: "36px 0",
+        }}
+      >
+        <div
+          className="hp-footer-inner"
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "0 32px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap" as const,
+            gap: 18,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <LogoSvg size={23} />
+            <span
+              style={{
+                fontFamily: "'Archivo'",
+                fontWeight: 800,
+                fontSize: 18,
+                letterSpacing: "-0.03em",
+                color: "#fff",
+              }}
+            >
+              LeadScore<span style={{ color: "#a78bfa" }}>AI</span>
+            </span>
+          </div>
+          <p
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 12,
+              color: "#6b6577",
+              letterSpacing: ".02em",
+            }}
+          >
+            Score every lead. Predict every sale. &copy; 2026 LeadScoreAI.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

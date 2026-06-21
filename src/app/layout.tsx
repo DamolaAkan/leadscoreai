@@ -14,9 +14,29 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "LeadscoreAI",
-  description: "Multi-tenant quiz funnel platform",
-  robots: { index: false, follow: false },
+  title: {
+    default: "LeadScoreAI — Know which leads convert before you chase them",
+    template: "%s | LeadScoreAI",
+  },
+  description:
+    "LeadScoreAI scores every lead the moment they raise their hand, sorts them Hot, Warm, Cold, and learns which answers actually predict a sale.",
+  icons: {
+    icon: [
+      { url: "/logo/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/logo/favicon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/logo/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo/favicon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/logo/favicon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/logo/favicon-32.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "LeadScoreAI",
+  },
 };
 
 export default function RootLayout({

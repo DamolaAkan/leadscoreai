@@ -31,7 +31,15 @@ export default function InvoiceSidebar({ onLogout }: InvoiceSidebarProps) {
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-black/[0.08] flex flex-col">
       <div className="p-6 border-b border-black/[0.08]">
-        <h1 className="text-xl font-bold text-[#7C3AED]">LeadscoreAI</h1>
+        <div className="flex items-center gap-2">
+          <svg width="22" height="22" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626"/>
+            <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb"/>
+            <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409"/>
+            <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a"/>
+          </svg>
+          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: "#15131c" }}>LeadScore<span style={{ color: "#6d28d9" }}>AI</span></h1>
+        </div>
         <p className="text-xs text-black/50 mt-1">Invoicing</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">

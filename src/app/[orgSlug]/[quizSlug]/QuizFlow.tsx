@@ -534,7 +534,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-gray-400">
-        Powered by LeadscoreAI
+        Powered by LeadScoreAI
       </footer>
     </div>
   );
