@@ -297,6 +297,7 @@ export default function HomePage() {
             </div>
             {/* Bars */}
             <div
+              className="hp-chart-bars"
               style={{
                 display: "flex",
                 alignItems: "flex-end",
@@ -346,7 +347,7 @@ export default function HomePage() {
               ))}
             </div>
             {/* Legend */}
-            <div style={{ display: "flex", gap: 20, marginTop: 13 }}>
+            <div className="hp-chart-legend" style={{ display: "flex", gap: 20, marginTop: 13 }}>
               {[
                 { color: "#16a34a", label: "Hot" },
                 { color: "#d99409", label: "Warm" },

@@ -274,4 +274,15 @@ html { scroll-behavior: smooth; }
   .hp-hero-inner h1 { font-size: 32px !important; }
   .hp-pipeline-grid { grid-template-columns: 1fr !important; }
   .hp-stats-grid { grid-template-columns: 1fr !important; }
+
+  /* Chart wrapper — reduce padding so bars fit */
+  .hp-chart-wrapper > div { padding: 20px 16px !important; }
+
+  /* Bar chart — tighten gap and remove min-width */
+  .hp-chart-bars { gap: 10px !important; }
+  .hp-chart-bars > div { min-width: 0 !important; }
+
+  /* Legend — tighten gap and remove min-width */
+  .hp-chart-legend { gap: 8px !important; }
+  .hp-chart-legend > div { min-width: 0 !important; }
 }
