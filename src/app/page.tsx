@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./homepage.css";
 import VideoPlayer from "./VideoPlayer";
 import MobileMenu from "./MobileMenu";
+import PricingSection from "./PricingSection";
 
 const CALENDLY_URL = "https://calendly.com/akanbidamola";
 
@@ -258,7 +259,8 @@ export default function HomePage() {
         >
           <div
             style={{
-              flex: "1 1 460px",
+              flex: "1 1 auto",
+              minWidth: 0,
               padding: "30px 34px",
               borderRight: "1px solid #ebe8f1",
             }}
@@ -316,7 +318,7 @@ export default function HomePage() {
                   key={bar.color}
                   style={{
                     flex: 1,
-                    minWidth: 50,
+                    minWidth: 0,
                     display: "flex",
                     flexDirection: "column" as const,
                     justifyContent: "flex-end",
@@ -358,7 +360,7 @@ export default function HomePage() {
                   key={item.label}
                   style={{
                     flex: 1,
-                    minWidth: 50,
+                    minWidth: 0,
                     display: "flex",
                     alignItems: "center",
                     gap: 7,
@@ -389,7 +391,8 @@ export default function HomePage() {
           </div>
           <div
             style={{
-              flex: "1 1 220px",
+              flex: "1 1 auto",
+              minWidth: 0,
               padding: "30px 34px",
               display: "flex",
               flexDirection: "column" as const,
@@ -1290,403 +1293,7 @@ export default function HomePage() {
       </section>
 
       {/* PRICING */}
-      <section
-        id="pricing"
-        style={{
-          background: "#faf9fc",
-          borderTop: "1px solid #ebe8f1",
-          borderBottom: "1px solid #ebe8f1",
-          padding: "clamp(74px,9vw,108px) 0",
-        }}
-      >
-        <div
-          className="hp-section-padded"
-          style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}
-        >
-          <div
-            style={{
-              fontFamily: "'IBM Plex Mono',monospace",
-              fontSize: "12.5px",
-              fontWeight: 600,
-              letterSpacing: ".1em",
-              textTransform: "uppercase" as const,
-              color: "#6b6577",
-            }}
-          >
-            <span style={{ color: "#6d28d9" }}>06</span>
-            <span style={{ color: "#cdc7da" }}> / </span>Pricing
-          </div>
-          <h2
-            style={{
-              fontFamily: "'Archivo'",
-              fontWeight: 800,
-              fontSize: "clamp(28px,3.8vw,46px)",
-              lineHeight: 1.04,
-              letterSpacing: "-0.03em",
-              color: "#15131c",
-              maxWidth: "20ch",
-              marginTop: 22,
-            }}
-          >
-            Consulting-led. Built for your business.
-          </h2>
-          <p
-            style={{
-              fontSize: 17,
-              color: "#6b6577",
-              maxWidth: "58ch",
-              marginTop: 18,
-              lineHeight: 1.6,
-            }}
-          >
-            Every engagement starts with a strategy call, because every business
-            qualifies differently. Annual billing saves 20%.
-          </p>
-          <div
-            className="hp-pricing-grid-new"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-              gap: 18,
-              marginTop: 46,
-              alignItems: "stretch",
-            }}
-          >
-            {/* Starter */}
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #ebe8f1",
-                borderRadius: 6,
-                padding: 32,
-                display: "flex",
-                flexDirection: "column" as const,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "'IBM Plex Mono',monospace",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase" as const,
-                  color: "#6b6577",
-                }}
-              >
-                Starter
-              </div>
-              <p
-                style={{
-                  fontSize: "13.5px",
-                  color: "#6b6577",
-                  marginTop: 10,
-                  minHeight: 38,
-                  lineHeight: 1.45,
-                }}
-              >
-                Scorecard + qualification for a single offer.
-              </p>
-              <div
-                style={{
-                  fontFamily: "'Archivo'",
-                  fontWeight: 800,
-                  fontSize: 40,
-                  color: "#15131c",
-                  marginTop: 8,
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                $500
-                <span
-                  style={{
-                    fontSize: 15,
-                    color: "#928da0",
-                    fontWeight: 500,
-                  }}
-                >
-                  {" "}
-                  / mo
-                </span>
-              </div>
-              <div
-                style={{
-                  height: 1,
-                  background: "#ebe8f1",
-                  margin: "22px 0",
-                }}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column" as const,
-                  gap: 12,
-                  flexGrow: 1,
-                }}
-              >
-                {[
-                  "Custom scorecard build",
-                  "Hot / Warm / Cold scoring",
-                  "Branded results page",
-                  "Admin dashboard & CSV export",
-                ].map((f) => (
-                  <div
-                    key={f}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      fontSize: "14.5px",
-                      color: "#3a3545",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#6d28d9",
-                        fontFamily: "'IBM Plex Mono',monospace",
-                        fontWeight: 600,
-                      }}
-                    >
-                      +
-                    </span>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <a href="#book" className="hp-price-btn-outline">
-                Book a call
-              </a>
-            </div>
-
-            {/* Scale (Most popular) */}
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #6d28d9",
-                boxShadow:
-                  "0 0 0 1px #6d28d9, 0 24px 50px -28px rgba(109,40,217,.4)",
-                borderRadius: 6,
-                padding: 32,
-                display: "flex",
-                flexDirection: "column" as const,
-                position: "relative" as const,
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute" as const,
-                  top: -11,
-                  left: 32,
-                  background: "#6d28d9",
-                  color: "#fff",
-                  fontFamily: "'IBM Plex Mono',monospace",
-                  fontSize: "10.5px",
-                  fontWeight: 600,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase" as const,
-                  padding: "5px 12px",
-                  borderRadius: 3,
-                }}
-              >
-                Most popular
-              </span>
-              <div
-                style={{
-                  fontFamily: "'IBM Plex Mono',monospace",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase" as const,
-                  color: "#6d28d9",
-                }}
-              >
-                Scale
-              </div>
-              <p
-                style={{
-                  fontSize: "13.5px",
-                  color: "#6b6577",
-                  marginTop: 10,
-                  minHeight: 38,
-                  lineHeight: 1.45,
-                }}
-              >
-                Full analytics + predictive layer for teams.
-              </p>
-              <div
-                style={{
-                  fontFamily: "'Archivo'",
-                  fontWeight: 800,
-                  fontSize: 40,
-                  color: "#15131c",
-                  marginTop: 8,
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                $2,400
-                <span
-                  style={{
-                    fontSize: 15,
-                    color: "#928da0",
-                    fontWeight: 500,
-                  }}
-                >
-                  {" "}
-                  / mo
-                </span>
-              </div>
-              <div
-                style={{
-                  height: 1,
-                  background: "#ebe8f1",
-                  margin: "22px 0",
-                }}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column" as const,
-                  gap: 12,
-                  flexGrow: 1,
-                }}
-              >
-                {[
-                  "Everything in Starter",
-                  "Unlimited scorecards & responses",
-                  "Market intelligence analytics",
-                  "Predictive conversion insights",
-                  "Agent-level attribution",
-                ].map((f) => (
-                  <div
-                    key={f}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      fontSize: "14.5px",
-                      color: "#3a3545",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#6d28d9",
-                        fontFamily: "'IBM Plex Mono',monospace",
-                        fontWeight: 600,
-                      }}
-                    >
-                      +
-                    </span>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <a href="#book" className="hp-price-btn-primary">
-                Book a call
-              </a>
-            </div>
-
-            {/* Enterprise */}
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #ebe8f1",
-                borderRadius: 6,
-                padding: 32,
-                display: "flex",
-                flexDirection: "column" as const,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "'IBM Plex Mono',monospace",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase" as const,
-                  color: "#6b6577",
-                }}
-              >
-                Enterprise
-              </div>
-              <p
-                style={{
-                  fontSize: "13.5px",
-                  color: "#6b6577",
-                  marginTop: 10,
-                  minHeight: 38,
-                  lineHeight: 1.45,
-                }}
-              >
-                White-label, bespoke build, dedicated team.
-              </p>
-              <div
-                style={{
-                  fontFamily: "'Archivo'",
-                  fontWeight: 800,
-                  fontSize: 40,
-                  color: "#15131c",
-                  marginTop: 8,
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                $5,000
-                <span
-                  style={{
-                    fontSize: 15,
-                    color: "#928da0",
-                    fontWeight: 500,
-                  }}
-                >
-                  + / mo
-                </span>
-              </div>
-              <div
-                style={{
-                  height: 1,
-                  background: "#ebe8f1",
-                  margin: "22px 0",
-                }}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column" as const,
-                  gap: 12,
-                  flexGrow: 1,
-                }}
-              >
-                {[
-                  "Everything in Scale",
-                  "White-label — your brand only",
-                  "Custom integrations & exports",
-                  "Dedicated account manager",
-                ].map((f) => (
-                  <div
-                    key={f}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      fontSize: "14.5px",
-                      color: "#3a3545",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#6d28d9",
-                        fontFamily: "'IBM Plex Mono',monospace",
-                        fontWeight: 600,
-                      }}
-                    >
-                      +
-                    </span>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <a href="#book" className="hp-price-btn-outline">
-                Talk to us
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* FINAL CTA */}
       <section

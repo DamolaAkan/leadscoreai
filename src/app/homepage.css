@@ -275,14 +275,33 @@ html { scroll-behavior: smooth; }
   .hp-pipeline-grid { grid-template-columns: 1fr !important; }
   .hp-stats-grid { grid-template-columns: 1fr !important; }
 
-  /* Chart wrapper — reduce padding so bars fit */
+  /* Chart wrapper — stack panels, reduce padding */
+  .hp-chart-wrapper { flex-direction: column !important; }
+  .hp-chart-wrapper > div:first-child { border-right: none !important; border-bottom: 1px solid #ebe8f1; flex-basis: auto !important; }
+  .hp-chart-wrapper > div:last-child { flex-basis: auto !important; }
   .hp-chart-wrapper > div { padding: 20px 16px !important; }
 
   /* Bar chart — tighten gap and remove min-width */
-  .hp-chart-bars { gap: 10px !important; }
-  .hp-chart-bars > div { min-width: 0 !important; }
+  .hp-chart-bars { gap: 8px !important; }
+  .hp-chart-bars > div { min-width: 0 !important; gap: 6px !important; }
+
+  /* Shrink the percentage labels so they fit narrow columns */
+  .hp-chart-bars > div > div:first-child { font-size: 18px !important; }
 
   /* Legend — tighten gap and remove min-width */
-  .hp-chart-legend { gap: 8px !important; }
-  .hp-chart-legend > div { min-width: 0 !important; }
+  .hp-chart-legend { gap: 6px !important; flex-wrap: wrap !important; }
+  .hp-chart-legend > div { min-width: 0 !important; gap: 4px !important; }
+  .hp-chart-legend > div > span:last-child { font-size: 10px !important; letter-spacing: 0 !important; }
+}
+
+@media (max-width: 360px) {
+  /* Extra-narrow: tighter hero padding */
+  .hp-hero-inner { padding: 44px 14px 0 !important; }
+  .hp-section-padded { padding-left: 14px !important; padding-right: 14px !important; }
+
+  /* Chart — even smaller text and gaps */
+  .hp-chart-wrapper > div { padding: 16px 12px !important; }
+  .hp-chart-bars { gap: 6px !important; }
+  .hp-chart-bars > div > div:first-child { font-size: 16px !important; }
+  .hp-chart-legend > div > span:last-child { font-size: 9.5px !important; }
 }
