@@ -1,7 +1,7 @@
 "use client";
 
 import { Invoice } from "@/lib/invoice-types";
-import { formatCurrency, formatDate } from "@/lib/invoice-utils";
+import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateBalanceDue } from "@/lib/invoice-utils";
 import StatusBadge from "./StatusBadge";
 
 interface InvoicePreviewProps {
@@ -11,6 +11,14 @@ interface InvoicePreviewProps {
 export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
   const client = invoice.client;
   const bank = invoice.bank_details;
+
+  const charges = invoice.line_items.filter((item) => !item.type || item.type === "charge");
+  const payments = invoice.line_items.filter((item) => item.type === "payment");
+  const hasPayments = payments.length > 0;
+
+  const totalCharges = calculateTotalCharges(invoice.line_items);
+  const totalPayments = calculateTotalPayments(invoice.line_items);
+  const balanceDue = calculateBalanceDue(invoice.line_items);
 
   return (
     <div className="bg-[#f9fafb] border border-black/[0.08] rounded-2xl p-8 max-w-2xl shadow-sm">
@@ -57,8 +65,8 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
         </div>
       )}
 
-      {/* Line Items */}
-      <table className="w-full mb-6">
+      {/* Charges Table */}
+      <table className="w-full mb-2">
         <thead>
           <tr className="border-b-2 border-[#7C3AED]/30">
             <th className="text-left py-2 text-xs text-black/50 uppercase">Description</th>
@@ -68,24 +76,71 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
           </tr>
         </thead>
         <tbody>
-          {invoice.line_items.map((item, i) => (
+          {charges.map((item, i) => (
             <tr key={i} className="border-b border-black/[0.08]">
-              <td className="py-3 text-sm text-gray-700">{item.description}</td>
+              <td className="py-3 text-sm text-gray-700">
+                {item.description}
+                {item.paid && (
+                  <span className="ml-2 inline-block px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-medium rounded-full border border-green-200">
+                    Paid
+                  </span>
+                )}
+              </td>
               <td className="py-3 text-sm text-gray-500 text-center">{item.quantity}</td>
               <td className="py-3 text-sm text-gray-500 text-right">{formatCurrency(item.unit_price, invoice.currency)}</td>
               <td className="py-3 text-sm text-[#111827] text-right font-medium">{formatCurrency(item.amount, invoice.currency)}</td>
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={3} className="py-4 text-right text-sm text-gray-500 font-medium">Total</td>
-            <td className="py-4 text-right text-lg text-[#7C3AED] font-bold">
-              {formatCurrency(invoice.subtotal, invoice.currency)}
-            </td>
-          </tr>
-        </tfoot>
       </table>
+
+      {/* Payments Table */}
+      {hasPayments && (
+        <>
+          <div className="mt-4 mb-2">
+            <p className="text-xs text-black/50 uppercase font-medium">Payments / Deductions</p>
+          </div>
+          <table className="w-full mb-2">
+            <tbody>
+              {payments.map((item, i) => (
+                <tr key={i} className="border-b border-black/[0.08]">
+                  <td className="py-3 text-sm text-green-600">{item.description}</td>
+                  <td className="py-3 text-sm text-green-600 text-center">{item.quantity}</td>
+                  <td className="py-3 text-sm text-green-600 text-right">{formatCurrency(item.unit_price, invoice.currency)}</td>
+                  <td className="py-3 text-sm text-green-600 text-right font-medium">-{formatCurrency(item.amount, invoice.currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Footer / Totals */}
+      <div className="border-t-2 border-[#7C3AED]/30 pt-3 mb-6">
+        {hasPayments ? (
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>Subtotal (Charges)</span>
+              <span>{formatCurrency(totalCharges, invoice.currency)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Payments</span>
+              <span>-{formatCurrency(totalPayments, invoice.currency)}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold text-[#7C3AED] pt-1">
+              <span>Balance Due</span>
+              <span>{formatCurrency(balanceDue, invoice.currency)}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500 font-medium">Total</span>
+            <span className="text-lg text-[#7C3AED] font-bold">
+              {formatCurrency(invoice.subtotal, invoice.currency)}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Bank Details */}
       {bank && Object.keys(bank).length > 0 && (

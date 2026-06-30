@@ -1,5 +1,5 @@
 import { Invoice, InvoiceClient } from "./invoice-types";
-import { formatCurrency, formatDate } from "./invoice-utils";
+import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateBalanceDue } from "./invoice-utils";
 
 function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
@@ -37,17 +37,63 @@ function emailWrapper(content: string): string {
 }
 
 function lineItemsTable(invoice: Invoice): string {
-  const rows = invoice.line_items
+  const charges = invoice.line_items.filter((item) => !item.type || item.type === "charge");
+  const payments = invoice.line_items.filter((item) => item.type === "payment");
+  const hasPayments = payments.length > 0;
+
+  const chargeRows = charges
     .map(
       (item) => `
     <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;">${item.description}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;">${item.description}${item.paid ? ' <span style="color:#22c55e;font-size:11px;">(Paid)</span>' : ""}</td>
       <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;text-align:center;">${item.quantity}</td>
       <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;text-align:right;">${formatCurrency(item.unit_price, invoice.currency)}</td>
       <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;text-align:right;">${formatCurrency(item.amount, invoice.currency)}</td>
     </tr>`
     )
     .join("");
+
+  const paymentRows = payments
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#22c55e;font-size:14px;">${item.description}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#22c55e;font-size:14px;text-align:center;">${item.quantity}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#22c55e;font-size:14px;text-align:right;">${formatCurrency(item.unit_price, invoice.currency)}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #2a2a3d;color:#22c55e;font-size:14px;text-align:right;">-${formatCurrency(item.amount, invoice.currency)}</td>
+    </tr>`
+    )
+    .join("");
+
+  const paymentSectionHeader = hasPayments
+    ? `<tr><td colspan="4" style="padding:16px 0 8px;color:#9ca3af;font-size:12px;font-weight:600;text-transform:uppercase;">Payments / Deductions</td></tr>`
+    : "";
+
+  let footer: string;
+  if (hasPayments) {
+    const totalCharges = calculateTotalCharges(invoice.line_items);
+    const totalPayments = calculateTotalPayments(invoice.line_items);
+    const balanceDue = calculateBalanceDue(invoice.line_items);
+    footer = `
+    <tr>
+      <td colspan="3" style="padding:12px 0 4px;text-align:right;color:#9ca3af;font-size:14px;">Subtotal (Charges)</td>
+      <td style="padding:12px 0 4px;text-align:right;color:#e5e7eb;font-size:14px;">${formatCurrency(totalCharges, invoice.currency)}</td>
+    </tr>
+    <tr>
+      <td colspan="3" style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">Payments</td>
+      <td style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">-${formatCurrency(totalPayments, invoice.currency)}</td>
+    </tr>
+    <tr>
+      <td colspan="3" style="padding:8px 0;text-align:right;color:#9ca3af;font-size:14px;font-weight:600;">Balance Due</td>
+      <td style="padding:8px 0;text-align:right;color:#7C3AED;font-size:18px;font-weight:700;">${formatCurrency(balanceDue, invoice.currency)}</td>
+    </tr>`;
+  } else {
+    footer = `
+    <tr>
+      <td colspan="3" style="padding:16px 0;text-align:right;color:#9ca3af;font-size:14px;font-weight:600;">Total</td>
+      <td style="padding:16px 0;text-align:right;color:#7C3AED;font-size:18px;font-weight:700;">${formatCurrency(invoice.subtotal, invoice.currency)}</td>
+    </tr>`;
+  }
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
@@ -57,11 +103,10 @@ function lineItemsTable(invoice: Invoice): string {
       <th style="padding:8px 0;text-align:right;color:#9ca3af;font-size:12px;font-weight:600;text-transform:uppercase;">Rate</th>
       <th style="padding:8px 0;text-align:right;color:#9ca3af;font-size:12px;font-weight:600;text-transform:uppercase;">Amount</th>
     </tr>
-    ${rows}
-    <tr>
-      <td colspan="3" style="padding:16px 0;text-align:right;color:#9ca3af;font-size:14px;font-weight:600;">Total</td>
-      <td style="padding:16px 0;text-align:right;color:#7C3AED;font-size:18px;font-weight:700;">${formatCurrency(invoice.subtotal, invoice.currency)}</td>
-    </tr>
+    ${chargeRows}
+    ${paymentSectionHeader}
+    ${paymentRows}
+    ${footer}
   </table>`;
 }
 
@@ -118,6 +163,7 @@ export function buildInvoiceEmailHtml(invoice: Invoice, client: InvoiceClient): 
 }
 
 export function buildReceiptEmailHtml(invoice: Invoice, client: InvoiceClient): string {
+  const balanceDue = calculateBalanceDue(invoice.line_items);
   const content = `
     <div style="text-align:center;padding:24px 0;">
       <div style="display:inline-block;width:64px;height:64px;background-color:#0d0d1a;border-radius:50%;border:2px solid #7C3AED;line-height:64px;font-size:28px;color:#7C3AED;">&#10003;</div>
@@ -138,8 +184,67 @@ export function buildReceiptEmailHtml(invoice: Invoice, client: InvoiceClient): 
               <td style="padding:8px 0;color:#7C3AED;font-size:18px;text-align:right;font-weight:700;">${formatCurrency(invoice.subtotal, invoice.currency)}</td>
             </tr>
             <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Balance Due</td>
+              <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;font-weight:600;">${formatCurrency(balanceDue, invoice.currency)}</td>
+            </tr>
+            <tr>
               <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Payment Date</td>
               <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;">${formatDate(new Date().toISOString())}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:32px 0 0;font-size:14px;color:#9ca3af;text-align:center;">If you have any questions, simply reply to this email.</p>
+  `;
+
+  return emailWrapper(content);
+}
+
+export function buildLineItemReceiptEmailHtml(
+  invoice: Invoice,
+  client: InvoiceClient,
+  lineItemIndex: number,
+  receiptNumber: string
+): string {
+  const item = invoice.line_items[lineItemIndex];
+  const balanceDue = calculateBalanceDue(invoice.line_items);
+
+  const content = `
+    <div style="text-align:center;padding:24px 0;">
+      <div style="display:inline-block;width:64px;height:64px;background-color:#0d0d1a;border-radius:50%;border:2px solid #7C3AED;line-height:64px;font-size:28px;color:#7C3AED;">&#10003;</div>
+    </div>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#e5e7eb;font-weight:600;text-align:center;">Payment Receipt</h2>
+    <p style="margin:0 0 32px;font-size:14px;color:#9ca3af;text-align:center;">Thank you for your payment, ${client.name}.</p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0d0d1a;border-radius:8px;border:1px solid #2a2a3d;">
+      <tr>
+        <td style="padding:20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Receipt #</td>
+              <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;font-weight:600;">${receiptNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Invoice</td>
+              <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;font-weight:600;">${invoice.invoice_number}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Description</td>
+              <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;">${item.description}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Amount Paid</td>
+              <td style="padding:8px 0;color:#7C3AED;font-size:18px;text-align:right;font-weight:700;">${formatCurrency(item.amount, invoice.currency)}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#9ca3af;font-size:14px;">Payment Date</td>
+              <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;">${formatDate(new Date().toISOString())}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;border-top:1px solid #2a2a3d;color:#9ca3af;font-size:14px;">Running Balance</td>
+              <td style="padding:8px 0;border-top:1px solid #2a2a3d;color:#e5e7eb;font-size:14px;text-align:right;font-weight:600;">${formatCurrency(balanceDue, invoice.currency)}</td>
             </tr>
           </table>
         </td>

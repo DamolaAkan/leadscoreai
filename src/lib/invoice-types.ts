@@ -13,6 +13,9 @@ export interface InvoiceLineItem {
   quantity: number;
   unit_price: number;
   amount: number;
+  type?: "charge" | "payment";
+  paid?: boolean;
+  paid_date?: string | null;
 }
 
 export interface BankDetails {

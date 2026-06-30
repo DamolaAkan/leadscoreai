@@ -40,3 +40,24 @@ export function formatDate(dateStr: string): string {
 export function calculateSubtotal(lineItems: { quantity: number; unit_price: number }[]): number {
   return lineItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
 }
+
+export function calculateTotalCharges(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment" }[]): number {
+  return lineItems
+    .filter((item) => !item.type || item.type === "charge")
+    .reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+}
+
+export function calculateTotalPayments(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment" }[]): number {
+  return lineItems
+    .filter((item) => item.type === "payment")
+    .reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+}
+
+export function calculateBalanceDue(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment" }[]): number {
+  return calculateTotalCharges(lineItems) - calculateTotalPayments(lineItems);
+}
+
+export function generateReceiptNumber(invoiceNumber: string, lineItemIndex: number): string {
+  const num = invoiceNumber.replace("INV-", "");
+  return `REC-${num}-${String(lineItemIndex + 1).padStart(2, "0")}`;
+}

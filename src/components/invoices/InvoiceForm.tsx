@@ -2,28 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { InvoiceClient, InvoiceLineItem, BankDetails } from "@/lib/invoice-types";
-import { calculateSubtotal } from "@/lib/invoice-utils";
+import { Invoice, InvoiceClient, InvoiceLineItem, BankDetails } from "@/lib/invoice-types";
+import { calculateBalanceDue } from "@/lib/invoice-utils";
 
 interface InvoiceFormProps {
   getAuthHeaders: () => Record<string, string>;
+  invoice?: Invoice;
 }
 
-export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
+export default function InvoiceForm({ getAuthHeaders, invoice: editInvoice }: InvoiceFormProps) {
   const router = useRouter();
   const [clients, setClients] = useState<InvoiceClient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [clientId, setClientId] = useState("");
-  const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0]);
-  const [dueDate, setDueDate] = useState("");
-  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
-    { description: "", quantity: 1, unit_price: 0, amount: 0 },
-  ]);
-  const [bankDetails, setBankDetails] = useState<BankDetails>({});
-  const [notes, setNotes] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const isEdit = !!editInvoice;
+
+  const [clientId, setClientId] = useState(editInvoice?.client_id || "");
+  const [issueDate, setIssueDate] = useState(
+    editInvoice?.issue_date || new Date().toISOString().split("T")[0]
+  );
+  const [dueDate, setDueDate] = useState(editInvoice?.due_date || "");
+  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>(
+    editInvoice?.line_items || [{ description: "", quantity: 1, unit_price: 0, amount: 0, type: "charge" }]
+  );
+  const [bankDetails, setBankDetails] = useState<BankDetails>(editInvoice?.bank_details || {});
+  const [notes, setNotes] = useState(editInvoice?.notes || "");
+  const [currency, setCurrency] = useState(editInvoice?.currency || "USD");
 
   useEffect(() => {
     fetch("/api/invoices/clients", { headers: getAuthHeaders() })
@@ -34,7 +39,8 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
   }, []);
 
   useEffect(() => {
-    // Auto-set currency from client
+    // Auto-set currency from client (only when not editing)
+    if (isEdit) return;
     const client = clients.find((c) => c.id === clientId);
     if (client) setCurrency(client.currency);
   }, [clientId, clients]);
@@ -47,8 +53,8 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
     setLineItems(updated);
   }
 
-  function addLineItem() {
-    setLineItems([...lineItems, { description: "", quantity: 1, unit_price: 0, amount: 0 }]);
+  function addLineItem(type: "charge" | "payment" = "charge") {
+    setLineItems([...lineItems, { description: "", quantity: 1, unit_price: 0, amount: 0, type }]);
   }
 
   function removeLineItem(index: number) {
@@ -56,41 +62,76 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
     setLineItems(lineItems.filter((_, i) => i !== index));
   }
 
+  const charges = lineItems.filter((item) => !item.type || item.type === "charge");
+  const payments = lineItems.filter((item) => item.type === "payment");
+  const balanceDue = calculateBalanceDue(lineItems);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const subtotal = calculateSubtotal(lineItems);
     const itemsWithAmount = lineItems.map((item) => ({
       ...item,
+      type: item.type || "charge",
       amount: item.quantity * item.unit_price,
     }));
 
-    const res = await fetch("/api/invoices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({
-        client_id: clientId,
-        issue_date: issueDate,
-        due_date: dueDate,
-        line_items: itemsWithAmount,
-        subtotal,
-        currency,
-        bank_details: bankDetails,
-        notes: notes || null,
-      }),
-    });
+    const subtotal = balanceDue;
 
-    const data = await res.json();
-    setLoading(false);
+    if (isEdit) {
+      // PATCH existing invoice
+      const res = await fetch(`/api/invoices/${editInvoice.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          client_id: clientId,
+          issue_date: issueDate,
+          due_date: dueDate,
+          line_items: itemsWithAmount,
+          subtotal,
+          currency,
+          bank_details: bankDetails,
+          notes: notes || null,
+        }),
+      });
 
-    if (!res.ok) {
-      setError(data.error || "Failed to create invoice");
-      return;
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        setError(data.error || "Failed to update invoice");
+        return;
+      }
+
+      router.push(`/invoices/${editInvoice.id}`);
+    } else {
+      // POST new invoice
+      const res = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          client_id: clientId,
+          issue_date: issueDate,
+          due_date: dueDate,
+          line_items: itemsWithAmount,
+          subtotal,
+          currency,
+          bank_details: bankDetails,
+          notes: notes || null,
+        }),
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create invoice");
+        return;
+      }
+
+      router.push(`/invoices/${data.invoice.id}`);
     }
-
-    router.push(`/invoices/${data.invoice.id}`);
   }
 
   return (
@@ -149,13 +190,21 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
         <div className="space-y-3">
           {lineItems.map((item, index) => (
             <div key={index} className="grid grid-cols-12 gap-2 items-center">
+              <select
+                value={item.type || "charge"}
+                onChange={(e) => updateLineItem(index, "type", e.target.value)}
+                className="col-span-2 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-2 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
+              >
+                <option value="charge">Charge</option>
+                <option value="payment">Payment</option>
+              </select>
               <input
                 type="text"
                 placeholder="Description"
                 value={item.description}
                 onChange={(e) => updateLineItem(index, "description", e.target.value)}
                 required
-                className="col-span-5 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
+                className="col-span-4 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
               />
               <input
                 type="number"
@@ -174,7 +223,7 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
                 min={0}
                 step={0.01}
                 required
-                className="col-span-3 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
+                className="col-span-2 bg-[#f9fafb] border border-black/[0.08] rounded-xl px-3 py-2 text-[#111827] text-sm focus:outline-none focus:border-[#7C3AED]"
               />
               <button
                 type="button"
@@ -186,13 +235,44 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={addLineItem}
-          className="mt-3 text-[#7C3AED] hover:text-[#6D28D9] text-sm font-medium"
-        >
-          + Add Line Item
-        </button>
+        <div className="mt-3 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => addLineItem("charge")}
+            className="text-[#7C3AED] hover:text-[#6D28D9] text-sm font-medium"
+          >
+            + Add Charge
+          </button>
+          <button
+            type="button"
+            onClick={() => addLineItem("payment")}
+            className="text-green-600 hover:text-green-700 text-sm font-medium"
+          >
+            + Add Payment
+          </button>
+        </div>
+
+        {/* Summary */}
+        {payments.length > 0 && (
+          <div className="mt-4 p-3 bg-white rounded-xl border border-black/[0.08] text-sm space-y-1">
+            <div className="flex justify-between text-gray-500">
+              <span>Charges ({charges.length} items)</span>
+              <span>{new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
+                charges.reduce((s, i) => s + i.quantity * i.unit_price, 0)
+              )}</span>
+            </div>
+            <div className="flex justify-between text-green-600">
+              <span>Payments ({payments.length} items)</span>
+              <span>-{new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
+                payments.reduce((s, i) => s + i.quantity * i.unit_price, 0)
+              )}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-[#111827] border-t border-black/[0.08] pt-1">
+              <span>Balance Due</span>
+              <span>{new Intl.NumberFormat("en-US", { style: "currency", currency }).format(balanceDue)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bank Details */}
@@ -249,7 +329,9 @@ export default function InvoiceForm({ getAuthHeaders }: InvoiceFormProps) {
           disabled={loading}
           className="px-6 py-2.5 bg-[#7C3AED] text-white font-medium rounded-full hover:bg-[#6D28D9] disabled:opacity-50 transition-colors"
         >
-          {loading ? "Creating..." : "Create Invoice"}
+          {loading
+            ? isEdit ? "Saving..." : "Creating..."
+            : isEdit ? "Save Changes" : "Create Invoice"}
         </button>
         <button
           type="button"
