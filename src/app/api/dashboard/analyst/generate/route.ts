@@ -46,32 +46,24 @@ function labelOf(a: AnswerRow): string | null {
 const REPORT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["personas", "targetMarkets", "dos"],
+  required: ["headline", "dos", "personas", "targetMarkets"],
   properties: {
+    headline: { type: "string" },
     personas: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["name", "description", "signals"],
+        required: ["name", "line"],
         properties: {
           name: { type: "string" },
-          description: { type: "string" },
-          signals: { type: "string" },
+          line: { type: "string" },
         },
       },
     },
     targetMarkets: {
       type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["market", "why"],
-        properties: {
-          market: { type: "string" },
-          why: { type: "string" },
-        },
-      },
+      items: { type: "string" },
     },
     dos: {
       type: "object",
@@ -232,20 +224,20 @@ export async function POST(request: Request) {
     "(cite actual rates/counts). Be specific and commercial — no filler, no generic advice, no hedging. Tight and decision-ready.";
 
   const userPrompt =
-    "Analyze this client's anonymized data and produce exactly three things:\n\n" +
-    "1) personas — EXACTLY 3 buyer personas that actually convert and pay. Each: name (a memorable, specific label), " +
-    "description (1-2 sentences), signals (the concrete answers/traits that identify them, grounded in the data).\n" +
-    "2) targetMarkets — EXACTLY 3 markets/segments to focus effort on next, best first. Each: market (who/where), " +
-    "why (one sentence backed by the numbers).\n" +
-    "3) dos — a Dan Sullivan DOS conversation: dangers (2-3 threats to eliminate), opportunities (2-3 to capture), " +
-    "strengths (2-3 to double down on). Each item ONE brief, specific sentence tied to this data.\n\n" +
-    "Keep everything tight and skimmable.\n\nDATA:\n" +
+    "Analyze this client's anonymized data. The DOS is the main output; personas and target markets are quick one-line takeaways.\n\n" +
+    "1) headline — ONE punchy sentence: the single most important takeaway about who pays.\n" +
+    "2) dos — a Dan Sullivan DOS conversation (the core). dangers (2-3 threats to eliminate), opportunities (2-3 to capture), " +
+    "strengths (2-3 to double down on). Each item ONE brief, specific sentence tied to the numbers.\n" +
+    "3) personas — EXACTLY 3 paying-buyer personas as ONE-LINERS. Each: name (a memorable label) + line (a single short phrase, grounded in a number).\n" +
+    "4) targetMarkets — EXACTLY 3 markets to focus on next, each a SINGLE short line (who/where + the number), best first.\n\n" +
+    "Be tight and skimmable — no paragraphs anywhere.\n\nDATA:\n" +
     JSON.stringify(aggregates, null, 2);
 
   let report: {
+    headline: unknown;
+    dos: unknown;
     personas: unknown;
     targetMarkets: unknown;
-    dos: unknown;
   };
   try {
     const resp = await getClaude().messages.create({

@@ -12,12 +12,7 @@ interface Props {
 
 interface Persona {
   name: string;
-  description: string;
-  signals: string;
-}
-interface TargetMarket {
-  market: string;
-  why: string;
+  line: string;
 }
 interface Dos {
   dangers: string[];
@@ -31,9 +26,10 @@ interface AnalystData {
   model: string | null;
   totals: { completed: number; converted: number } | null;
   report: {
-    personas: Persona[];
-    targetMarkets: TargetMarket[];
+    headline: string;
     dos: Dos;
+    personas: Persona[];
+    targetMarkets: string[];
   } | null;
 }
 
@@ -161,69 +157,19 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
 
       {report && (
         <>
-          {/* Personas */}
-          <div>
-            <h2 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
-              Buyer personas
-            </h2>
-            <p className="text-sm text-gray-500 mb-4">The three profiles that actually pay.</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {report.personas.map((p, i) => (
-                <div key={i} className={CARD}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="w-6 h-6 rounded-md text-white text-xs flex items-center justify-center font-bold shrink-0"
-                      style={{ backgroundColor: accent }}
-                    >
-                      {i + 1}
-                    </span>
-                    <h3 className="font-semibold" style={{ color: "#1e293b" }}>
-                      {p.name}
-                    </h3>
-                  </div>
-                  <p className="text-sm leading-relaxed" style={{ color: "#475569" }}>
-                    {p.description}
-                  </p>
-                  <p className="text-xs mt-3 leading-relaxed" style={{ color: "#94a3b8" }}>
-                    <span className="font-semibold" style={{ color: "#64748b" }}>
-                      Identify by:{" "}
-                    </span>
-                    {p.signals}
-                  </p>
-                </div>
-              ))}
+          {/* Headline */}
+          {report.headline && (
+            <div
+              className="rounded-lg p-5"
+              style={{ backgroundColor: `${accent}0f` }}
+            >
+              <p className="text-lg font-semibold leading-snug" style={{ color: "#1e293b" }}>
+                {report.headline}
+              </p>
             </div>
-          </div>
+          )}
 
-          {/* Target markets */}
-          <div className={CARD}>
-            <h2 className="text-base font-semibold" style={{ color: "#1e293b" }}>
-              Target markets to focus on
-            </h2>
-            <p className="text-sm text-gray-500 mt-1 mb-4">Best opportunities first.</p>
-            <ol className="space-y-3">
-              {report.targetMarkets.map((m, i) => (
-                <li key={i} className="flex gap-3">
-                  <span
-                    className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-semibold shrink-0"
-                    style={{ backgroundColor: accent }}
-                  >
-                    {i + 1}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-sm" style={{ color: "#1e293b" }}>
-                      {m.market}
-                    </p>
-                    <p className="text-sm mt-0.5" style={{ color: "#64748b" }}>
-                      {m.why}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          {/* DOS */}
+          {/* DOS — the main frame */}
           <div className={CARD}>
             <h2 className="text-base font-semibold" style={{ color: "#1e293b" }}>
               DOS — Dangers · Opportunities · Strengths
@@ -235,6 +181,42 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
               <DosColumn title="Dangers" items={report.dos.dangers} color="#dc2626" />
               <DosColumn title="Opportunities" items={report.dos.opportunities} color="#16a34a" />
               <DosColumn title="Strengths" items={report.dos.strengths} color="#2563eb" />
+            </div>
+          </div>
+
+          {/* Takeaways — personas + markets as one-liners */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={CARD}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#64748b" }}>
+                Who pays — personas
+              </h3>
+              <ul className="space-y-2.5">
+                {report.personas.map((p, i) => (
+                  <li key={i} className="text-sm leading-relaxed flex gap-2" style={{ color: "#475569" }}>
+                    <span style={{ color: accent }}>•</span>
+                    <span>
+                      <span className="font-semibold" style={{ color: "#1e293b" }}>
+                        {p.name}
+                      </span>{" "}
+                      — {p.line}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={CARD}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#64748b" }}>
+                Markets to focus on
+              </h3>
+              <ul className="space-y-2.5">
+                {report.targetMarkets.map((m, i) => (
+                  <li key={i} className="text-sm leading-relaxed flex gap-2" style={{ color: "#475569" }}>
+                    <span style={{ color: accent }}>•</span>
+                    <span>{m}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </>
