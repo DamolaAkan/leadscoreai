@@ -10,14 +10,19 @@ interface Props {
   isAdmin: boolean;
 }
 
-interface Insight {
-  insight: string;
-  evidence: string;
-  action: string;
+interface Persona {
+  name: string;
+  description: string;
+  signals: string;
 }
-interface Section {
-  summary: string;
-  insights: Insight[];
+interface TargetMarket {
+  market: string;
+  why: string;
+}
+interface Dos {
+  dangers: string[];
+  opportunities: string[];
+  strengths: string[];
 }
 interface AnalystData {
   configured: boolean;
@@ -26,17 +31,13 @@ interface AnalystData {
   model: string | null;
   totals: { completed: number; converted: number } | null;
   report: {
-    whoPays: Section;
-    whereToFocus: Section;
-    untappedSegments: Section;
+    personas: Persona[];
+    targetMarkets: TargetMarket[];
+    dos: Dos;
   } | null;
 }
 
-const SECTIONS: { key: keyof NonNullable<AnalystData["report"]>; title: string; emoji: string }[] = [
-  { key: "whoPays", title: "Who actually pays", emoji: "💰" },
-  { key: "whereToFocus", title: "Where to focus", emoji: "🎯" },
-  { key: "untappedSegments", title: "Untapped segments", emoji: "🌱" },
-];
+const CARD = "bg-white rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]";
 
 export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props) {
   const [data, setData] = useState<AnalystData | null>(null);
@@ -82,14 +83,40 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
     return <div className="text-gray-500 py-8 text-center">Loading analyst...</div>;
   }
 
+  const report = data?.report;
+
+  const DosColumn = ({
+    title,
+    items,
+    color,
+  }: {
+    title: string;
+    items: string[];
+    color: string;
+  }) => (
+    <div>
+      <h4 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color }}>
+        {title}
+      </h4>
+      <ul className="space-y-2">
+        {(items || []).map((it, i) => (
+          <li key={i} className="text-sm leading-relaxed flex gap-2" style={{ color: "#475569" }}>
+            <span style={{ color }}>•</span>
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">AI Analyst</h1>
           <p className="text-sm text-gray-500 mt-1 max-w-2xl">
-            A live read on your own customers — who pays, where to focus, and which segments you&apos;re
-            missing. Generated from anonymized data; refreshes as you gather more.
+            A short strategic read on your customers — the personas that pay, the markets to chase
+            next, and a Dangers / Opportunities / Strengths snapshot.
           </p>
           {data?.generatedAt && (
             <p className="text-xs text-gray-400 mt-1">
@@ -102,7 +129,7 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
           <button
             onClick={generate}
             disabled={generating || !data?.configured}
-            className="text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50 shrink-0"
+            className="text-sm font-medium px-4 py-2 rounded-md text-white disabled:opacity-50 shrink-0"
             style={{ backgroundColor: accent }}
           >
             {generating
@@ -115,63 +142,103 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
       </div>
 
       {!data?.configured && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
           The AI agent isn&apos;t connected yet (no API key configured).
         </div>
       )}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {data?.configured && !data.hasReport && !generating && (
-        <div className="rounded-xl bg-white p-8 text-center text-gray-500">
+        <div className={`${CARD} text-center text-gray-500`}>
           No report yet. Click <span className="font-medium">Generate report</span> to have the AI
           analyze your leads and conversions.
         </div>
       )}
 
-      {data?.report &&
-        SECTIONS.map(({ key, title, emoji }) => {
-          const section = data.report![key];
-          if (!section) return null;
-          return (
-            <div
-              key={key}
-              className="bg-white rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-            >
-              <h2
-                className="text-base font-semibold flex items-center gap-2"
-                style={{ color: "#1e293b" }}
-              >
-                <span>{emoji}</span> {title}
-              </h2>
-              <p className="mt-1 mb-4 text-sm" style={{ color: "#64748b" }}>
-                {section.summary}
-              </p>
-              <div className="space-y-3">
-                {section.insights.map((ins, i) => (
-                  <div
-                    key={i}
-                    className="rounded-md p-4"
-                    style={{ backgroundColor: "#f8fafc" }}
+      {report && (
+        <>
+          {/* Personas */}
+          <div>
+            <h2 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+              Buyer personas
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">The three profiles that actually pay.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {report.personas.map((p, i) => (
+                <div key={i} className={CARD}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="w-6 h-6 rounded-md text-white text-xs flex items-center justify-center font-bold shrink-0"
+                      style={{ backgroundColor: accent }}
+                    >
+                      {i + 1}
+                    </span>
+                    <h3 className="font-semibold" style={{ color: "#1e293b" }}>
+                      {p.name}
+                    </h3>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "#475569" }}>
+                    {p.description}
+                  </p>
+                  <p className="text-xs mt-3 leading-relaxed" style={{ color: "#94a3b8" }}>
+                    <span className="font-semibold" style={{ color: "#64748b" }}>
+                      Identify by:{" "}
+                    </span>
+                    {p.signals}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Target markets */}
+          <div className={CARD}>
+            <h2 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+              Target markets to focus on
+            </h2>
+            <p className="text-sm text-gray-500 mt-1 mb-4">Best opportunities first.</p>
+            <ol className="space-y-3">
+              {report.targetMarkets.map((m, i) => (
+                <li key={i} className="flex gap-3">
+                  <span
+                    className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-semibold shrink-0"
+                    style={{ backgroundColor: accent }}
                   >
-                    <p className="font-semibold" style={{ color: "#1e293b" }}>
-                      {ins.insight}
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: "#1e293b" }}>
+                      {m.market}
                     </p>
-                    <p className="text-sm mt-1" style={{ color: "#64748b" }}>
-                      <span className="font-semibold">Evidence:</span> {ins.evidence}
-                    </p>
-                    <p className="text-sm mt-1 font-medium" style={{ color: "#475569" }}>
-                      → Action: {ins.action}
+                    <p className="text-sm mt-0.5" style={{ color: "#64748b" }}>
+                      {m.why}
                     </p>
                   </div>
-                ))}
-              </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* DOS */}
+          <div className={CARD}>
+            <h2 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+              DOS — Dangers · Opportunities · Strengths
+            </h2>
+            <p className="text-sm text-gray-500 mt-1 mb-5">
+              What to eliminate, capture, and double down on.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <DosColumn title="Dangers" items={report.dos.dangers} color="#dc2626" />
+              <DosColumn title="Opportunities" items={report.dos.opportunities} color="#16a34a" />
+              <DosColumn title="Strengths" items={report.dos.strengths} color="#2563eb" />
             </div>
-          );
-        })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

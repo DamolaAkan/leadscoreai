@@ -43,36 +43,46 @@ function labelOf(a: AnswerRow): string | null {
   return null;
 }
 
-const SECTION = {
+const REPORT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["summary", "insights"],
+  required: ["personas", "targetMarkets", "dos"],
   properties: {
-    summary: { type: "string" },
-    insights: {
+    personas: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["insight", "evidence", "action"],
+        required: ["name", "description", "signals"],
         properties: {
-          insight: { type: "string" },
-          evidence: { type: "string" },
-          action: { type: "string" },
+          name: { type: "string" },
+          description: { type: "string" },
+          signals: { type: "string" },
         },
       },
     },
-  },
-} as const;
-
-const REPORT_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["whoPays", "whereToFocus", "untappedSegments"],
-  properties: {
-    whoPays: SECTION,
-    whereToFocus: SECTION,
-    untappedSegments: SECTION,
+    targetMarkets: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["market", "why"],
+        properties: {
+          market: { type: "string" },
+          why: { type: "string" },
+        },
+      },
+    },
+    dos: {
+      type: "object",
+      additionalProperties: false,
+      required: ["dangers", "opportunities", "strengths"],
+      properties: {
+        dangers: { type: "array", items: { type: "string" } },
+        opportunities: { type: "array", items: { type: "string" } },
+        strengths: { type: "array", items: { type: "string" } },
+      },
+    },
   },
 } as const;
 
@@ -217,24 +227,25 @@ export async function POST(request: Request) {
   };
 
   const system =
-    "You are an AI data analyst embedded in a lead-scoring platform. You produce a concise, plain-language " +
-    "business report for a non-technical operator from ANONYMIZED aggregates (no personal data). Ground every claim in " +
-    "the numbers provided — cite the actual rates/counts. Be specific and commercial, never generic. Where same-industry " +
-    "peer data exists, use it for benchmarking. Do not restate the raw data; interpret it into decisions.";
+    "You are an AI strategist embedded in a lead-scoring platform. From ANONYMIZED aggregates (no personal data) you " +
+    "produce a SHORT, high-signal strategic brief for a non-technical business owner. Ground every claim in the numbers " +
+    "(cite actual rates/counts). Be specific and commercial — no filler, no generic advice, no hedging. Tight and decision-ready.";
 
   const userPrompt =
-    "Analyze this client's anonymized data and produce a report with three sections. " +
-    "Each section: a 1-2 sentence summary plus 2-4 insights; each insight has {insight, evidence (the specific numbers), action (what to do)}.\n" +
-    "- whoPays: who actually converts and pays — the profiles and answers that predict payment.\n" +
-    "- whereToFocus: where marketing and sales effort will pay off most right now.\n" +
-    "- untappedSegments: segments being under-served or missed that could convert.\n\n" +
-    "DATA:\n" +
+    "Analyze this client's anonymized data and produce exactly three things:\n\n" +
+    "1) personas — EXACTLY 3 buyer personas that actually convert and pay. Each: name (a memorable, specific label), " +
+    "description (1-2 sentences), signals (the concrete answers/traits that identify them, grounded in the data).\n" +
+    "2) targetMarkets — EXACTLY 3 markets/segments to focus effort on next, best first. Each: market (who/where), " +
+    "why (one sentence backed by the numbers).\n" +
+    "3) dos — a Dan Sullivan DOS conversation: dangers (2-3 threats to eliminate), opportunities (2-3 to capture), " +
+    "strengths (2-3 to double down on). Each item ONE brief, specific sentence tied to this data.\n\n" +
+    "Keep everything tight and skimmable.\n\nDATA:\n" +
     JSON.stringify(aggregates, null, 2);
 
   let report: {
-    whoPays: unknown;
-    whereToFocus: unknown;
-    untappedSegments: unknown;
+    personas: unknown;
+    targetMarkets: unknown;
+    dos: unknown;
   };
   try {
     const resp = await getClaude().messages.create({
@@ -259,9 +270,7 @@ export async function POST(request: Request) {
 
   await supabase.from("analyst_reports").insert({
     organization_id: orgId,
-    who_pays: report.whoPays,
-    where_to_focus: report.whereToFocus,
-    untapped_segments: report.untappedSegments,
+    report,
     total_responses: completed,
     converted_count: converted,
     model: CLAUDE_MODEL,

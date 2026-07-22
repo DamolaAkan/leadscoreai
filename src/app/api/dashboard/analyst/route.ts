@@ -14,8 +14,9 @@ export async function GET(request: Request) {
 
   const { data } = await supabase
     .from("analyst_reports")
-    .select("who_pays, where_to_focus, untapped_segments, total_responses, converted_count, model, generated_at")
+    .select("report, total_responses, converted_count, model, generated_at")
     .eq("organization_id", user.organizationId)
+    .not("report", "is", null)
     .order("generated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -28,12 +29,6 @@ export async function GET(request: Request) {
     totals: data
       ? { completed: data.total_responses, converted: data.converted_count }
       : null,
-    report: data
-      ? {
-          whoPays: data.who_pays,
-          whereToFocus: data.where_to_focus,
-          untappedSegments: data.untapped_segments,
-        }
-      : null,
+    report: data?.report || null,
   });
 }
