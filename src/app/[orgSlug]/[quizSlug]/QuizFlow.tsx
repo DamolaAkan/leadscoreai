@@ -58,6 +58,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   const [percentage, setPercentage] = useState(0);
   const [qualification, setQualification] = useState<Qualification | null>(null);
 
+  // Client brand color drives the scorecard (design system default, per-client override).
   const accent = org.primary_color;
 
   // Detect user's country for phone input default
@@ -168,6 +169,25 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
     setIsSubmitting(false);
   }, [selectedOption, responseId, questions, currentQ, answers]);
 
+  // Go back one question (removes the last saved answer so it can be re-picked).
+  const handleBack = useCallback(async () => {
+    if (currentQ === 0) {
+      setStep("start");
+      return;
+    }
+    const last = answers[answers.length - 1];
+    if (last && responseId) {
+      await supabase
+        .from("response_answers")
+        .delete()
+        .eq("response_id", responseId)
+        .eq("question_id", last.questionId);
+      setAnswers(answers.slice(0, -1));
+    }
+    setSelectedOption(null);
+    setCurrentQ(currentQ - 1);
+  }, [currentQ, answers, responseId]);
+
   // Submit contact form and compute results
   const handleContactSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -226,116 +246,203 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       ? 100
       : 0;
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header
-        className="w-full py-4 px-6 text-white text-center font-semibold text-lg"
-        style={{ backgroundColor: accent }}
+  const inputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = accent;
+    e.target.style.boxShadow = `0 0 0 3px ${accent}22`;
+  };
+  const inputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "#cbd5e1";
+    e.target.style.boxShadow = "none";
+  };
+
+  const Logo = ({ size }: { size: number }) =>
+    org.logo_url ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={org.logo_url}
+        alt={org.name}
+        style={{ width: size, height: size }}
+        className="rounded-xl"
+      />
+    ) : (
+      <div
+        className="rounded-xl flex items-center justify-center text-white font-bold"
+        style={{ width: size, height: size, backgroundColor: accent, fontSize: size / 2.4 }}
       >
-        {org.name}
-      </header>
+        {org.name[0]}
+      </div>
+    );
 
-      {/* Progress bar (visible during questions and contact) */}
-      {(step === "questions" || step === "contact") && (
-        <div className="w-full h-2 bg-gray-200">
-          <div
-            className="h-full transition-all duration-300"
-            style={{ width: `${progress}%`, backgroundColor: "#D4A017" }}
-          />
+  // ── START — dark hero ──
+  if (step === "start") {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center"
+        style={{
+          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          fontFamily: "var(--font-inter)",
+        }}
+      >
+        <div className="w-full max-w-2xl">
+          <div className="mx-auto mb-10 w-20 h-20">
+            <Logo size={80} />
+          </div>
+          <h1
+            className="font-extrabold text-white mb-5"
+            style={{ fontSize: "clamp(34px, 6vw, 52px)", lineHeight: 1.15 }}
+          >
+            {quiz.start_headline}
+          </h1>
+          <p className="text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: "#cbd5e1" }}>
+            {quiz.start_subheadline}
+          </p>
+          <button
+            onClick={handleStart}
+            disabled={isSubmitting}
+            className="inline-block px-14 py-4 rounded-lg text-white font-semibold text-base transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+            style={{ backgroundColor: accent }}
+          >
+            {isSubmitting ? "Loading…" : quiz.start_cta_text}
+          </button>
+          <p className="mt-6 text-sm" style={{ color: "#94a3b8" }}>
+            ✓ {questions.length} questions &nbsp;·&nbsp; ✓ Takes about 2 minutes &nbsp;·&nbsp; ✓ Free
+          </p>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className={`w-full ${step === "results" ? "max-w-xl" : "max-w-lg"}`}>
-          {/* START PAGE */}
-          {step === "start" && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {quiz.start_headline}
-              </h1>
-              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-                {quiz.start_subheadline}
-              </p>
-              <button
-                onClick={handleStart}
-                disabled={isSubmitting}
-                className="w-full py-4 rounded-xl text-white font-semibold text-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: accent }}
-              >
-                {isSubmitting ? "Loading..." : quiz.start_cta_text}
-              </button>
-              <p className="text-sm text-gray-400 mt-4">
-                {questions.length} questions &middot; Takes 2 minutes
-              </p>
+  // ── QUESTIONS / CONTACT / RESULTS — light layout ──
+  return (
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background: "linear-gradient(135deg, #f8f9fa 0%, #eef2f5 100%)",
+        fontFamily: "var(--font-inter)",
+      }}
+    >
+      {/* Header */}
+      <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+        <div className="max-w-2xl mx-auto px-5 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <Logo size={32} />
+              <span className="font-bold" style={{ color: "#1e293b" }}>
+                {org.name}
+              </span>
+            </div>
+            {step === "questions" && (
+              <span className="text-sm" style={{ color: "#64748b" }}>
+                Step {currentQ + 1} of {questions.length}
+              </span>
+            )}
+          </div>
+          {(step === "questions" || step === "contact") && (
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#e2e8f0" }}>
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${progress}%`, backgroundColor: accent }}
+              />
             </div>
           )}
+        </div>
+      </header>
 
+      <main className="flex-1 px-5 py-10">
+        <div className="max-w-2xl mx-auto">
           {/* QUESTIONS */}
           {step === "questions" && (
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <p className="text-sm font-medium text-gray-400 mb-2">
-                Question {currentQ + 1} of {questions.length}
-              </p>
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+              <h2
+                className="font-semibold mb-8"
+                style={{ fontSize: "clamp(21px, 4vw, 28px)", lineHeight: 1.3, color: "#1a1a2e" }}
+              >
                 {questions[currentQ].question_text}
               </h2>
 
-              <div className="space-y-3 mb-8">
-                {questions[currentQ].options.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setSelectedOption(option.value)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                      selectedOption === option.value
-                        ? "border-current bg-opacity-10"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    style={
-                      selectedOption === option.value
-                        ? { borderColor: accent, backgroundColor: accent + "15", color: accent }
-                        : {}
-                    }
-                  >
-                    <span
-                      className={`font-medium ${
-                        selectedOption === option.value ? "" : "text-gray-800"
-                      }`}
+              <div className="space-y-3 mb-9">
+                {questions[currentQ].options.map((option) => {
+                  const isSel = selectedOption === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => setSelectedOption(option.value)}
+                      className="w-full text-left flex items-center p-4 rounded-lg border-2 transition-colors"
+                      style={
+                        isSel
+                          ? { borderColor: accent, backgroundColor: accent + "12" }
+                          : { borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }
+                      }
                     >
-                      {option.text}
-                    </span>
-                  </button>
-                ))}
+                      <span
+                        className="w-5 h-5 rounded-full border-2 mr-3 flex-shrink-0 flex items-center justify-center"
+                        style={{ borderColor: isSel ? accent : "#cbd5e1" }}
+                      >
+                        {isSel && (
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accent }} />
+                        )}
+                      </span>
+                      <span className="text-[15px] font-medium" style={{ color: "#1e293b" }}>
+                        {option.text}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
-              <button
-                onClick={handleAnswer}
-                disabled={!selectedOption || isSubmitting}
-                className="w-full py-4 rounded-xl text-white font-semibold text-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: accent }}
-              >
-                {isSubmitting
-                  ? "Saving..."
-                  : currentQ < questions.length - 1
-                  ? "Next"
-                  : "Continue"}
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                  className="px-6 py-3 rounded-lg text-sm font-semibold disabled:opacity-50"
+                  style={{ backgroundColor: "#e2e8f0", color: "#1e293b" }}
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={handleAnswer}
+                  disabled={!selectedOption || isSubmitting}
+                  className="px-7 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                  style={{ backgroundColor: accent }}
+                >
+                  {isSubmitting ? "Saving…" : currentQ < questions.length - 1 ? "Next →" : "Continue →"}
+                </button>
+              </div>
+
+              {/* Step dots */}
+              <div className="flex flex-wrap gap-2 justify-center mt-9">
+                {questions.map((_, i) => (
+                  <span
+                    key={i}
+                    className="w-7 h-7 rounded-full text-xs font-semibold flex items-center justify-center"
+                    style={
+                      i === currentQ
+                        ? { backgroundColor: accent, color: "white" }
+                        : i < currentQ
+                        ? { backgroundColor: accent + "22", color: accent }
+                        : { backgroundColor: "#e2e8f0", color: "#94a3b8" }
+                    }
+                  >
+                    {i + 1}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
           {/* CONTACT FORM */}
           {step === "contact" && (
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+              <h2 className="text-2xl font-bold text-center mb-2" style={{ color: "#1a1a2e" }}>
                 Almost there!
               </h2>
-              <p className="text-gray-600 mb-6 text-center">
+              <p className="text-center mb-7 text-sm" style={{ color: "#64748b" }}>
                 Enter your details to see your personalised results.
               </p>
 
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
                     Full Name
                   </label>
                   <input
@@ -343,18 +450,16 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     required
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 text-gray-900"
-                    style={{ focusRingColor: accent } as React.CSSProperties}
-                    onFocus={(e) =>
-                      (e.target.style.boxShadow = `0 0 0 2px ${accent}40`)
-                    }
-                    onBlur={(e) => (e.target.style.boxShadow = "none")}
+                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                    style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
                     placeholder="John Smith"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
                     Email Address
                   </label>
                   <input
@@ -362,17 +467,16 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     required
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 text-gray-900"
-                    onFocus={(e) =>
-                      (e.target.style.boxShadow = `0 0 0 2px ${accent}40`)
-                    }
-                    onBlur={(e) => (e.target.style.boxShadow = "none")}
+                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                    style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
                     placeholder="john@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
                     Phone Number
                   </label>
                   <PhoneInput
@@ -381,18 +485,18 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     countries={SUPPORTED_COUNTRIES}
                     value={contactPhone}
                     onChange={(val) => setContactPhone(val || "")}
-                    className="phone-input-wrapper w-full px-4 py-3 rounded-xl border border-gray-300 focus-within:ring-2 text-gray-900"
-                    style={{ "--PhoneInputCountryFlag-height": "1em" } as React.CSSProperties}
+                    className="phone-input-wrapper w-full px-4 py-2.5 rounded-lg border text-[15px]"
+                    style={{ borderColor: "#cbd5e1", "--PhoneInputCountryFlag-height": "1em" } as React.CSSProperties}
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl text-white font-semibold text-lg transition-opacity hover:opacity-90 disabled:opacity-50 mt-2"
+                  className="w-full py-3.5 rounded-lg text-white font-semibold text-base disabled:opacity-60 mt-2"
                   style={{ backgroundColor: accent }}
                 >
-                  {isSubmitting ? "Calculating..." : "See My Results"}
+                  {isSubmitting ? "Calculating…" : "See my results →"}
                 </button>
               </form>
             </div>
@@ -412,81 +516,47 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
             return (
               <div className="space-y-6">
-                {/* Hero score card */}
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                  {/* Coloured top band */}
-                  <div
-                    className="h-2 w-full"
-                    style={{ backgroundColor: tierColor }}
-                  />
-
-                  <div className="p-8 text-center">
-                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">
-                      Your Performance Report
-                    </p>
-
-                    {/* Large score circle */}
-                    <div
-                      className="w-40 h-40 rounded-full mx-auto mb-6 flex flex-col items-center justify-center shadow-lg"
-                      style={{
-                        background: `linear-gradient(135deg, ${tierColor}20, ${tierColor}40)`,
-                        border: `4px solid ${tierColor}`,
-                      }}
-                    >
-                      <span
-                        className="text-5xl font-bold leading-none"
-                        style={{ color: tierColor }}
-                      >
-                        {percentage}%
-                      </span>
-                      <span className="text-xs font-medium text-gray-500 mt-1">
-                        {score} / {quiz.max_score}
-                      </span>
-                    </div>
-
-                    {/* Greeting + tier name */}
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      {firstName}, your result is in
-                    </h2>
-                    <div
-                      className="inline-block px-6 py-2.5 rounded-full text-white font-semibold text-sm"
-                      style={{ backgroundColor: tierColor }}
+                {/* Score header */}
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: "#94a3b8" }}>
+                    Your result
+                  </p>
+                  <div className="text-5xl font-extrabold leading-none" style={{ color: tierColor }}>
+                    {percentage}%
+                  </div>
+                  <p className="text-sm mt-2" style={{ color: "#94a3b8" }}>
+                    {score} / {quiz.max_score}
+                  </p>
+                  <div className="mt-5">
+                    <span
+                      className="inline-block px-4 py-1.5 rounded-md text-sm font-semibold"
+                      style={{ backgroundColor: tierColor + "1a", color: tierColor }}
                     >
                       {tierName}
-                    </div>
+                    </span>
                   </div>
+                  <h2 className="text-xl font-bold mt-5" style={{ color: "#1e293b" }}>
+                    {firstName}, your result is in
+                  </h2>
                 </div>
 
                 {/* Personalised insights */}
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    Your Personalised Insights
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                  <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                    Your personalised insights
                   </h3>
-                  <p className="text-sm text-gray-500 mb-6">
+                  <p className="text-sm mt-1 mb-5" style={{ color: "#64748b" }}>
                     Based on your specific answers, here&apos;s what stands out:
                   </p>
-
-                  <div className="space-y-5">
+                  <div className="space-y-3">
                     {insights.map((insight, i) => (
-                      <div
-                        key={i}
-                        className="flex gap-4 p-4 rounded-xl"
-                        style={{ backgroundColor: accent + "08" }}
-                      >
-                        <div
-                          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                          style={{ backgroundColor: accent + "18" }}
-                        >
-                          {insight.icon}
-                        </div>
+                      <div key={i} className="flex gap-3 rounded-md p-4" style={{ backgroundColor: "#f8fafc" }}>
+                        <span className="text-lg leading-none mt-0.5">{insight.icon}</span>
                         <div>
-                          <h4
-                            className="font-semibold text-sm mb-1"
-                            style={{ color: accent }}
-                          >
+                          <h4 className="font-semibold text-sm" style={{ color: "#1e293b" }}>
                             {insight.title}
                           </h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">
+                          <p className="text-sm mt-0.5 leading-relaxed" style={{ color: "#64748b" }}>
                             {insight.body}
                           </p>
                         </div>
@@ -496,34 +566,22 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                 </div>
 
                 {/* What happens next */}
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <div
-                    className="px-8 py-5"
-                    style={{ backgroundColor: accent + "0a" }}
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                  <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+                    {nextStep.heading}
+                  </h3>
+                  <p className="text-sm mb-5 leading-relaxed" style={{ color: "#64748b" }}>
+                    {nextStep.body}
+                  </p>
+                  <button
+                    className="px-8 py-3 rounded-lg text-white font-semibold text-base"
+                    style={{ backgroundColor: accent }}
                   >
-                    <h3
-                      className="text-lg font-bold"
-                      style={{ color: accent }}
-                    >
-                      {nextStep.heading}
-                    </h3>
-                  </div>
-                  <div className="p-8">
-                    <p className="text-gray-700 leading-relaxed mb-6">
-                      {nextStep.body}
-                    </p>
-
-                    <button
-                      className="w-full py-4 rounded-xl text-white font-semibold text-lg transition-all hover:opacity-90 hover:shadow-lg"
-                      style={{ backgroundColor: accent }}
-                    >
-                      {nextStep.cta}
-                    </button>
-                  </div>
+                    {nextStep.cta}
+                  </button>
                 </div>
 
-                {/* Footer note */}
-                <p className="text-center text-sm text-gray-400">
+                <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
                   A member of our team will be in touch shortly at {contactEmail}
                 </p>
               </div>
@@ -532,9 +590,8 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-xs text-gray-400">
-        Powered by LeadScoreAI
+      <footer className="py-5 text-center text-xs" style={{ color: "#94a3b8" }}>
+        All responses are confidential · Powered by LeadScoreAI
       </footer>
     </div>
   );

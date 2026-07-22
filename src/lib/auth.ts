@@ -50,6 +50,7 @@ export async function validateSession(
     orgSlug: org.slug,
     orgName: org.name,
     primaryColor: org.primary_color,
+    logoUrl: org.logo_url || null,
     username: member.username,
     fullName: member.full_name,
     role: member.role,

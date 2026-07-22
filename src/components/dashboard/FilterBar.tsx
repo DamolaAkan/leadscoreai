@@ -36,7 +36,7 @@ export default function FilterBar({
         <select
           value={qualification}
           onChange={(e) => onQualificationChange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+          className="px-3 py-2 border border-[#cbd5e1] rounded-md text-sm text-gray-900 bg-white"
         >
           <option value="">All</option>
           {Object.entries(QUALIFICATION_LABELS).map(([key, label]) => (
@@ -55,7 +55,7 @@ export default function FilterBar({
           type="date"
           value={dateFrom}
           onChange={(e) => onDateFromChange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
+          className="px-3 py-2 border border-[#cbd5e1] rounded-md text-sm text-gray-900"
         />
       </div>
 
@@ -67,7 +67,7 @@ export default function FilterBar({
           type="date"
           value={dateTo}
           onChange={(e) => onDateToChange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
+          className="px-3 py-2 border border-[#cbd5e1] rounded-md text-sm text-gray-900"
         />
       </div>
 
@@ -80,13 +80,13 @@ export default function FilterBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Name, email, or phone..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
+          className="w-full px-3 py-2 border border-[#cbd5e1] rounded-md text-sm text-gray-900"
         />
       </div>
 
       <button
         onClick={onExport}
-        className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-opacity hover:opacity-90"
+        className="px-4 py-2 text-sm font-semibold text-white rounded-md transition-opacity hover:opacity-90"
         style={{ backgroundColor: accent }}
       >
         Export CSV

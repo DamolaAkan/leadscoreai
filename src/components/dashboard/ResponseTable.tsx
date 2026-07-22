@@ -33,33 +33,33 @@ export default function ResponseTable({
   }
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden">
+    <div className="bg-white rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+            <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Name
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Email
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Phone
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Score
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Qualification
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Converted
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Date
               </th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#64748b" }}>
                 Actions
               </th>
             </tr>
@@ -68,7 +68,8 @@ export default function ResponseTable({
             {responses.map((r) => (
               <tr
                 key={r.id}
-                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                className="hover:bg-[#f8fafc] transition-colors"
+                style={{ borderBottom: "1px solid #e2e8f0" }}
               >
                 <td className="px-4 py-3 text-gray-900 font-medium">
                   {r.contact_name || "—"}
@@ -83,18 +84,20 @@ export default function ResponseTable({
                   {r.score !== null ? `${r.score}/${r.max_score}` : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-col items-start gap-1">
+                  <div className="flex items-center gap-2">
                     <QualificationBadge qualification={r.qualification} />
                     {r.is_super_lead && (
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
+                        className="text-base leading-none"
+                        style={{ color: "#d97706" }}
+                        aria-label="Super lead"
                         title={
                           r.wtp_score !== null
-                            ? `Willingness to pay: ${r.wtp_score}/100 — call first`
-                            : "High willingness to pay — call first"
+                            ? `Super lead · willingness to pay ${r.wtp_score}/100 — call first`
+                            : "Super lead — high willingness to pay, call first"
                         }
                       >
-                        ⚡ Super Lead
+                        ⚡
                       </span>
                     )}
                   </div>

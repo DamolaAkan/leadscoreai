@@ -126,7 +126,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
       )}
 
       {data?.configured && !data.hasRubric && !generating && (
-        <div className="rounded-xl bg-white p-8 text-center text-gray-500">
+        <div className="rounded-lg bg-white p-8 text-center text-gray-500 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           No analysis yet. Click <span className="font-medium">Generate analysis</span> to have the
           AI read this scorecard and your conversions, then score every lead&apos;s willingness to
           pay.
@@ -154,7 +154,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
           </div>
 
           {data.summary && (
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5">
+            <div className="rounded-lg bg-amber-50/60 p-5">
               <h2 className="text-amber-800 font-semibold mb-2 flex items-center gap-2">
                 <span>⚡</span> What predicts payment
               </h2>
@@ -170,7 +170,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {data.signals.map((s) => (
-                <div key={s.questionId} className="bg-white rounded-xl p-6">
+                <div key={s.questionId} className="bg-white rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                   <h3 className="font-semibold text-gray-900">{s.questionText}</h3>
                   <p className="text-sm text-gray-500 mt-1 mb-4">{s.rationale}</p>
                   <div className="space-y-2">
@@ -199,7 +199,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
 
           {/* Suggested questions */}
           {data.suggestedQuestions.length > 0 && (
-            <div className="rounded-2xl border border-gray-100 bg-white p-6">
+            <div className="rounded-lg bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <h2 className="text-lg font-bold text-gray-900 mb-1">
                 Questions worth adding
               </h2>
@@ -227,7 +227,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
 
           {/* Top super leads */}
           {data.stats.topSuperLeads.length > 0 && (
-            <div className="rounded-2xl border border-gray-100 bg-white p-6">
+            <div className="rounded-lg bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Top super leads — call first</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

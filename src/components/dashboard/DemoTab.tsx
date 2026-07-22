@@ -47,7 +47,7 @@ export default function DemoTab({ accent, getAuthHeaders }: Props) {
 
   if (!orgSlug || quizzes.length === 0) {
     return (
-      <div className="rounded-xl bg-white p-8 text-center text-gray-500">
+      <div className="rounded-lg bg-white p-8 text-center text-gray-500 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
         No active scorecard to demo yet.
       </div>
     );
@@ -117,7 +117,7 @@ export default function DemoTab({ accent, getAuthHeaders }: Props) {
         </div>
       </div>
 
-      <div className="rounded-xl overflow-hidden border border-gray-200 bg-white">
+      <div className="rounded-lg overflow-hidden border border-gray-200 bg-white">
         <iframe
           key={reloadKey}
           src={path}

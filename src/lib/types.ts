@@ -3,6 +3,7 @@ export interface Organization {
   name: string;
   slug: string;
   primary_color: string;
+  logo_url?: string | null;
   plan: string;
   is_active: boolean;
 }

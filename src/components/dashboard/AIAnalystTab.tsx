@@ -137,24 +137,34 @@ export default function AIAnalystTab({ accent, getAuthHeaders, isAdmin }: Props)
           const section = data.report![key];
           if (!section) return null;
           return (
-            <div key={key} className="rounded-2xl border border-gray-100 bg-white p-6">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <div
+              key={key}
+              className="bg-white rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+            >
+              <h2
+                className="text-base font-semibold flex items-center gap-2"
+                style={{ color: "#1e293b" }}
+              >
                 <span>{emoji}</span> {title}
               </h2>
-              <p className="text-gray-600 mt-1 mb-4">{section.summary}</p>
-              <div className="space-y-4">
+              <p className="mt-1 mb-4 text-sm" style={{ color: "#64748b" }}>
+                {section.summary}
+              </p>
+              <div className="space-y-3">
                 {section.insights.map((ins, i) => (
                   <div
                     key={i}
-                    className="border-l-4 pl-4 py-1"
-                    style={{ borderLeftColor: accent }}
+                    className="rounded-md p-4"
+                    style={{ backgroundColor: "#f8fafc" }}
                   >
-                    <p className="text-gray-900 font-medium">{ins.insight}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      <span className="font-medium text-gray-600">Evidence:</span> {ins.evidence}
+                    <p className="font-semibold" style={{ color: "#1e293b" }}>
+                      {ins.insight}
                     </p>
-                    <p className="text-sm mt-1" style={{ color: accent }}>
-                      <span className="font-medium">→ Action:</span> {ins.action}
+                    <p className="text-sm mt-1" style={{ color: "#64748b" }}>
+                      <span className="font-semibold">Evidence:</span> {ins.evidence}
+                    </p>
+                    <p className="text-sm mt-1 font-medium" style={{ color: "#475569" }}>
+                      → Action: {ins.action}
                     </p>
                   </div>
                 ))}

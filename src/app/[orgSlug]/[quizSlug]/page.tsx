@@ -3,6 +3,9 @@ import { Organization, Quiz, QuizQuestion } from "@/lib/types";
 import { notFound } from "next/navigation";
 import QuizFlow from "./QuizFlow";
 
+// Always fetch fresh org/quiz config so branding + questions reflect immediately.
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: { orgSlug: string; quizSlug: string };
 }

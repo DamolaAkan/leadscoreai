@@ -26,6 +26,7 @@ export interface AuthUser {
   orgSlug: string;
   orgName: string;
   primaryColor: string;
+  logoUrl: string | null;
   username: string;
   fullName: string;
   role: MemberRole;
@@ -40,11 +41,20 @@ export interface ResponseFilters {
   pageSize?: number;
 }
 
+// Solid colors for charts (pie/bar fills) — design-system semantic hues.
 export const QUALIFICATION_COLORS: Record<string, string> = {
-  HOT_LEAD: "#16a34a",
+  HOT_LEAD: "#10b981",
   WARM_LEAD: "#f59e0b",
-  COLD_LEAD: "#f97316",
+  COLD_LEAD: "#3b82f6",
   NOT_QUALIFIED: "#ef4444",
+};
+
+// Soft badge tints (bg + text) — straight-edge, no border, dark text.
+export const QUALIFICATION_BADGE: Record<string, { bg: string; text: string }> = {
+  HOT_LEAD: { bg: "#dcfce7", text: "#166534" },
+  WARM_LEAD: { bg: "#fef3c7", text: "#92400e" },
+  COLD_LEAD: { bg: "#dbeafe", text: "#0c2d6b" },
+  NOT_QUALIFIED: { bg: "#fee2e2", text: "#991b1b" },
 };
 
 export const QUALIFICATION_LABELS: Record<string, string> = {

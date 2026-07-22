@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
-import Sidebar from "@/components/dashboard/Sidebar";
+import TopNav from "@/components/dashboard/TopNav";
 import ResponsesTab from "@/components/dashboard/ResponsesTab";
 import AnalyticsTab from "@/components/dashboard/AnalyticsTab";
 import UsersTab from "@/components/dashboard/UsersTab";
@@ -45,7 +45,9 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  const accent = user.primaryColor || "#6366f1";
+  // Design system: dashboard chrome standardizes on Primary Slate (per-client
+  // brand color lives on the public scorecard, not the dashboard).
+  const accent = "#64748b";
 
   const handleLogout = async () => {
     await logout();
@@ -53,8 +55,11 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "#f8fafc", fontFamily: "var(--font-inter)" }}
+    >
+      <TopNav
         user={user}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -64,8 +69,8 @@ export default function DashboardPage() {
         isSuperAdmin={isSuperAdmin}
       />
 
-      <main className="flex-1 min-h-screen overflow-auto">
-        <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div>
           {activeTab === "responses" && (
             <ResponsesTab
               user={user}

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Peak Scale Academy">
+  <rect width="48" height="48" rx="11" fill="#ea580c"/>
+  <g transform="translate(12,12)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m8 3 4 8 5-5 5 15H2z"/>
+  </g>
+</svg>
