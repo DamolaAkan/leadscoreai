@@ -5,7 +5,7 @@ import { AuthUser } from "@/lib/dashboard-types";
 import { QuizResponse } from "@/lib/types";
 import KPICard from "./KPICard";
 import FilterBar from "./FilterBar";
-import ResponseTable, { EmailSequenceInfo } from "./ResponseTable";
+import ResponseTable from "./ResponseTable";
 import ResponseDetailPanel from "./ResponseDetailPanel";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -20,8 +20,12 @@ export default function ResponsesTab({
   getAuthHeaders,
 }: ResponsesTabProps) {
   const [responses, setResponses] = useState<QuizResponse[]>([]);
-  const [sequenceMap, setSequenceMap] = useState<Record<string, EmailSequenceInfo>>({});
-  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    converted: 0,
+    qualified: 0,
+    conversionRate: 0,
+  });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -55,8 +59,14 @@ export default function ResponsesTab({
       });
       const data = await res.json();
       setResponses(data.responses || []);
-      setSequenceMap(data.sequenceMap || {});
-      setTotal(data.total || 0);
+      setStats(
+        data.stats || {
+          total: data.total || 0,
+          converted: 0,
+          qualified: 0,
+          conversionRate: 0,
+        }
+      );
       setTotalPages(data.totalPages || 1);
     } catch {
       // Ignore
@@ -79,12 +89,21 @@ export default function ResponsesTab({
   }, [searchInput]);
 
   const handleToggleConverted = async (id: string, current: boolean) => {
-    // Optimistic update
+    // Optimistic update — row + the full-set "Converted" KPI
     setResponses((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, converted_to_sale: !current } : r
       )
     );
+    setStats((prev) => {
+      const converted = prev.converted + (current ? -1 : 1);
+      return {
+        ...prev,
+        converted,
+        conversionRate:
+          prev.total > 0 ? Math.round((converted / prev.total) * 100) : 0,
+      };
+    });
 
     const res = await fetch(`/api/dashboard/responses/${id}`, {
       method: "PUT",
@@ -99,6 +118,15 @@ export default function ResponsesTab({
           r.id === id ? { ...r, converted_to_sale: current } : r
         )
       );
+      setStats((prev) => {
+        const converted = prev.converted + (current ? 1 : -1);
+        return {
+          ...prev,
+          converted,
+          conversionRate:
+            prev.total > 0 ? Math.round((converted / prev.total) * 100) : 0,
+        };
+      });
     }
   };
 
@@ -131,35 +159,28 @@ export default function ResponsesTab({
     URL.revokeObjectURL(url);
   };
 
-  const convertedCount = responses.filter((r) => r.converted_to_sale).length;
-  const qualifiedCount = responses.filter(
-    (r) => r.qualification === "HOT_LEAD" || r.qualification === "WARM_LEAD"
-  ).length;
-  const conversionRate =
-    total > 0 ? Math.round((convertedCount / responses.length) * 100) : 0;
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Responses</h1>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Total Responses" value={total} accent={accent} />
+        <KPICard label="Total Responses" value={stats.total} accent={accent} />
         <KPICard
           label="Converted"
-          value={convertedCount}
-          sublabel={`of ${responses.length} on this page`}
+          value={stats.converted}
+          sublabel={`of ${stats.total} total`}
           accent="#16a34a"
         />
         <KPICard
           label="Qualified Leads"
-          value={qualifiedCount}
+          value={stats.qualified}
           sublabel="Hot + Warm"
           accent="#f59e0b"
         />
         <KPICard
           label="Conversion Rate"
-          value={`${conversionRate}%`}
+          value={`${stats.conversionRate}%`}
           accent={accent}
         />
       </div>
@@ -195,7 +216,6 @@ export default function ResponsesTab({
       ) : (
         <ResponseTable
           responses={responses}
-          sequenceMap={sequenceMap}
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}

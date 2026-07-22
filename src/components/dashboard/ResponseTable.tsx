@@ -2,18 +2,9 @@
 
 import { QuizResponse } from "@/lib/types";
 import QualificationBadge from "./QualificationBadge";
-import EmailStatusIndicator from "./EmailStatusIndicator";
-
-export interface EmailSequenceInfo {
-  current_step: number;
-  completed: boolean;
-  next_send_at: string | null;
-  sequence_track: string;
-}
 
 interface ResponseTableProps {
   responses: QuizResponse[];
-  sequenceMap: Record<string, EmailSequenceInfo>;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -25,7 +16,6 @@ interface ResponseTableProps {
 
 export default function ResponseTable({
   responses,
-  sequenceMap,
   page,
   totalPages,
   onPageChange,
@@ -63,11 +53,6 @@ export default function ResponseTable({
               <th className="text-left px-4 py-3 font-medium text-gray-500">
                 Qualification
               </th>
-              <th className="text-center px-2 py-3 font-medium text-gray-500" title="Email Sequence">
-                <svg className="w-4 h-4 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">
                 Converted
               </th>
@@ -98,10 +83,21 @@ export default function ResponseTable({
                   {r.score !== null ? `${r.score}/${r.max_score}` : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <QualificationBadge qualification={r.qualification} />
-                </td>
-                <td className="px-2 py-3 text-center">
-                  <EmailStatusIndicator sequence={sequenceMap[r.id]} />
+                  <div className="flex flex-col items-start gap-1">
+                    <QualificationBadge qualification={r.qualification} />
+                    {r.is_super_lead && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
+                        title={
+                          r.wtp_score !== null
+                            ? `Willingness to pay: ${r.wtp_score}/100 — call first`
+                            : "High willingness to pay — call first"
+                        }
+                      >
+                        ⚡ Super Lead
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <button

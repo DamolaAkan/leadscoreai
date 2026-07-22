@@ -17,7 +17,9 @@ interface SidebarProps {
 const tabs: { key: DashboardTab; label: string; minRole: string }[] = [
   { key: "responses", label: "Responses", minRole: "staff" },
   { key: "analytics", label: "Analytics", minRole: "staff" },
-  { key: "calls", label: "Calls", minRole: "staff" },
+  { key: "insights", label: "Predictive Insights", minRole: "staff" },
+  { key: "analyst", label: "AI Analyst", minRole: "staff" },
+  { key: "demo", label: "Demo", minRole: "staff" },
   { key: "users", label: "Users", minRole: "admin" },
   { key: "settings", label: "Settings", minRole: "superadmin" },
 ];

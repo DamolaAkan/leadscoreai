@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
+import { QuizResponse } from "@/lib/types";
 
 export async function GET(request: Request) {
   const sessionId = getSessionIdFromRequest(request);
@@ -23,36 +24,44 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
 
-  let query = supabase
-    .from("quiz_responses")
-    .select("*", { count: "exact" })
-    .eq("organization_id", user.organizationId)
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false });
-
-  if (qualification) {
-    query = query.eq("qualification", qualification);
-  }
-
-  if (dateFrom) {
-    query = query.gte("completed_at", `${dateFrom}T00:00:00`);
-  }
-
-  if (dateTo) {
-    query = query.lte("completed_at", `${dateTo}T23:59:59`);
-  }
-
-  if (search) {
-    query = query.or(
-      `contact_name.ilike.%${search}%,contact_email.ilike.%${search}%,contact_phone.ilike.%${search}%`
-    );
-  }
+  // Build a freshly-filtered query each call (Supabase builders are single-use)
+  // so the paged list and the aggregate stats always share the same filter set.
+  const filtered = (
+    selectArg: string,
+    opts?: { count?: "exact"; head?: boolean }
+  ) => {
+    let q = supabase
+      .from("quiz_responses")
+      .select(selectArg, opts)
+      .eq("organization_id", user.organizationId)
+      .not("completed_at", "is", null);
+    if (qualification) q = q.eq("qualification", qualification);
+    if (dateFrom) q = q.gte("completed_at", `${dateFrom}T00:00:00`);
+    if (dateTo) q = q.lte("completed_at", `${dateTo}T23:59:59`);
+    if (search) {
+      q = q.or(
+        `contact_name.ilike.%${search}%,contact_email.ilike.%${search}%,contact_phone.ilike.%${search}%`
+      );
+    }
+    return q;
+  };
 
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  query = query.range(from, to);
 
-  const { data, error, count } = await query;
+  // Paged rows for the table + two full-set aggregates for the KPI cards.
+  const [listResult, convertedResult, qualifiedResult] = await Promise.all([
+    filtered("*", { count: "exact" })
+      .order("completed_at", { ascending: false })
+      .range(from, to),
+    filtered("id", { count: "exact", head: true }).eq("converted_to_sale", true),
+    filtered("id", { count: "exact", head: true }).in("qualification", [
+      "HOT_LEAD",
+      "WARM_LEAD",
+    ]),
+  ]);
+
+  const { data, error, count } = listResult;
 
   if (error) {
     return NextResponse.json(
@@ -61,8 +70,21 @@ export async function GET(request: Request) {
     );
   }
 
+  const total = count || 0;
+  const convertedCount = convertedResult.count || 0;
+  const qualifiedCount = qualifiedResult.count || 0;
+  const stats = {
+    total,
+    converted: convertedCount,
+    qualified: qualifiedCount,
+    conversionRate: total > 0 ? Math.round((convertedCount / total) * 100) : 0,
+  };
+
+  // The dynamic string select() widens the row type, so cast back to rows.
+  const rows = (data || []) as unknown as QuizResponse[];
+
   // Fetch email sequence status for these responses
-  const responseIds = (data || []).map((r) => r.id);
+  const responseIds = rows.map((r) => r.id);
   const sequenceMap: Record<string, { current_step: number; completed: boolean; next_send_at: string | null; sequence_track: string }> = {};
 
   if (responseIds.length > 0) {
@@ -84,11 +106,12 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    responses: data,
+    responses: rows,
     sequenceMap,
-    total: count || 0,
+    stats,
+    total,
     page,
     pageSize,
-    totalPages: Math.ceil((count || 0) / pageSize),
+    totalPages: Math.ceil(total / pageSize),
   });
 }

@@ -8,9 +8,18 @@ import ResponsesTab from "@/components/dashboard/ResponsesTab";
 import AnalyticsTab from "@/components/dashboard/AnalyticsTab";
 import UsersTab from "@/components/dashboard/UsersTab";
 import SettingsTab from "@/components/dashboard/SettingsTab";
-import CallsTab from "@/components/dashboard/CallsTab";
+import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab";
+import AIAnalystTab from "@/components/dashboard/AIAnalystTab";
+import DemoTab from "@/components/dashboard/DemoTab";
 
-export type DashboardTab = "responses" | "analytics" | "calls" | "users" | "settings";
+export type DashboardTab =
+  | "responses"
+  | "analytics"
+  | "insights"
+  | "analyst"
+  | "demo"
+  | "users"
+  | "settings";
 
 export default function DashboardPage() {
   const params = useParams();
@@ -71,12 +80,24 @@ export default function DashboardPage() {
               getAuthHeaders={getAuthHeaders}
             />
           )}
-          {activeTab === "calls" && (
-            <CallsTab
+          {activeTab === "insights" && (
+            <PredictiveInsightsTab
               user={user}
               accent={accent}
               getAuthHeaders={getAuthHeaders}
+              isAdmin={isAdmin}
             />
+          )}
+          {activeTab === "analyst" && (
+            <AIAnalystTab
+              user={user}
+              accent={accent}
+              getAuthHeaders={getAuthHeaders}
+              isAdmin={isAdmin}
+            />
+          )}
+          {activeTab === "demo" && (
+            <DemoTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />
           )}
           {activeTab === "users" && isAdmin && (
             <UsersTab

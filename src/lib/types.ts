@@ -33,6 +33,7 @@ export interface QuizQuestion {
   question_type: "radio" | "text" | "matrix";
   options: QuizOption[];
   max_points: number;
+  wtp_signal?: boolean;
 }
 
 export interface QuizResponse {
@@ -54,6 +55,11 @@ export interface QuizResponse {
   converted_to_sale: boolean;
   created_at: string;
   completed_at: string | null;
+  // Willingness-to-pay — sits beside the score, never modifies qualification.
+  wtp_score: number | null;
+  is_super_lead: boolean;
+  wtp_reasons: { signal: string; detail: string }[] | null;
+  wtp_scored_at: string | null;
 }
 
 export interface ResponseAnswer {

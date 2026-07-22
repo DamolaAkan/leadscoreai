@@ -59,9 +59,16 @@ export async function PUT(
   const body = await request.json();
   const supabase = createServiceClient();
 
+  // Stamp converted_at on the first conversion so lead-to-sale timing and the
+  // monthly avg-days-to-convert metric have something to measure against; clear
+  // it when a conversion is undone.
+  const converted = !!body.converted_to_sale;
   const { error } = await supabase
     .from("quiz_responses")
-    .update({ converted_to_sale: body.converted_to_sale })
+    .update({
+      converted_to_sale: converted,
+      converted_at: converted ? new Date().toISOString() : null,
+    })
     .eq("id", params.id)
     .eq("organization_id", user.organizationId);
 
