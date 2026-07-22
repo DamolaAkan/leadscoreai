@@ -54,8 +54,9 @@ export default function ResponseDetailPanel({
   const formatAnswer = (answer: AnswerWithQuestion) => {
     const val = answer.answer_value;
     if (typeof val === "object" && val !== null) {
+      // Prefer the human-readable option text; fall back to the raw value.
+      if ("text" in val && val.text != null && val.text !== "") return String(val.text);
       if ("selected" in val) return String(val.selected);
-      if ("text" in val) return String(val.text);
       // Matrix answers
       const entries = Object.entries(val);
       if (entries.length > 0) {
