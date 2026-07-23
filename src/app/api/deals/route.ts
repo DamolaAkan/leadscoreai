@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireAdmin, canManage } from "@/lib/invoice-auth";
+import { notifyDealAssigned } from "@/lib/sl-notify";
 
 export const dynamic = "force-dynamic";
 
@@ -87,5 +88,29 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // If a manager assigned this deal to a different rep, email that rep.
+  if (ownerId !== user.id) {
+    const { data: owner } = await supabase
+      .from("admin_users")
+      .select("email, full_name")
+      .eq("id", ownerId)
+      .single();
+    if (owner?.email) {
+      await notifyDealAssigned({
+        ownerEmail: owner.email,
+        ownerName: owner.full_name || "there",
+        assignerName: user.full_name,
+        deal: {
+          id: data.id,
+          contact_name: data.contact_name,
+          company_name: data.company_name,
+          setup_fee: data.setup_fee,
+          currency: data.currency,
+        },
+      });
+    }
+  }
+
   return NextResponse.json({ deal: data });
 }
