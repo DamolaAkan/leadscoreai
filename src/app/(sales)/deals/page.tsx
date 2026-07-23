@@ -23,7 +23,6 @@ export default function DealsPage() {
   const [loading, setLoading] = useState(true);
 
   const [stage, setStage] = useState("");
-  const [productId, setProductId] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -37,7 +36,6 @@ export default function DealsPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (stage) params.set("stage", stage);
-    if (productId) params.set("product_id", productId);
     if (ownerId) params.set("owner_id", ownerId);
     if (search.trim()) params.set("search", search.trim());
     if (dateFrom) params.set("date_from", dateFrom);
@@ -49,7 +47,7 @@ export default function DealsPage() {
       setDeals([]);
     }
     setLoading(false);
-  }, [stage, productId, ownerId, search, dateFrom, dateTo]);
+  }, [stage, ownerId, search, dateFrom, dateTo]);
 
   useEffect(() => {
     const t = setTimeout(load, 250);
@@ -100,14 +98,6 @@ export default function DealsPage() {
             </option>
           ))}
         </select>
-        <select value={productId} onChange={(e) => setProductId(e.target.value)} className={inputCls}>
-          <option value="">All products</option>
-          {meta?.products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
         {manager && (
           <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className={inputCls}>
             <option value="">All reps</option>
@@ -129,7 +119,6 @@ export default function DealsPage() {
             <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-left">
               <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b]">Contact</th>
               <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b]">Company</th>
-              <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b]">Product</th>
               {manager && <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b]">Rep</th>}
               <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b]">Stage</th>
               <th className="px-4 py-3 font-medium text-xs uppercase tracking-wide text-[#64748b] text-right">Setup fee</th>
@@ -145,7 +134,6 @@ export default function DealsPage() {
               >
                 <td className="px-4 py-3 font-medium text-[#1e293b]">{d.contact_name}</td>
                 <td className="px-4 py-3 text-[#475569]">{d.company_name || "—"}</td>
-                <td className="px-4 py-3 text-[#475569]">{d.product?.name || "—"}</td>
                 {manager && <td className="px-4 py-3 text-[#475569]">{d.owner?.full_name || "—"}</td>}
                 <td className="px-4 py-3">
                   <StageBadge stage={d.stage} />
@@ -179,7 +167,7 @@ export default function DealsPage() {
               <StageBadge stage={d.stage} />
             </div>
             <div className="flex items-center justify-between mt-3 text-sm">
-              <span className="text-[#64748b]">{d.product?.name}</span>
+              <span className="text-[#64748b]">{formatDate(d.created_at)}</span>
               <span className="tabular-nums font-medium text-[#1e293b]">
                 {formatMoney(d.setup_fee, d.currency)}
               </span>

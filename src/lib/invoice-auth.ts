@@ -49,7 +49,12 @@ export async function requireAdmin(request: Request): Promise<AdminUser | null> 
   return validateAdminSession(sessionId);
 }
 
-// A supervisor or super_admin can see all reps' data and run approvals/payouts.
+// A supervisor or super_admin can see all reps' data and approve commissions.
 export function canManage(user: AdminUser): boolean {
   return user.role === "supervisor" || user.role === "super_admin";
+}
+
+// Only super_admins get the privileged tabs (Invoicing, Payouts).
+export function isSuperAdmin(user: AdminUser): boolean {
+  return user.role === "super_admin";
 }

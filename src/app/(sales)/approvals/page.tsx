@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { slGet, slSend } from "@/lib/sl-client";
 import { SlCommission } from "@/lib/sl-types";
 import { formatNaira, formatMoney, formatDate } from "@/lib/sl-format";
+import { StatusBadge } from "@/components/sales/Badges";
 
 interface Meta {
   me: { id: string; canManage: boolean };
@@ -12,24 +13,27 @@ interface Meta {
 export default function ApprovalsPage() {
   const [rows, setRows] = useState<SlCommission[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [manager, setManager] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [voidFor, setVoidFor] = useState<SlCommission | null>(null);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(async () => {
+    // API scopes this: a rep sees only their own pending, a manager sees everyone's.
     const d = await slGet<{ commissions: SlCommission[] }>("/api/commissions?status=pending");
     setRows(d.commissions);
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
     slGet<Meta>("/api/deals/meta")
       .then((m) => {
         setMeId(m.me.id);
-        setAllowed(m.me.canManage);
-        if (m.me.canManage) load();
+        setManager(m.me.canManage);
+        load();
       })
-      .catch(() => setAllowed(false));
+      .catch(() => setLoaded(true));
   }, [load]);
 
   async function approve(id: string) {
@@ -57,15 +61,15 @@ export default function ApprovalsPage() {
     setBusy(null);
   }
 
-  if (allowed === false) {
-    return <div className="text-sm text-[#64748b]">You do not have access to approvals.</div>;
-  }
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">Approvals</h1>
-        <p className="text-sm text-gray-500 mt-1">{rows.length} commission{rows.length === 1 ? "" : "s"} awaiting approval.</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {manager
+            ? `${rows.length} commission${rows.length === 1 ? "" : "s"} awaiting approval.`
+            : "Your earned commissions awaiting approval."}
+        </p>
       </div>
 
       {error && <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>}
@@ -90,32 +94,38 @@ export default function ApprovalsPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => approve(c.id)}
-                      disabled={isOwn || busy === c.id}
-                      title={isOwn ? "You cannot approve your own commission" : ""}
-                      className="text-sm font-medium px-4 py-2 rounded-md text-white bg-[#0d9488] hover:bg-[#0f766e] disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => setVoidFor(c)}
-                      disabled={busy === c.id}
-                      className="text-sm font-medium px-4 py-2 rounded-md border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50"
-                    >
-                      Void
-                    </button>
-                  </div>
-                  {isOwn && <p className="text-[11px] text-[#94a3b8]">You cannot approve your own commission.</p>}
+                  {manager ? (
+                    <>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => approve(c.id)}
+                          disabled={isOwn || busy === c.id}
+                          title={isOwn ? "You cannot approve your own commission" : ""}
+                          className="text-sm font-medium px-4 py-2 rounded-md text-white bg-[#0d9488] hover:bg-[#0f766e] disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => setVoidFor(c)}
+                          disabled={busy === c.id}
+                          className="text-sm font-medium px-4 py-2 rounded-md border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50"
+                        >
+                          Void
+                        </button>
+                      </div>
+                      {isOwn && <p className="text-[11px] text-[#94a3b8]">You cannot approve your own commission.</p>}
+                    </>
+                  ) : (
+                    <StatusBadge status="pending" />
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
-        {rows.length === 0 && allowed && (
+        {loaded && rows.length === 0 && (
           <div className="bg-white rounded-lg p-10 text-center text-gray-400 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-            Nothing pending. All caught up.
+            {manager ? "Nothing pending. All caught up." : "No commissions awaiting approval."}
           </div>
         )}
       </div>

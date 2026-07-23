@@ -8,19 +8,19 @@ interface NavItem {
   href: string;
   label: string;
   icon: string;
-  managerOnly?: boolean;
+  superAdminOnly?: boolean;
 }
 
 const SALES: NavItem[] = [
   { href: "/deals", label: "Deals", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
   { href: "/earnings", label: "Commission Ledger", icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" },
-  { href: "/approvals", label: "Approvals", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", managerOnly: true },
-  { href: "/payouts", label: "Payouts", icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", managerOnly: true },
+  { href: "/approvals", label: "Approvals", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+  { href: "/payouts", label: "Payouts", icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", superAdminOnly: true },
 ];
 
 const OTHER: NavItem[] = [
   { href: "/demos", label: "Demos", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
-  { href: "/invoices", label: "Invoicing", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+  { href: "/invoices", label: "Invoicing", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", superAdminOnly: true },
 ];
 
 export default function StaffSidebar({
@@ -34,7 +34,7 @@ export default function StaffSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const manager = user.role === "supervisor" || user.role === "super_admin";
+  const superAdmin = user.role === "super_admin";
 
   function isActive(href: string) {
     if (href === "/invoices") return pathname.startsWith("/invoices");
@@ -47,7 +47,7 @@ export default function StaffSidebar({
   }
 
   const renderItem = (item: NavItem) => {
-    if (item.managerOnly && !manager) return null;
+    if (item.superAdminOnly && !superAdmin) return null;
     return (
       <Link
         key={item.href}

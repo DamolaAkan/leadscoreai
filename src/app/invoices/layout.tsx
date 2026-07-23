@@ -11,8 +11,14 @@ export default function InvoicesLayout({ children }: { children: React.ReactNode
   const isLoginPage = pathname === "/invoices/login";
 
   useEffect(() => {
-    if (!loading && !user && !isLoginPage) {
+    if (loading || isLoginPage) return;
+    if (!user) {
       window.location.href = "/staff";
+      return;
+    }
+    // Invoicing is a super_admin-only area.
+    if (user.role !== "super_admin") {
+      window.location.href = "/deals";
     }
   }, [loading, user, isLoginPage]);
 

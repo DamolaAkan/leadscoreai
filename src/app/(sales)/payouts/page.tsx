@@ -7,7 +7,7 @@ import { formatNaira, formatDate } from "@/lib/sl-format";
 
 interface Meta {
   reps: { id: string; full_name: string }[];
-  me: { canManage: boolean };
+  me: { superAdmin: boolean };
 }
 interface Payout {
   id: string;
@@ -38,9 +38,9 @@ export default function PayoutsPage() {
   useEffect(() => {
     slGet<Meta>("/api/deals/meta")
       .then((m) => {
-        setAllowed(m.me.canManage);
+        setAllowed(m.me.superAdmin);
         setMeta(m);
-        if (m.me.canManage) loadHistory();
+        if (m.me.superAdmin) loadHistory();
       })
       .catch(() => setAllowed(false));
   }, [loadHistory]);

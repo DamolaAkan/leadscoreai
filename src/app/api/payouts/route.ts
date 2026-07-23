@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { requireAdmin, canManage } from "@/lib/invoice-auth";
+import { requireAdmin, isSuperAdmin } from "@/lib/invoice-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const user = await requireAdmin(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canManage(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isSuperAdmin(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await requireAdmin(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canManage(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isSuperAdmin(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
   const ownerId = body.owner_id as string;

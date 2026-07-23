@@ -39,9 +39,11 @@ export default function DealForm({ deal }: { deal?: SlDeal }) {
     slGet<Meta>("/api/deals/meta")
       .then((m) => {
         setMeta(m);
+        // Single product for now — auto-assign the commission-eligible one.
+        const prod = m.products.find((p) => p.is_commission_eligible) || m.products[0];
         setForm((f) => ({
           ...f,
-          product_id: f.product_id || m.products[0]?.id || "",
+          product_id: f.product_id || prod?.id || "",
           owner_id: f.owner_id || m.me.id,
         }));
       })
@@ -104,34 +106,28 @@ export default function DealForm({ deal }: { deal?: SlDeal }) {
       <div className="bg-white rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Product</label>
-            <select value={form.product_id} onChange={(e) => set("product_id", e.target.value)} className={inputCls}>
-              {meta?.products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.is_commission_eligible ? ` (${(p.commission_rate * 100).toFixed(1)}%)` : " (no commission)"}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className={labelCls}>Currency</label>
             <select value={form.currency} onChange={(e) => set("currency", e.target.value)} className={inputCls}>
               <option value="NGN">NGN (₦)</option>
               <option value="USD">USD ($)</option>
             </select>
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Setup fee (commission base)</label>
-            <input type="number" min="0" step="0.01" value={form.setup_fee} onChange={(e) => set("setup_fee", e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Monthly amount (tracked, not commissioned)</label>
-            <input type="number" min="0" step="0.01" value={form.monthly_amount} onChange={(e) => set("monthly_amount", e.target.value)} className={inputCls} />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.setup_fee}
+              onChange={(e) => set("setup_fee", e.target.value)}
+              className={inputCls}
+              placeholder="Leave blank if not agreed yet"
+            />
           </div>
         </div>
+        <p className="text-[11px] text-[#94a3b8] -mt-1">
+          You can leave the setup fee blank now and set it later once the amount is agreed.
+        </p>
         {meta?.me.canManage && (
           <div>
             <label className={labelCls}>Owner (rep)</label>
@@ -145,7 +141,7 @@ export default function DealForm({ deal }: { deal?: SlDeal }) {
           </div>
         )}
         <div>
-          <label className={labelCls}>Notes</label>
+          <label className={labelCls}>Description (optional)</label>
           <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} className={inputCls} />
         </div>
       </div>

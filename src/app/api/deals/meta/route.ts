@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { requireAdmin, canManage } from "@/lib/invoice-auth";
+import { requireAdmin, canManage, isSuperAdmin } from "@/lib/invoice-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +29,12 @@ export async function GET(request: Request) {
   return NextResponse.json({
     products: products || [],
     reps,
-    me: { id: user.id, full_name: user.full_name, role: user.role, canManage: canManage(user) },
+    me: {
+      id: user.id,
+      full_name: user.full_name,
+      role: user.role,
+      canManage: canManage(user),
+      superAdmin: isSuperAdmin(user),
+    },
   });
 }
