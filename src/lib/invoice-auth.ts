@@ -1,9 +1,12 @@
 import { createServiceClient } from "./supabase";
 
+export type AdminRole = "rep" | "supervisor" | "super_admin";
+
 export interface AdminUser {
   id: string;
   email: string;
   full_name: string;
+  role: AdminRole;
 }
 
 export function getAdminSessionFromRequest(request: Request): string | null {
@@ -31,5 +34,22 @@ export async function validateAdminSession(sessionId: string): Promise<AdminUser
   }
 
   const admin = session.admin;
-  return { id: admin.id, email: admin.email, full_name: admin.full_name };
+  return {
+    id: admin.id,
+    email: admin.email,
+    full_name: admin.full_name,
+    role: (admin.role as AdminRole) || "rep",
+  };
+}
+
+// Resolve the admin user from a request, or null if unauthenticated.
+export async function requireAdmin(request: Request): Promise<AdminUser | null> {
+  const sessionId = getAdminSessionFromRequest(request);
+  if (!sessionId) return null;
+  return validateAdminSession(sessionId);
+}
+
+// A supervisor or super_admin can see all reps' data and run approvals/payouts.
+export function canManage(user: AdminUser): boolean {
+  return user.role === "supervisor" || user.role === "super_admin";
 }

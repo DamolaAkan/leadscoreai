@@ -4,10 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 const STORAGE_KEY = "lsai-admin-session";
 
+export type AdminRole = "rep" | "supervisor" | "super_admin";
+
 export interface AdminUser {
   id: string;
   email: string;
   full_name: string;
+  role: AdminRole;
 }
 
 export function useInvoiceAuth() {

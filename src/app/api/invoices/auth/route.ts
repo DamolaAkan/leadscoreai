@@ -70,7 +70,12 @@ export async function GET(request: Request) {
   }
 
   const admin = session.admin;
-  return NextResponse.json({ id: admin.id, email: admin.email, full_name: admin.full_name });
+  return NextResponse.json({
+    id: admin.id,
+    email: admin.email,
+    full_name: admin.full_name,
+    role: admin.role || "rep",
+  });
 }
 
 // DELETE /api/invoices/auth — logout
