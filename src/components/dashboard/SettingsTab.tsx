@@ -40,13 +40,6 @@ export default function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
-  // Voice settings
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voicePrompt, setVoicePrompt] = useState("");
-  const [voiceFirstMessage, setVoiceFirstMessage] = useState("");
-  const [savingVoice, setSavingVoice] = useState(false);
-  const [voiceMsg, setVoiceMsg] = useState("");
-
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
@@ -58,11 +51,6 @@ export default function SettingsTab({
       setQuizzes(data.quizzes || []);
       setEditName(data.org?.name || "");
       setEditColor(data.org?.primary_color || "#6366f1");
-      if (data.voiceSettings) {
-        setVoiceEnabled(data.voiceSettings.voice_calls_enabled || false);
-        setVoicePrompt(data.voiceSettings.voice_system_prompt || "");
-        setVoiceFirstMessage(data.voiceSettings.voice_first_message || "");
-      }
     } catch {
       // Ignore
     }
@@ -99,27 +87,6 @@ export default function SettingsTab({
       body: JSON.stringify({ is_active: !current }),
     });
     fetchSettings();
-  };
-
-  const handleSaveVoice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingVoice(true);
-    setVoiceMsg("");
-
-    const res = await fetch("/api/dashboard/settings", {
-      method: "PUT",
-      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({
-        voiceSettings: {
-          voice_calls_enabled: voiceEnabled,
-          voice_system_prompt: voicePrompt,
-          voice_first_message: voiceFirstMessage,
-        },
-      }),
-    });
-
-    setVoiceMsg(res.ok ? "Voice settings saved!" : "Failed to save.");
-    setSavingVoice(false);
   };
 
   const copyQuizLink = (quiz: QuizInfo) => {
@@ -240,83 +207,6 @@ export default function SettingsTab({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Voice Call Settings */}
-      <div className="bg-white rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">
-          AI Voice Calls
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Automatically call HOT and WARM leads 60 seconds after quiz
-          completion. Uses Vapi AI with ElevenLabs voice.
-        </p>
-
-        <form onSubmit={handleSaveVoice} className="space-y-4">
-          <div className="flex items-center gap-3">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={voiceEnabled}
-                onChange={(e) => setVoiceEnabled(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
-            </label>
-            <span className="text-sm font-medium text-gray-700">
-              {voiceEnabled ? "Enabled" : "Disabled"}
-            </span>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Message
-            </label>
-            <p className="text-xs text-gray-400 mb-1">
-              What Maya says when the lead picks up. Use {`{{firstName}}`},{" "}
-              {`{{percentage}}`}, {`{{orgName}}`}.
-            </p>
-            <textarea
-              value={voiceFirstMessage}
-              onChange={(e) => setVoiceFirstMessage(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
-              placeholder="Hi {{firstName}}, this is Maya from {{orgName}}..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              System Prompt
-            </label>
-            <p className="text-xs text-gray-400 mb-1">
-              Instructions for the AI voice agent. Use {`{{firstName}}`},{" "}
-              {`{{score}}`}, {`{{percentage}}`}, {`{{orgName}}`},{" "}
-              {`{{qualification}}`}.
-            </p>
-            <textarea
-              value={voicePrompt}
-              onChange={(e) => setVoicePrompt(e.target.value)}
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
-              placeholder="You are Maya, a friendly performance consultant..."
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={savingVoice}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50"
-              style={{ backgroundColor: accent }}
-            >
-              {savingVoice ? "Saving..." : "Save Voice Settings"}
-            </button>
-            {voiceMsg && (
-              <span className="text-sm text-gray-600">{voiceMsg}</span>
-            )}
-          </div>
-        </form>
       </div>
     </div>
   );

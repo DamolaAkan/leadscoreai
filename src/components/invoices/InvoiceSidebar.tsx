@@ -11,8 +11,8 @@ const navItems = [
 ];
 
 const crossLinks = [
-  { href: "/deals", label: "Deals", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
-  { href: "/demos", label: "Demos", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
+  { href: "/deals", label: "Deals", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", newTab: false },
+  { href: "/demos", label: "Demos", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", newTab: true },
 ];
 
 interface InvoiceSidebarProps {
@@ -69,6 +69,8 @@ export default function InvoiceSidebar({ onLogout }: InvoiceSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              target={item.newTab ? "_blank" : undefined}
+              rel={item.newTab ? "noopener noreferrer" : undefined}
               className="flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium transition-colors text-gray-500 hover:text-[#111827] hover:bg-gray-50"
             >
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
