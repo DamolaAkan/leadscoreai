@@ -72,7 +72,7 @@ export async function notifyDealAssigned(input: DealAssignedInput): Promise<void
       subject: `New deal assigned: ${input.deal.contact_name}`,
       html,
       apiKey,
-      fromEmail: "akanbidamola@practiceinteractions.com",
+      fromEmail: "notifications@leadscoreai.com",
       fromName: "LeadScoreAI",
     });
     if (error) console.error("[sl-notify] deal assignment email error:", error);
