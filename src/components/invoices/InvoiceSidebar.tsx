@@ -30,7 +30,7 @@ export default function InvoiceSidebar({ onLogout }: InvoiceSidebarProps) {
 
   async function handleLogout() {
     await onLogout();
-    router.replace("/invoices/login");
+    router.replace("/staff");
   }
 
   return (

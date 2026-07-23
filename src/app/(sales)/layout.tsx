@@ -17,7 +17,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   }
 
   if (!user) {
-    if (typeof window !== "undefined") window.location.href = "/invoices/login";
+    if (typeof window !== "undefined") window.location.href = "/staff";
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />

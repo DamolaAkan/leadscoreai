@@ -12,7 +12,7 @@ export default function InvoicesLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading && !user && !isLoginPage) {
-      window.location.href = "/invoices/login";
+      window.location.href = "/staff";
     }
   }, [loading, user, isLoginPage]);
 

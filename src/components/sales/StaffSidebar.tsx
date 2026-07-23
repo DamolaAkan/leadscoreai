@@ -43,7 +43,7 @@ export default function StaffSidebar({
 
   async function handleLogout() {
     await onLogout();
-    router.replace("/invoices/login");
+    router.replace("/staff");
   }
 
   const renderItem = (item: NavItem) => {
