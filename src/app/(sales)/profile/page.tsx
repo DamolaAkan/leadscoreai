@@ -258,28 +258,34 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="flex justify-center">
-              <div ref={idRef} style={{ width: 320, background: "#fff", borderRadius: 16, overflow: "hidden", fontFamily: "ui-sans-serif, system-ui, sans-serif", border: "1px solid #e2e8f0" }}>
-                <div style={{ background: "linear-gradient(135deg,#6d28d9,#7C3AED)", padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ color: "#fff", fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em" }}>LeadScoreAI</span>
-                  <span style={{ color: "rgba(255,255,255,.85)", fontSize: 10, fontWeight: 700, letterSpacing: "0.16em" }}>STAFF ID</span>
+              <div ref={idRef} style={{ width: 320, background: "linear-gradient(180deg,#191622,#131019)", borderRadius: 16, overflow: "hidden", fontFamily: "ui-sans-serif, system-ui, sans-serif", border: "1px solid rgba(255,255,255,.08)", color: "#fff" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Mark h={18} />
+                    <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                      LeadScore<span style={{ color: "#8b5cf6" }}>AI</span>
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", color: "#a5a1b3" }}>STAFF ID</span>
                 </div>
-                <div style={{ padding: "22px 18px 20px", textAlign: "center" }}>
-                  <div style={{ width: 108, height: 108, borderRadius: 14, margin: "0 auto", overflow: "hidden", background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center", border: "3px solid #ede9fe" }}>
+                <div style={{ padding: "18px 18px 20px", textAlign: "center" }}>
+                  <div style={{ width: 104, height: 104, borderRadius: 14, margin: "0 auto", overflow: "hidden", background: "rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,.1)" }}>
                     {photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <span style={{ fontSize: 40, fontWeight: 800, color: "#6d28d9" }}>{admin.full_name[0]}</span>
+                      <span style={{ fontSize: 38, fontWeight: 800, color: "#8b5cf6" }}>{admin.full_name[0]}</span>
                     )}
                   </div>
-                  <h3 style={{ marginTop: 14, fontSize: 19, fontWeight: 800, color: "#111827" }}>{admin.full_name}</h3>
-                  <div style={{ marginTop: 2, color: "#7C3AED", fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>{title}</div>
-                  <div style={{ marginTop: 14, display: "inline-flex", flexDirection: "column", gap: 4, background: "#f8fafc", borderRadius: 10, padding: "10px 18px" }}>
-                    <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Staff ID</span>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", fontVariantNumeric: "tabular-nums", letterSpacing: "0.04em" }}>{idNo}</span>
+                  <h3 style={{ marginTop: 14, fontSize: 19, fontWeight: 800 }}>{admin.full_name}</h3>
+                  <div style={{ marginTop: 2, color: "#8b5cf6", fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>{title}</div>
+                  <div style={{ marginTop: 4, color: "#a5a1b3", fontSize: 12 }}>{admin.email}</div>
+                  <div style={{ marginTop: 14, display: "inline-flex", flexDirection: "column", gap: 4, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 18px" }}>
+                    <span style={{ fontSize: 9.5, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 700 }}>Staff ID</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: "0.06em" }}>{idNo}</span>
                   </div>
                 </div>
-                <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: "9px 18px", textAlign: "center", color: "#94a3b8", fontSize: 10.5 }}>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", padding: "9px 18px", textAlign: "center", color: "#6f6b7e", fontSize: 10.5 }}>
                   leadscoreai.com · Valid while employed
                 </div>
               </div>
