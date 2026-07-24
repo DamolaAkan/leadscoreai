@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="StudyBridge">
+  <rect width="48" height="48" rx="11" fill="#4f46e5"/>
+  <g transform="translate(12,13)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3 2 8l10 5 10-5-10-5z"/>
+    <path d="M5 10.5v4.5c0 1.5 3.2 3 7 3s7-1.5 7-3v-4.5"/>
+    <path d="M22 8v5.5"/>
+  </g>
+</svg>

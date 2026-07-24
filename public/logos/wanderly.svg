@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Wanderly">
+  <rect width="48" height="48" rx="11" fill="#e11d48"/>
+  <g transform="translate(12,12)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 2 11 13"/>
+    <path d="M22 2 15 22l-4-9-9-4 20-7z"/>
+  </g>
+</svg>
