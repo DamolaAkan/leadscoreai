@@ -146,7 +146,7 @@ export default function ProfilePage() {
 
   if (!admin) return <div className="text-gray-400 text-sm">Loading...</div>;
 
-  const title = profile.title || admin.role.replace("_", " ");
+  const title = profile.title || "Team member";
   const idNo = staffId(profile.staff_no);
 
   return (
