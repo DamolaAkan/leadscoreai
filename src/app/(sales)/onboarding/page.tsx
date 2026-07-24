@@ -183,7 +183,11 @@ export default function OnboardingPage() {
       <FormCard title="Acknowledgements">
         <div className="space-y-3">
           <AckRow checked={!!form.ack_employment} onChange={(v) => set("ack_employment", v)}>
-            I confirm my employment details are correct and accept the terms of my offer.
+            I confirm my employment details are correct and accept the{" "}
+            <a href="/policies/employment-terms" target="_blank" rel="noopener noreferrer" className="text-[#7C3AED] font-medium underline">
+              employment terms
+            </a>{" "}
+            of my offer.
           </AckRow>
           <AckRow checked={!!form.ack_nda} onChange={(v) => set("ack_nda", v)}>
             I agree to the{" "}
@@ -200,7 +204,11 @@ export default function OnboardingPage() {
             .
           </AckRow>
           <AckRow checked={!!form.ack_privacy} onChange={(v) => set("ack_privacy", v)}>
-            I consent to LeadScoreAI storing these details for HR and payroll purposes.
+            I consent to LeadScoreAI storing these details for HR and payroll purposes, in line with the{" "}
+            <a href="/policies/data-privacy" target="_blank" rel="noopener noreferrer" className="text-[#7C3AED] font-medium underline">
+              data privacy notice
+            </a>
+            .
           </AckRow>
         </div>
       </FormCard>

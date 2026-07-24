@@ -8,6 +8,18 @@ interface Msg {
   content: string;
 }
 
+// Strip any markdown the model still emits so the chat reads as clean prose
+// (no **bold**, headings, backticks, or raw list markers).
+function stripSlop(t: string): string {
+  return t
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "• ")
+    .trim();
+}
+
 const STARTERS = [
   "Give me 5 scorecard title ideas for a gym.",
   "What questions best determine willingness to pay?",
@@ -42,7 +54,7 @@ export default function OfficeManagerPage() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Could not respond");
-      setMessages((m) => [...m, { role: "assistant", content: d.reply }]);
+      setMessages((m) => [...m, { role: "assistant", content: stripSlop(d.reply || "") }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not respond");
     }
