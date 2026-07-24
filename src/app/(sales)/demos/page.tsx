@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { slGet, slSend } from "@/lib/sl-client";
+import { slGet } from "@/lib/sl-client";
 
 interface Demo {
   id: string;
@@ -26,7 +26,6 @@ const INDUSTRY_LABEL: Record<string, string> = {
 export default function DemosPage() {
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [entering, setEntering] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -35,28 +34,6 @@ export default function DemosPage() {
       .catch(() => setError("Could not load demos"))
       .finally(() => setLoading(false));
   }, []);
-
-  function enter(slug: string) {
-    setEntering(slug);
-    setError("");
-    // Open the tab synchronously inside the click gesture so it is never popup-blocked,
-    // then point it at the dashboard once the demo session is minted. This launcher stays
-    // open, so nothing here hangs while the dashboard loads in the new tab.
-    const tab = window.open("about:blank", "_blank");
-    slSend<{ session_id: string; slug: string }>("/api/demos/enter", "POST", { slug })
-      .then((r) => {
-        // Drop the freshly-minted org session where the client dashboard reads it.
-        localStorage.setItem("lsai-session", r.session_id);
-        const url = `/dashboard/${r.slug}`;
-        if (tab) tab.location.href = url;
-        else window.open(url, "_blank");
-      })
-      .catch((e) => {
-        if (tab) tab.close();
-        setError(e instanceof Error ? e.message : "Could not open demo");
-      })
-      .finally(() => setEntering(null));
-  }
 
   return (
     <div className="space-y-6">
@@ -80,11 +57,14 @@ export default function DemosPage() {
           {demos.map((d) => {
             const color = d.primary_color || "#7C3AED";
             return (
-              <button
+              // Native link opens a new tab reliably (never popup-blocked). The target
+              // page mints the demo session and redirects into the dashboard.
+              <a
                 key={d.id}
-                onClick={() => enter(d.slug)}
-                disabled={!!entering}
-                className="text-left bg-white rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow disabled:opacity-60 group"
+                href={`/demo-open/${d.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-left bg-white rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow group"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -110,10 +90,10 @@ export default function DemosPage() {
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-xs text-[#64748b]">{d.responses} responses</span>
                   <span className="text-sm font-medium" style={{ color }}>
-                    {entering === d.slug ? "Opening..." : "Open dashboard ↗"}
+                    Open dashboard ↗
                   </span>
                 </div>
-              </button>
+              </a>
             );
           })}
         </div>
