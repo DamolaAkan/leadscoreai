@@ -38,6 +38,25 @@ interface AnswerRecord {
   points: number;
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = (hex || "").replace("#", "");
+  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const int = parseInt(n || "1e40af", 16);
+  return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+}
+
+// Derive the dark start-cover gradient from the client's brand colour.
+// DriveNow keeps its original hand-tuned navy (client sign-off), everyone else
+// gets a deep, premium gradient tinted toward their own brand hue.
+function heroGradientFor(org: { slug: string; primary_color: string }): string {
+  if (org.slug === "drivenow") {
+    return "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)";
+  }
+  const { r, g, b } = hexToRgb(org.primary_color || "#1e40af");
+  const s = (f: number) => `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`;
+  return `linear-gradient(135deg, ${s(0.16)} 0%, ${s(0.32)} 50%, ${s(0.55)} 100%)`;
+}
+
 export default function QuizFlow({ org, quiz, questions }: Props) {
   const [step, setStep] = useState<Step>("start");
   const [currentQ, setCurrentQ] = useState(0);
@@ -60,6 +79,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
   // Client brand color drives the scorecard (design system default, per-client override).
   const accent = org.primary_color;
+  const heroGradient = heroGradientFor(org);
 
   // Detect user's country for phone input default
   useEffect(() => {
@@ -279,7 +299,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       <div
         className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center"
         style={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          background: heroGradient,
           fontFamily: "var(--font-inter)",
         }}
       >
