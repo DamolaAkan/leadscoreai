@@ -18,6 +18,9 @@ const INDUSTRY_LABEL: Record<string, string> = {
   insurance_credit: "Insurance & credit",
   real_estate: "Real estate",
   coaching_b2b: "Coaching & B2B",
+  solar_energy: "Solar & energy",
+  education: "Education",
+  travel: "Travel",
 };
 
 export default function DemosPage() {
@@ -33,18 +36,26 @@ export default function DemosPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function enter(slug: string) {
+  function enter(slug: string) {
     setEntering(slug);
     setError("");
-    try {
-      const r = await slSend<{ session_id: string; slug: string }>("/api/demos/enter", "POST", { slug });
-      // Drop the freshly-minted org session where the client dashboard reads it, then land inside.
-      localStorage.setItem("lsai-session", r.session_id);
-      window.location.href = `/dashboard/${r.slug}`;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not open demo");
-      setEntering(null);
-    }
+    // Open the tab synchronously inside the click gesture so it is never popup-blocked,
+    // then point it at the dashboard once the demo session is minted. This launcher stays
+    // open, so nothing here hangs while the dashboard loads in the new tab.
+    const tab = window.open("about:blank", "_blank");
+    slSend<{ session_id: string; slug: string }>("/api/demos/enter", "POST", { slug })
+      .then((r) => {
+        // Drop the freshly-minted org session where the client dashboard reads it.
+        localStorage.setItem("lsai-session", r.session_id);
+        const url = `/dashboard/${r.slug}`;
+        if (tab) tab.location.href = url;
+        else window.open(url, "_blank");
+      })
+      .catch((e) => {
+        if (tab) tab.close();
+        setError(e instanceof Error ? e.message : "Could not open demo");
+      })
+      .finally(() => setEntering(null));
   }
 
   return (
@@ -52,7 +63,7 @@ export default function DemosPage() {
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">Demos</h1>
         <p className="text-sm text-gray-500 mt-1">
-          One click drops you straight into a live client dashboard. Great for walkthroughs and pitches.
+          One click opens a live client dashboard in a new tab. Great for walkthroughs and pitches.
         </p>
       </div>
 
@@ -99,7 +110,7 @@ export default function DemosPage() {
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-xs text-[#64748b]">{d.responses} responses</span>
                   <span className="text-sm font-medium" style={{ color }}>
-                    {entering === d.slug ? "Opening..." : "Open dashboard →"}
+                    {entering === d.slug ? "Opening..." : "Open dashboard ↗"}
                   </span>
                 </div>
               </button>
