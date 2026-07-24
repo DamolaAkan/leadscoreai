@@ -19,6 +19,13 @@ const SALES: NavItem[] = [
   { href: "/payouts", label: "Payouts", icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", superAdminOnly: true },
 ];
 
+const WORKSPACE: NavItem[] = [
+  { href: "/office-manager", label: "AI Office Manager", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.7 9.7 0 01-4-.85L3 21l1.35-4.5A7.7 7.7 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
+  { href: "/profile", label: "Profile", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+  { href: "/onboarding", label: "Onboarding", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+  { href: "/team", label: "Team", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", superAdminOnly: true },
+];
+
 const OTHER: NavItem[] = [
   { href: "/demos", label: "Demos", icon: "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", newTab: true },
   { href: "/invoices", label: "Invoicing", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", superAdminOnly: true, newTab: true },
@@ -94,6 +101,7 @@ export default function StaffSidebar({
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {SALES.map(renderItem)}
+        <div className="pt-3 mt-3 border-t border-black/[0.06] space-y-1">{WORKSPACE.map(renderItem)}</div>
         <div className="pt-3 mt-3 border-t border-black/[0.06] space-y-1">{OTHER.map(renderItem)}</div>
       </nav>
 

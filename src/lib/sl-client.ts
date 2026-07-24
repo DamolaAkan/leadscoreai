@@ -19,7 +19,7 @@ export async function slGet<T>(url: string): Promise<T> {
 
 export async function slSend<T>(
   url: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   body?: unknown
 ): Promise<T> {
   const res = await fetch(url, {
