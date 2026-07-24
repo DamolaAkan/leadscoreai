@@ -7,15 +7,11 @@ export interface StaffOnboarding {
   address: string | null;
   personal_email: string | null;
   phone: string | null;
-  nin: string | null;
   id_type: string | null;
   id_number: string | null;
-  bvn: string | null;
   bank_name: string | null;
   account_number: string | null;
   account_name: string | null;
-  tin: string | null;
-  pension_pin: string | null;
   nok_name: string | null;
   nok_relationship: string | null;
   nok_phone: string | null;
@@ -44,8 +40,8 @@ export interface StaffProfile {
 // Editable onboarding fields (everything except status/timestamps).
 export const ONBOARDING_FIELDS: (keyof StaffOnboarding)[] = [
   "full_name", "date_of_birth", "gender", "address", "personal_email", "phone",
-  "nin", "id_type", "id_number", "bvn",
-  "bank_name", "account_number", "account_name", "tin", "pension_pin",
+  "id_type", "id_number",
+  "bank_name", "account_number", "account_name",
   "nok_name", "nok_relationship", "nok_phone", "nok_address",
   "guarantor_name", "guarantor_occupation", "guarantor_phone", "guarantor_address",
   "ack_employment", "ack_nda", "ack_conduct", "ack_privacy",

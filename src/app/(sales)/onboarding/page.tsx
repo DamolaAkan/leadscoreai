@@ -138,18 +138,17 @@ export default function OnboardingPage() {
 
       <FormCard title="Identity">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="NIN (National ID number)" value={val("nin")} onChange={(v) => set("nin", v)} />
-          <Field label="BVN" value={val("bvn")} onChange={(v) => set("bvn", v)} />
           <div>
-            <label className={lbl}>Other ID type</label>
+            <label className={lbl}>ID type</label>
             <select value={val("id_type")} onChange={(e) => set("id_type", e.target.value)} className={input}>
               <option value="">Select</option>
               <option>International passport</option>
               <option>Driver&apos;s licence</option>
               <option>Voter&apos;s card</option>
+              <option>National ID (NIN slip)</option>
             </select>
           </div>
-          <Field label="Other ID number" value={val("id_number")} onChange={(v) => set("id_number", v)} />
+          <Field label="ID number" value={val("id_number")} onChange={(v) => set("id_number", v)} />
         </div>
       </FormCard>
 
@@ -157,9 +156,9 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Bank name" value={val("bank_name")} onChange={(v) => set("bank_name", v)} />
           <Field label="Account number" value={val("account_number")} onChange={(v) => set("account_number", v)} />
-          <Field label="Account name" value={val("account_name")} onChange={(v) => set("account_name", v)} />
-          <Field label="TIN (tax ID, optional)" value={val("tin")} onChange={(v) => set("tin", v)} />
-          <Field label="Pension RSA PIN (optional)" value={val("pension_pin")} onChange={(v) => set("pension_pin", v)} />
+          <div className="sm:col-span-2">
+            <Field label="Account name" value={val("account_name")} onChange={(v) => set("account_name", v)} />
+          </div>
         </div>
       </FormCard>
 
@@ -187,10 +186,18 @@ export default function OnboardingPage() {
             I confirm my employment details are correct and accept the terms of my offer.
           </AckRow>
           <AckRow checked={!!form.ack_nda} onChange={(v) => set("ack_nda", v)}>
-            I agree to the confidentiality and non-disclosure agreement.
+            I agree to the{" "}
+            <a href="/policies/nda" target="_blank" rel="noopener noreferrer" className="text-[#7C3AED] font-medium underline">
+              confidentiality and non-disclosure agreement
+            </a>
+            .
           </AckRow>
           <AckRow checked={!!form.ack_conduct} onChange={(v) => set("ack_conduct", v)}>
-            I have read and accept the code of conduct.
+            I have read and accept the{" "}
+            <a href="/policies/code-of-conduct" target="_blank" rel="noopener noreferrer" className="text-[#7C3AED] font-medium underline">
+              code of conduct
+            </a>
+            .
           </AckRow>
           <AckRow checked={!!form.ack_privacy} onChange={(v) => set("ack_privacy", v)}>
             I consent to LeadScoreAI storing these details for HR and payroll purposes.

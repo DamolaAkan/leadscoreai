@@ -171,16 +171,12 @@ function DetailView({ detail, onClose }: { detail: Detail; onClose: () => void }
             <Row l="Address" v={o.address} />
           </Section>
           <Section title="Identity">
-            <Row l="NIN" v={o.nin} />
-            <Row l="BVN" v={o.bvn} />
-            <Row l="Other ID" v={o.id_type ? `${o.id_type} · ${o.id_number || ""}` : null} />
+            <Row l="ID" v={o.id_type ? `${o.id_type} · ${o.id_number || ""}` : null} />
           </Section>
           <Section title="Bank">
             <Row l="Bank" v={o.bank_name} />
             <Row l="Account number" v={o.account_number} />
             <Row l="Account name" v={o.account_name} />
-            <Row l="TIN" v={o.tin} />
-            <Row l="Pension PIN" v={o.pension_pin} />
           </Section>
           <Section title="Next of kin">
             <Row l="Name" v={o.nok_name} />
