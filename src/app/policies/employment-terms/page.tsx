@@ -47,25 +47,19 @@ export default function EmploymentTermsPage() {
         and responsive during agreed working hours.
       </p>
 
-      <h2 className={h2}>5. Leave</h2>
-      <p className={p}>
-        You are entitled to annual leave and statutory public holidays as set out in your offer or the staff handbook.
-        Leave should be requested and approved in advance.
-      </p>
-
-      <h2 className={h2}>6. Confidentiality and conduct</h2>
+      <h2 className={h2}>5. Confidentiality and conduct</h2>
       <p className={p}>
         Your engagement is subject to our confidentiality and non-disclosure agreement and our code of conduct, which
         form part of your terms.
       </p>
 
-      <h2 className={h2}>7. Ending the engagement</h2>
+      <h2 className={h2}>6. Ending the engagement</h2>
       <p className={p}>
         Either side may end the engagement by giving the notice stated in your offer. The company may end it without
         notice for serious misconduct. On leaving, you must return company property and hand over your work.
       </p>
 
-      <h2 className={h2}>8. Acceptance</h2>
+      <h2 className={h2}>7. Acceptance</h2>
       <p className={p}>
         By ticking the employment acknowledgement on your onboarding form, you confirm your details are correct and that
         you accept these terms together with your offer letter.
