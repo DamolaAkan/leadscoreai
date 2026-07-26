@@ -297,12 +297,25 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   if (step === "start") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center"
+        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center relative"
         style={{
           background: heroGradient,
           fontFamily: "var(--font-inter)",
         }}
       >
+        {quiz.result_mode === "assessment" && (
+          <div className="absolute top-5 right-5 sm:right-8 flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626" />
+              <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb" />
+              <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409" />
+              <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a" />
+            </svg>
+            <span className="text-sm font-extrabold tracking-tight text-white">
+              LeadScore<span style={{ color: "#a78bfa" }}>AI</span>
+            </span>
+          </div>
+        )}
         <div className="w-full max-w-2xl">
           <div className="mx-auto mb-10 w-20 h-20">
             <Logo size={80} />
@@ -351,10 +364,24 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                 {org.name}
               </span>
             </div>
-            {step === "questions" && (
-              <span className="text-sm" style={{ color: "#64748b" }}>
-                Step {currentQ + 1} of {questions.length}
-              </span>
+            {quiz.result_mode === "assessment" ? (
+              <div className="flex items-center gap-1.5">
+                <svg width="15" height="15" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                  <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626" />
+                  <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb" />
+                  <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409" />
+                  <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a" />
+                </svg>
+                <span className="text-xs font-extrabold tracking-tight" style={{ color: "#15131c" }}>
+                  LeadScore<span style={{ color: "#6d28d9" }}>AI</span>
+                </span>
+              </div>
+            ) : (
+              step === "questions" && (
+                <span className="text-sm" style={{ color: "#64748b" }}>
+                  Step {currentQ + 1} of {questions.length}
+                </span>
+              )
             )}
           </div>
           {(step === "questions" || step === "contact") && (
@@ -522,8 +549,88 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
             </div>
           )}
 
+          {/* ASSESSMENT RESULT — diagnosis mode (e.g. Loan Doctor) */}
+          {step === "results" && qualification && quiz.result_mode === "assessment" && (() => {
+            const health =
+              percentage >= 80
+                ? { label: "Healthy", color: "#16a34a", heading: "your loan book is in good shape.", body: "Strong screening and follow-up. The next level is using AI to pre-score every applicant for repayment and benchmark your book against other MFBs." }
+                : percentage >= 60
+                ? { label: "Fair", color: "#2563eb", heading: "a solid base, with room to tighten.", body: "You have some structure, but more data and pre-screening would cut defaults and free your officers from chasing applicants who never qualify." }
+                : percentage >= 40
+                ? { label: "Needs work", color: "#f59e0b", heading: "there are real gaps costing you money.", body: "Too many bad loans and too much officer time are slipping through. Pre-scoring applicants before approval would close most of it." }
+                : { label: "At risk", color: "#dc2626", heading: "your loan book is exposed.", body: "Approvals lean on gut and officers are bleeding time into applicants who never qualify. This is exactly where defaults come from, and it is fixable." };
+            const firstName = contactName.split(" ")[0] || "there";
+            return (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: "#94a3b8" }}>
+                    Loan book health
+                  </p>
+                  <div className="text-5xl font-extrabold leading-none" style={{ color: health.color }}>
+                    {percentage}%
+                  </div>
+                  <div className="mt-5">
+                    <span
+                      className="inline-block px-4 py-1.5 rounded-md text-sm font-semibold"
+                      style={{ backgroundColor: health.color + "1a", color: health.color }}
+                    >
+                      {health.label}
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-bold mt-5" style={{ color: "#1e293b" }}>
+                    {firstName}, {health.heading}
+                  </h2>
+                  <p className="text-sm mt-2 max-w-md mx-auto leading-relaxed" style={{ color: "#64748b" }}>
+                    {health.body}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                  <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                    What the healthiest MFBs do differently
+                  </h3>
+                  <div className="space-y-3 mt-4">
+                    {[
+                      "Pre-score every applicant for repayment before an officer touches them.",
+                      "Work only the ready-and-able, and screen out the rest early.",
+                      "Use their own data to predict who will actually repay, not gut feel.",
+                    ].map((t, i) => (
+                      <div key={i} className="flex gap-3 rounded-md p-4" style={{ backgroundColor: "#f8fafc" }}>
+                        <span className="text-lg leading-none mt-0.5" style={{ color: accent }}>✓</span>
+                        <p className="text-sm leading-relaxed" style={{ color: "#475569" }}>{t}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                  <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+                    Get your free loan-book review
+                  </h3>
+                  <p className="text-sm mb-5 leading-relaxed max-w-md mx-auto" style={{ color: "#64748b" }}>
+                    Book a 15-minute call and we will show you exactly how to pre-score your applicants for
+                    repayment, live on your own pipeline.
+                  </p>
+                  <a
+                    href={quiz.cta_url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-8 py-3 rounded-lg text-white font-semibold text-base"
+                    style={{ backgroundColor: accent }}
+                  >
+                    Book my free review
+                  </a>
+                </div>
+
+                <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
+                  We will also reach out at {contactEmail}.
+                </p>
+              </div>
+            );
+          })()}
+
           {/* RESULTS PAGE */}
-          {step === "results" && qualification && (() => {
+          {step === "results" && qualification && quiz.result_mode !== "assessment" && (() => {
             const tierColor = TIER_COLORS[qualification];
             const tierName = TIER_NAMES[qualification];
             const nextStep = NEXT_STEPS[qualification];

@@ -24,6 +24,8 @@ export interface Quiz {
   start_cta_text: string;
   max_score: number;
   is_active: boolean;
+  result_mode?: "lead" | "assessment";
+  cta_url?: string | null;
 }
 
 export interface QuizQuestion {
