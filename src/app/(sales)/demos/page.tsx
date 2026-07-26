@@ -21,6 +21,7 @@ const INDUSTRY_LABEL: Record<string, string> = {
   solar_energy: "Solar & energy",
   education: "Education",
   travel: "Travel",
+  microfinance: "Microfinance",
 };
 
 export default function DemosPage() {

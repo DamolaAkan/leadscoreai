@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="TrustPoint Microfinance">
+  <rect width="48" height="48" rx="11" fill="#047857"/>
+  <g transform="translate(12,12)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3 3 8h18L12 3z"/>
+    <path d="M3 10.5h18"/>
+    <path d="M5.5 11v8M9.5 11v8M14.5 11v8M18.5 11v8"/>
+    <path d="M3 21h18"/>
+  </g>
+</svg>
