@@ -297,25 +297,12 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   if (step === "start") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center relative"
+        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center"
         style={{
           background: heroGradient,
           fontFamily: "var(--font-inter)",
         }}
       >
-        {quiz.result_mode === "assessment" && (
-          <div className="absolute top-5 right-5 sm:right-8 flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-              <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626" />
-              <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb" />
-              <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409" />
-              <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a" />
-            </svg>
-            <span className="text-sm font-extrabold tracking-tight text-white">
-              LeadScore<span style={{ color: "#a78bfa" }}>AI</span>
-            </span>
-          </div>
-        )}
         <div className="w-full max-w-2xl">
           <div className="mx-auto mb-10 w-20 h-20">
             <Logo size={80} />
@@ -364,24 +351,10 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                 {org.name}
               </span>
             </div>
-            {quiz.result_mode === "assessment" ? (
-              <div className="flex items-center gap-1.5">
-                <svg width="15" height="15" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                  <rect x="0" y="18" width="5" height="10" rx="1.5" fill="#dc2626" />
-                  <rect x="7.67" y="13" width="5" height="15" rx="1.5" fill="#2563eb" />
-                  <rect x="15.33" y="8" width="5" height="20" rx="1.5" fill="#d99409" />
-                  <rect x="23" y="1" width="5" height="27" rx="1.5" fill="#16a34a" />
-                </svg>
-                <span className="text-xs font-extrabold tracking-tight" style={{ color: "#15131c" }}>
-                  LeadScore<span style={{ color: "#6d28d9" }}>AI</span>
-                </span>
-              </div>
-            ) : (
-              step === "questions" && (
-                <span className="text-sm" style={{ color: "#64748b" }}>
-                  Step {currentQ + 1} of {questions.length}
-                </span>
-              )
+            {step === "questions" && (
+              <span className="text-sm" style={{ color: "#64748b" }}>
+                Step {currentQ + 1} of {questions.length}
+              </span>
             )}
           </div>
           {(step === "questions" || step === "contact") && (
