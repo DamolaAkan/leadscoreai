@@ -3,10 +3,27 @@ import CheckupVideo from "./CheckupVideo";
 import MetaPixel from "@/components/MetaPixel";
 import "../homepage.css";
 
+const OG_IMAGE = "https://app.leadscoreai.com/microfinance-og.png";
+const TITLE = "Predict which borrowers will repay | LeadScoreAI for Microfinance";
+const DESCRIPTION =
+  "Know which borrowers will repay before you disburse loans. LeadScoreAI helps microfinance banks and lenders cut defaults and strengthen repayment rates.";
+
 export const metadata: Metadata = {
-  title: "Predict which borrowers will repay | LeadScoreAI for Microfinance",
-  description:
-    "Know which borrowers will repay before you disburse loans. LeadScoreAI helps microfinance banks and lenders cut defaults and strengthen repayment rates.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "https://app.leadscoreai.com/microfinance",
+    type: "website",
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "Who's going to repay? — LeadScoreAI for microfinance banks" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
+  },
 };
 
 export default function MicrofinancePage() {
