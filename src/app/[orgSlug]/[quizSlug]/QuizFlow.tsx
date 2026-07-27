@@ -609,6 +609,24 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                   >
                     Book my free review
                   </a>
+
+                  <div className="mt-6 pt-6 border-t" style={{ borderColor: "#eef2f7" }}>
+                    <p className="text-sm mb-3" style={{ color: "#64748b" }}>
+                      Or start with the founder&apos;s manifesto:
+                    </p>
+                    <a
+                      href="https://leadscoreai.com/manifesto/episode1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-7 py-3 rounded-lg font-semibold text-base border-2 transition-colors"
+                      style={{ color: accent, borderColor: accent }}
+                    >
+                      Watch Manifesto · Episode 1
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </a>
+                  </div>
                 </div>
 
                 <p className="text-center text-sm" style={{ color: "#94a3b8" }}>

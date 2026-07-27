@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-// When Damola's TrustPoint Microfinance walkthrough is recorded, paste the
-// YouTube ID here (just the id, e.g. "dQw4w9WgXcQ") and the player goes live.
-const VIDEO_ID = "";
+// YouTube ID of the microfinance walkthrough. Poster below uses this video's
+// own thumbnail, so updating the cover on YouTube updates the page too.
+const VIDEO_ID = "Ow3t730HAmU";
 
 export default function CheckupVideo() {
   const [playing, setPlaying] = useState(false);
@@ -46,7 +46,7 @@ export default function CheckupVideo() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/video-thumbnail.png"
+            src={hasVideo ? `https://img.youtube.com/vi/${VIDEO_ID}/maxresdefault.jpg` : "/video-thumbnail.png"}
             alt="Walkthrough: predicting who repays from your loan applications"
             style={{
               position: "absolute",
