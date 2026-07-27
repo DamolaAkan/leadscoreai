@@ -69,13 +69,40 @@ export default function MicrofinancePage() {
           </div>
 
           {/* Video */}
-          <div style={{ marginBottom: "clamp(40px, 7vw, 72px)" }}>
+          <div style={{ marginBottom: "clamp(18px, 3vw, 28px)" }}>
             <CheckupVideo />
           </div>
 
+          {/* Scroll cue — points down to the scorecard */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "clamp(24px, 4vw, 40px)" }}>
+            <a
+              href="#scorecard"
+              aria-label="Scroll to the check-up"
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 999,
+                background: "#6d28d9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 12px 30px -8px rgba(109,40,217,.55)",
+                animation: "mfbBounce 1.5s ease-in-out infinite",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </a>
+          </div>
+          <style>{`@keyframes mfbBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}`}</style>
+
           {/* Scorecard */}
           <div
+            id="scorecard"
             style={{
+              scrollMarginTop: 24,
               borderRadius: 16,
               overflow: "hidden",
               border: "1px solid #e2ddef",

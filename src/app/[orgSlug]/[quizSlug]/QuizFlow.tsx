@@ -304,9 +304,11 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
         }}
       >
         <div className="w-full max-w-2xl">
-          <div className="mx-auto mb-10 w-20 h-20">
-            <Logo size={80} />
-          </div>
+          {org.slug !== "loandoctor" && (
+            <div className="mx-auto mb-10 w-20 h-20">
+              <Logo size={80} />
+            </div>
+          )}
           <h1
             className="font-extrabold text-white mb-5"
             style={{
