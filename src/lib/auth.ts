@@ -28,6 +28,28 @@ export async function validateSession(
     return null;
   }
 
+  // Staff override session (no org_members row): identity + org come from the
+  // session itself. Lets any active LeadScoreAI staff account into any dashboard.
+  if (!session.member_id) {
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .select("*")
+      .eq("id", session.organization_id)
+      .single();
+    if (orgError || !org) return null;
+    return {
+      memberId: session.id,
+      organizationId: org.id,
+      orgSlug: org.slug,
+      orgName: org.name,
+      primaryColor: org.primary_color,
+      logoUrl: org.logo_url || null,
+      username: session.username,
+      fullName: session.full_name,
+      role: session.role,
+    };
+  }
+
   const { data: member, error: memberError } = await supabase
     .from("org_members")
     .select("*")
