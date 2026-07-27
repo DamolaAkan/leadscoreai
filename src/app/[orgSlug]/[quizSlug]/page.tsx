@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { Organization, Quiz, QuizQuestion } from "@/lib/types";
 import { notFound } from "next/navigation";
 import QuizFlow from "./QuizFlow";
+import MetaPixel from "@/components/MetaPixel";
 
 // Always fetch fresh org/quiz config so branding + questions reflect immediately.
 export const dynamic = "force-dynamic";
@@ -45,10 +46,13 @@ export default async function QuizPage({ params }: PageProps) {
   if (!questions || questions.length === 0) notFound();
 
   return (
-    <QuizFlow
-      org={org}
-      quiz={quiz}
-      questions={questions}
-    />
+    <>
+      {org.slug === "loandoctor" && <MetaPixel />}
+      <QuizFlow
+        org={org}
+        quiz={quiz}
+        questions={questions}
+      />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CheckupVideo from "./CheckupVideo";
+import MetaPixel from "@/components/MetaPixel";
 import "../homepage.css";
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function MicrofinancePage() {
   return (
     <div className="hp-body">
+      <MetaPixel />
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap"

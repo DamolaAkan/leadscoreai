@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { supabase } from "@/lib/supabase";
+import { trackPixel } from "@/components/MetaPixel";
 import {
   Organization,
   Quiz,
@@ -245,6 +246,9 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       setQualification(qual);
       setStep("results");
       setIsSubmitting(false);
+
+      // Meta pixel conversion (loandoctor MFB campaign only; no-op elsewhere)
+      if (org.slug === "loandoctor") trackPixel("Lead");
 
       // Fire-and-forget: trigger email sequence server-side
       fetch("/api/email/trigger-sequence", {
