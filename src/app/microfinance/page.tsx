@@ -73,37 +73,6 @@ export default function MicrofinancePage() {
             <CheckupVideo />
           </div>
 
-          {/* Scorecard intro */}
-          <div style={{ textAlign: "center", marginBottom: "clamp(24px, 4vw, 36px)" }}>
-            <h2
-              style={{
-                fontFamily: "'Archivo', sans-serif",
-                fontWeight: 800,
-                fontSize: "clamp(24px, 4.4vw, 34px)",
-                lineHeight: 1.14,
-                letterSpacing: "-0.02em",
-                color: "#15131c",
-                margin: "0 0 14px",
-                maxWidth: 720,
-                marginInline: "auto",
-              }}
-            >
-              Discover a system for predicting which borrowers are able and willing to pay you back.
-            </h2>
-            <p
-              style={{
-                fontSize: "clamp(15px, 2.4vw, 17.5px)",
-                lineHeight: 1.55,
-                color: "#5a5568",
-                maxWidth: 560,
-                margin: "0 auto",
-              }}
-            >
-              Take the free 2-minute Loan Doctor scorecard below to see how your current loan
-              qualification measures up.
-            </p>
-          </div>
-
           {/* Scorecard */}
           <div
             style={{

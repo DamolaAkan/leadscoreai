@@ -314,7 +314,15 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
             {quiz.start_headline}
           </h1>
           <p className="text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: "#cbd5e1" }}>
-            {quiz.start_subheadline}
+            {quiz.start_subheadline.split(/(Loan Doctor)/g).map((part, i) =>
+              part === "Loan Doctor" ? (
+                <strong key={i} style={{ color: "#FBBF24", fontWeight: 700 }}>
+                  {part}
+                </strong>
+              ) : (
+                <span key={i}>{part}</span>
+              )
+            )}
           </p>
           <button
             onClick={handleStart}
