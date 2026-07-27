@@ -255,6 +255,16 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           organizationId: org.id,
         }),
       }).catch(() => {});
+
+      // Fire-and-forget: founder note (self-gates to the Loan Doctor scorecard)
+      fetch("/api/email/founder-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          responseId,
+          organizationId: org.id,
+        }),
+      }).catch(() => {});
     },
     [responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, org.id]
   );
