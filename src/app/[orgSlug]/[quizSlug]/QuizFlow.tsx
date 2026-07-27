@@ -309,7 +309,13 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           </div>
           <h1
             className="font-extrabold text-white mb-5"
-            style={{ fontSize: "clamp(34px, 6vw, 52px)", lineHeight: 1.15 }}
+            style={{
+              fontSize:
+                quiz.start_headline.length > 70
+                  ? "clamp(24px, 4.4vw, 38px)"
+                  : "clamp(34px, 6vw, 52px)",
+              lineHeight: 1.18,
+            }}
           >
             {quiz.start_headline}
           </h1>
