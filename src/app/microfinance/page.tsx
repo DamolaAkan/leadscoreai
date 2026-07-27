@@ -63,8 +63,9 @@ export default function MicrofinancePage() {
                 margin: "0 auto",
               }}
             >
-              Cut defaults and strengthen repayment rates with LeadScoreAI — a system for predicting
-              who is able and willing to pay you back.
+              A video walkthrough of how microfinance banks and lenders can strengthen repayment
+              rates and reduce defaults with LeadScoreAI — a system for predicting who is able and
+              willing to pay you back.
             </p>
           </div>
 
