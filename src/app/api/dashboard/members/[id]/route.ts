@@ -73,6 +73,11 @@ export async function PUT(
     );
   }
 
+  // Password reset or deactivation invalidates the member's active sessions.
+  if (body.newPassword || body.is_active === false) {
+    await supabase.from("org_sessions").delete().eq("member_id", params.id);
+  }
+
   return NextResponse.json({ success: true });
 }
 
