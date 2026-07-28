@@ -63,8 +63,8 @@ export async function POST(request: Request) {
       subject,
       html,
       apiKey,
-      fromEmail: "akanbidamola@practiceinteractions.com",
-      fromName: "LeadscoreAI",
+      fromEmail: "billing@leadscoreai.com",
+      fromName: "LeadScoreAI",
     });
     emailId = result.id;
     sendError = result.error;
