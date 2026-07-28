@@ -126,23 +126,23 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   // Start quiz — create response row
   const handleStart = useCallback(async () => {
     setIsSubmitting(true);
-    const { data, error } = await supabase
-      .from("quiz_responses")
-      .insert({
-        quiz_id: quiz.id,
-        organization_id: org.id,
-        session_id: sessionId,
-      })
-      .select("id")
-      .single();
+    // Generate the id client-side so the insert needs no read-back (RLS keeps
+    // the leads table write-only for the public key).
+    const newId = crypto.randomUUID();
+    const { error } = await supabase.from("quiz_responses").insert({
+      id: newId,
+      quiz_id: quiz.id,
+      organization_id: org.id,
+      session_id: sessionId,
+    });
 
-    if (error || !data) {
+    if (error) {
       console.error("Failed to create response:", error);
       setIsSubmitting(false);
       return;
     }
 
-    setResponseId(data.id);
+    setResponseId(newId);
     setStep("questions");
     setIsSubmitting(false);
   }, [quiz.id, org.id, sessionId]);
@@ -223,9 +223,13 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       const pct = Math.round((totalScore / quiz.max_score) * 100);
       const qual = getQualification(pct);
 
-      const { error } = await supabase
-        .from("quiz_responses")
-        .update({
+      // Finalize server-side (service role) so the public key never needs
+      // UPDATE/SELECT on the leads table.
+      const finalizeRes = await fetch("/api/scorecard/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          responseId,
           contact_name: contactName,
           contact_email: contactEmail,
           contact_phone: contactPhone || "",
@@ -235,12 +239,11 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           max_score: quiz.max_score,
           percentage: pct,
           qualification: qual,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", responseId);
+        }),
+      });
 
-      if (error) {
-        console.error("Failed to update response:", error);
+      if (!finalizeRes.ok) {
+        console.error("Failed to finalize response");
         setIsSubmitting(false);
         return;
       }
