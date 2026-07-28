@@ -26,6 +26,7 @@ export interface Quiz {
   is_active: boolean;
   result_mode?: "lead" | "assessment";
   cta_url?: string | null;
+  collect_company?: boolean;
 }
 
 export interface QuizQuestion {
@@ -54,6 +55,8 @@ export interface QuizResponse {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  contact_company: string | null;
+  contact_website: string | null;
   agent_code: string | null;
   converted_to_sale: boolean;
   created_at: string;

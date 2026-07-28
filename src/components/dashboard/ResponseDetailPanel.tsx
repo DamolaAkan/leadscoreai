@@ -126,6 +126,22 @@ export default function ResponseDetailPanel({
                       {response.contact_phone || "—"}
                     </p>
                   </div>
+                  {response.contact_company && (
+                    <div>
+                      <span className="text-gray-500">Company:</span>
+                      <p className="text-gray-900 font-medium">
+                        {response.contact_company}
+                      </p>
+                    </div>
+                  )}
+                  {response.contact_website && (
+                    <div>
+                      <span className="text-gray-500">Website:</span>
+                      <p className="text-gray-900 font-medium break-all">
+                        {response.contact_website}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <span className="text-gray-500">Agent Code:</span>
                     <p className="text-gray-900 font-medium">

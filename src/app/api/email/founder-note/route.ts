@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     const { data: response } = await supabase
       .from("quiz_responses")
-      .select("contact_name, contact_email, contact_phone, percentage, qualification, founder_email_sent_at")
+      .select("contact_name, contact_email, contact_phone, contact_company, contact_website, percentage, qualification, founder_email_sent_at")
       .eq("id", responseId)
       .eq("organization_id", organizationId)
       .single();
@@ -68,6 +68,8 @@ export async function POST(request: Request) {
         <h1 style="margin:0 0 20px;font-size:22px;font-weight:800;color:#15131c;">Congratulations — a new lead just came through.</h1>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;">
           <tr><td style="padding:18px 20px;font-size:15px;color:#1e293b;line-height:1.9;">
+            <strong>Company:</strong> ${response.contact_company || "—"}<br>
+            <strong>Website:</strong> ${response.contact_website || "—"}<br>
             <strong>Name:</strong> ${response.contact_name || "—"}<br>
             <strong>Email:</strong> ${response.contact_email}<br>
             <strong>Phone:</strong> ${response.contact_phone || "—"}<br>

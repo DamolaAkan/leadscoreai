@@ -71,6 +71,8 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState<string | undefined>("");
+  const [contactCompany, setContactCompany] = useState("");
+  const [contactWebsite, setContactWebsite] = useState("");
   const [detectedCountry, setDetectedCountry] = useState<Country>("US");
 
   // Results
@@ -227,6 +229,8 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           contact_name: contactName,
           contact_email: contactEmail,
           contact_phone: contactPhone || "",
+          contact_company: contactCompany || null,
+          contact_website: contactWebsite || null,
           score: totalScore,
           max_score: quiz.max_score,
           percentage: pct,
@@ -270,7 +274,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
         }),
       }).catch(() => {});
     },
-    [responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, org.id]
+    [responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, contactCompany, contactWebsite, org.slug, org.id]
   );
 
   const progress =
@@ -524,6 +528,43 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     placeholder="john@example.com"
                   />
                 </div>
+
+                {quiz.collect_company && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                        Company Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={contactCompany}
+                        onChange={(e) => setContactCompany(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                        style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                        onFocus={inputFocus}
+                        onBlur={inputBlur}
+                        placeholder="Your microfinance bank or company"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                        Website <span style={{ color: "#94a3b8" }}>(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactWebsite}
+                        onChange={(e) => setContactWebsite(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                        style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                        onFocus={inputFocus}
+                        onBlur={inputBlur}
+                        placeholder="www.yourcompany.com"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
