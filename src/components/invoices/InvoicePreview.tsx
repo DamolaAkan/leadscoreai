@@ -1,7 +1,7 @@
 "use client";
 
 import { Invoice } from "@/lib/invoice-types";
-import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateBalanceDue } from "@/lib/invoice-utils";
+import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateTotalPaidCharges, calculateBalanceDue } from "@/lib/invoice-utils";
 import StatusBadge from "./StatusBadge";
 
 interface InvoicePreviewProps {
@@ -18,7 +18,9 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
   const totalCharges = calculateTotalCharges(invoice.line_items);
   const totalPayments = calculateTotalPayments(invoice.line_items);
+  const totalPaidCharges = calculateTotalPaidCharges(invoice.line_items);
   const balanceDue = calculateBalanceDue(invoice.line_items);
+  const hasReductions = hasPayments || totalPaidCharges > 0;
 
   return (
     <div className="bg-[#f9fafb] border border-black/[0.08] rounded-2xl p-8 max-w-2xl shadow-sm">
@@ -117,16 +119,24 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
       {/* Footer / Totals */}
       <div className="border-t-2 border-[#7C3AED]/30 pt-3 mb-6">
-        {hasPayments ? (
+        {hasReductions ? (
           <div className="space-y-1">
             <div className="flex justify-between text-sm text-gray-500">
               <span>Subtotal (Charges)</span>
               <span>{formatCurrency(totalCharges, invoice.currency)}</span>
             </div>
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Payments</span>
-              <span>-{formatCurrency(totalPayments, invoice.currency)}</span>
-            </div>
+            {totalPayments > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Payments / deductions</span>
+                <span>-{formatCurrency(totalPayments, invoice.currency)}</span>
+              </div>
+            )}
+            {totalPaidCharges > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Paid line items</span>
+                <span>-{formatCurrency(totalPaidCharges, invoice.currency)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold text-[#7C3AED] pt-1">
               <span>Balance Due</span>
               <span>{formatCurrency(balanceDue, invoice.currency)}</span>

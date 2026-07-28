@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Invoice, InvoiceClient } from "./invoice-types";
-import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateBalanceDue } from "./invoice-utils";
+import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateTotalPaidCharges, calculateBalanceDue } from "./invoice-utils";
 
 const PURPLE = "#7C3AED";
 const DARK = "#111827";
@@ -226,7 +226,8 @@ export function generateInvoicePdf(invoice: Invoice, client: InvoiceClient): Buf
   doc.line(120, y, 190, y);
   y += 8;
 
-  if (hasPayments) {
+  const totalPaidChargesAmt = calculateTotalPaidCharges(invoice.line_items);
+  if (hasPayments || totalPaidChargesAmt > 0) {
     const totalCharges = calculateTotalCharges(invoice.line_items);
     const totalPaymentsAmt = calculateTotalPayments(invoice.line_items);
     const balanceDue = calculateBalanceDue(invoice.line_items);
@@ -238,10 +239,19 @@ export function generateInvoicePdf(invoice: Invoice, client: InvoiceClient): Buf
     doc.text(formatCurrency(totalCharges, invoice.currency), 190, y, { align: "right" });
     y += 7;
 
-    doc.setTextColor(GREEN);
-    doc.text("Payments", 120, y);
-    doc.text(`-${formatCurrency(totalPaymentsAmt, invoice.currency)}`, 190, y, { align: "right" });
-    y += 7;
+    if (totalPaymentsAmt > 0) {
+      doc.setTextColor(GREEN);
+      doc.text("Payments / deductions", 120, y);
+      doc.text(`-${formatCurrency(totalPaymentsAmt, invoice.currency)}`, 190, y, { align: "right" });
+      y += 7;
+    }
+
+    if (totalPaidChargesAmt > 0) {
+      doc.setTextColor(GREEN);
+      doc.text("Paid line items", 120, y);
+      doc.text(`-${formatCurrency(totalPaidChargesAmt, invoice.currency)}`, 190, y, { align: "right" });
+      y += 7;
+    }
 
     doc.setFontSize(12);
     doc.setTextColor(PURPLE);

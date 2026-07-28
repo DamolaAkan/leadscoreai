@@ -1,5 +1,5 @@
 import { Invoice, InvoiceClient } from "./invoice-types";
-import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateBalanceDue } from "./invoice-utils";
+import { formatCurrency, formatDate, calculateTotalCharges, calculateTotalPayments, calculateTotalPaidCharges, calculateBalanceDue } from "./invoice-utils";
 
 function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
@@ -69,20 +69,27 @@ function lineItemsTable(invoice: Invoice): string {
     ? `<tr><td colspan="4" style="padding:16px 0 8px;color:#9ca3af;font-size:12px;font-weight:600;text-transform:uppercase;">Payments / Deductions</td></tr>`
     : "";
 
+  const totalPaidChargesAmt = calculateTotalPaidCharges(invoice.line_items);
   let footer: string;
-  if (hasPayments) {
+  if (hasPayments || totalPaidChargesAmt > 0) {
     const totalCharges = calculateTotalCharges(invoice.line_items);
     const totalPayments = calculateTotalPayments(invoice.line_items);
     const balanceDue = calculateBalanceDue(invoice.line_items);
+    const paymentsRow = totalPayments > 0 ? `
+    <tr>
+      <td colspan="3" style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">Payments / deductions</td>
+      <td style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">-${formatCurrency(totalPayments, invoice.currency)}</td>
+    </tr>` : "";
+    const paidChargesRow = totalPaidChargesAmt > 0 ? `
+    <tr>
+      <td colspan="3" style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">Paid line items</td>
+      <td style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">-${formatCurrency(totalPaidChargesAmt, invoice.currency)}</td>
+    </tr>` : "";
     footer = `
     <tr>
       <td colspan="3" style="padding:12px 0 4px;text-align:right;color:#9ca3af;font-size:14px;">Subtotal (Charges)</td>
       <td style="padding:12px 0 4px;text-align:right;color:#e5e7eb;font-size:14px;">${formatCurrency(totalCharges, invoice.currency)}</td>
-    </tr>
-    <tr>
-      <td colspan="3" style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">Payments</td>
-      <td style="padding:4px 0;text-align:right;color:#22c55e;font-size:14px;">-${formatCurrency(totalPayments, invoice.currency)}</td>
-    </tr>
+    </tr>${paymentsRow}${paidChargesRow}
     <tr>
       <td colspan="3" style="padding:8px 0;text-align:right;color:#9ca3af;font-size:14px;font-weight:600;">Balance Due</td>
       <td style="padding:8px 0;text-align:right;color:#7C3AED;font-size:18px;font-weight:700;">${formatCurrency(balanceDue, invoice.currency)}</td>

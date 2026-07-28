@@ -53,8 +53,20 @@ export function calculateTotalPayments(lineItems: { quantity: number; unit_price
     .reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
 }
 
-export function calculateBalanceDue(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment" }[]): number {
-  return calculateTotalCharges(lineItems) - calculateTotalPayments(lineItems);
+// Charge line items that have been individually marked paid (e.g. a milestone
+// paid and receipted). These reduce the balance the same as a deduction does.
+export function calculateTotalPaidCharges(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment"; paid?: boolean }[]): number {
+  return lineItems
+    .filter((item) => (!item.type || item.type === "charge") && item.paid)
+    .reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+}
+
+export function calculateBalanceDue(lineItems: { quantity: number; unit_price: number; type?: "charge" | "payment"; paid?: boolean }[]): number {
+  return (
+    calculateTotalCharges(lineItems) -
+    calculateTotalPayments(lineItems) -
+    calculateTotalPaidCharges(lineItems)
+  );
 }
 
 export function generateReceiptNumber(invoiceNumber: string, lineItemIndex: number): string {
