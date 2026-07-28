@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { supabase } from "@/lib/supabase";
 import { trackPixel } from "@/components/MetaPixel";
 import {
   Organization,
@@ -126,23 +125,21 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   // Start quiz — create response row
   const handleStart = useCallback(async () => {
     setIsSubmitting(true);
-    // Generate the id client-side so the insert needs no read-back (RLS keeps
-    // the leads table write-only for the public key).
-    const newId = crypto.randomUUID();
-    const { error } = await supabase.from("quiz_responses").insert({
-      id: newId,
-      quiz_id: quiz.id,
-      organization_id: org.id,
-      session_id: sessionId,
+    // Created server-side (service role) so the public key never touches the DB.
+    const res = await fetch("/api/scorecard/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quizId: quiz.id, organizationId: org.id, sessionId }),
     });
+    const data = await res.json().catch(() => null);
 
-    if (error) {
-      console.error("Failed to create response:", error);
+    if (!res.ok || !data?.id) {
+      console.error("Failed to create response");
       setIsSubmitting(false);
       return;
     }
 
-    setResponseId(newId);
+    setResponseId(data.id);
     setStep("questions");
     setIsSubmitting(false);
   }, [quiz.id, org.id, sessionId]);
@@ -157,17 +154,21 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
     setIsSubmitting(true);
 
-    // Save to response_answers
-    const { error } = await supabase.from("response_answers").insert({
-      response_id: responseId,
-      question_id: question.id,
-      question_order: question.question_order,
-      answer_value: { selected: option.value, text: option.text },
-      points_awarded: option.points,
+    // Save to response_answers server-side (service role).
+    const res = await fetch("/api/scorecard/answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        responseId,
+        questionId: question.id,
+        questionOrder: question.question_order,
+        answerValue: { selected: option.value, text: option.text },
+        pointsAwarded: option.points,
+      }),
     });
 
-    if (error) {
-      console.error("Failed to save answer:", error);
+    if (!res.ok) {
+      console.error("Failed to save answer");
       setIsSubmitting(false);
       return;
     }
@@ -198,18 +199,13 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       setStep("start");
       return;
     }
-    const last = answers[answers.length - 1];
-    if (last && responseId) {
-      await supabase
-        .from("response_answers")
-        .delete()
-        .eq("response_id", responseId)
-        .eq("question_id", last.questionId);
+    // Drop the last answer locally; re-answering replaces it server-side.
+    if (answers.length > 0) {
       setAnswers(answers.slice(0, -1));
     }
     setSelectedOption(null);
     setCurrentQ(currentQ - 1);
-  }, [currentQ, answers, responseId]);
+  }, [currentQ, answers]);
 
   // Submit contact form and compute results
   const handleContactSubmit = useCallback(
