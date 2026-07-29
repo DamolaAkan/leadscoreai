@@ -4,9 +4,9 @@ import { requireAdmin } from "@/lib/invoice-auth";
 
 export const dynamic = "force-dynamic";
 
-// Company-set revenue target per rep. The personal dream goal is self-set;
-// this one is the floor the company expects.
-const COMPANY_MONTHLY = { deals: 4, setup_naira: 2_500_000 };
+// Company-wide monthly revenue goal, shared across all reps. Mix and match:
+// 20 Starter (N500k), 5 premium (N2M), or anything in between.
+const COMPANY_MONTHLY_SETUP_NAIRA = 10_000_000;
 
 // GET /api/goals — the signed-in rep's personal commission goal + progress,
 // plus company-target progress for the current month.
@@ -27,28 +27,32 @@ export async function GET(request: Request) {
       .eq("owner_id", user.id)
       .in("status", ["pending", "approved", "paid"])
       .gte("created_at", yearStart),
+    // Company-wide closes this month (all reps), with owner_id so each rep
+    // also sees their own contribution to the shared goal.
     supabase
       .from("sl_commissions")
-      .select("setup_fee_naira")
-      .eq("owner_id", user.id)
+      .select("owner_id, setup_fee_naira")
       .in("status", ["pending", "approved", "paid"])
       .gte("created_at", monthStart),
   ]);
 
   const earnedYear = (yearRows || []).reduce((s, r) => s + Number(r.commission_naira || 0), 0);
   const dealsYear = (yearRows || []).length;
-  const dealsMonth = (monthRows || []).length;
-  const setupMonth = (monthRows || []).reduce((s, r) => s + Number(r.setup_fee_naira || 0), 0);
+  const companyDealsMonth = (monthRows || []).length;
+  const companySetupMonth = (monthRows || []).reduce((s, r) => s + Number(r.setup_fee_naira || 0), 0);
+  const mySetupMonth = (monthRows || [])
+    .filter((r) => r.owner_id === user.id)
+    .reduce((s, r) => s + Number(r.setup_fee_naira || 0), 0);
 
   return NextResponse.json({
     annual_target_naira: Number(goal?.annual_target_naira || 0),
     earned_year_naira: earnedYear,
     deals_closed_year: dealsYear,
     company: {
-      monthly_deal_target: COMPANY_MONTHLY.deals,
-      monthly_setup_target_naira: COMPANY_MONTHLY.setup_naira,
-      deals_this_month: dealsMonth,
-      setup_this_month_naira: setupMonth,
+      monthly_setup_target_naira: COMPANY_MONTHLY_SETUP_NAIRA,
+      setup_this_month_naira: companySetupMonth,
+      deals_this_month: companyDealsMonth,
+      my_setup_this_month_naira: mySetupMonth,
     },
   });
 }

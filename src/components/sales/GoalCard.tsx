@@ -9,10 +9,10 @@ interface GoalData {
   earned_year_naira: number;
   deals_closed_year: number;
   company: {
-    monthly_deal_target: number;
     monthly_setup_target_naira: number;
-    deals_this_month: number;
     setup_this_month_naira: number;
+    deals_this_month: number;
+    my_setup_this_month_naira: number;
   };
 }
 
@@ -41,7 +41,10 @@ export default function GoalCard() {
   const starterDeals = Math.ceil(remaining / STARTER_COMMISSION);
 
   const c = data.company;
-  const companyPct = Math.min(100, Math.round((c.deals_this_month / c.monthly_deal_target) * 100));
+  const companyPct = Math.min(
+    100,
+    Math.round((c.setup_this_month_naira / c.monthly_setup_target_naira) * 100)
+  );
 
   async function save() {
     const value = Number(draft.replace(/[^0-9]/g, ""));
@@ -134,14 +137,17 @@ export default function GoalCard() {
           )}
         </div>
 
-        {/* Company target */}
-        <div className="min-w-[240px]">
+        {/* Company goal — shared by the whole team */}
+        <div className="min-w-[260px]">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
-            Company target · this month
+            Company goal · this month
           </p>
           <p className="text-2xl font-bold text-[#111827] mt-1 tabular-nums">
-            {c.deals_this_month}
-            <span className="text-sm font-medium text-[#94a3b8]"> of {c.monthly_deal_target} deals</span>
+            {formatNaira(c.setup_this_month_naira)}
+            <span className="text-sm font-medium text-[#94a3b8]">
+              {" "}
+              of {formatNaira(c.monthly_setup_target_naira)} ({companyPct}%)
+            </span>
           </p>
           <div className="h-2 rounded-full bg-[#f1f5f9] mt-2 overflow-hidden">
             <div
@@ -150,8 +156,11 @@ export default function GoalCard() {
             />
           </div>
           <p className="text-xs text-[#64748b] mt-2 tabular-nums">
-            {formatNaira(c.setup_this_month_naira)} of {formatNaira(c.monthly_setup_target_naira)} setup
-            revenue
+            {c.deals_this_month} deal{c.deals_this_month === 1 ? "" : "s"} closed · your part:{" "}
+            {formatNaira(c.my_setup_this_month_naira)}
+          </p>
+          <p className="text-xs text-[#94a3b8] mt-1">
+            Mix &amp; match: 20 Starter · 5 premium · anything in between
           </p>
         </div>
       </div>
