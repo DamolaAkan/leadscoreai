@@ -83,7 +83,7 @@ export interface SlBalances {
 // Stage badges — deliberately NOT the scorecard tier colours (green/amber/blue/red),
 // which mean Hot/Warm/Cold/Not-Qualified elsewhere in the product.
 export const STAGE_META: Record<SlStage, { label: string; bg: string; text: string }> = {
-  contact_added: { label: "Contact Added", bg: "#f1f5f9", text: "#475569" },
+  contact_added: { label: "Interested", bg: "#f1f5f9", text: "#475569" },
   meeting_booked: { label: "Meeting Booked", bg: "#ede9fe", text: "#5b21b6" },
   proposal_sent: { label: "Proposal Sent", bg: "#e0e7ff", text: "#3730a3" },
   paid: { label: "Paid", bg: "#ccfbf1", text: "#115e59" },

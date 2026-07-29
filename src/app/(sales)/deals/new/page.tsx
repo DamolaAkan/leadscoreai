@@ -11,6 +11,10 @@ export default function NewDealPage() {
           ← Back to deals
         </Link>
         <h1 className="text-2xl font-bold text-[#111827] mt-2">Add Deal</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Milestones only: add a company here once they have <strong>responded with interest</strong> or{" "}
+          <strong>agreed to a meeting</strong>. Prospecting and first messages stay off the deal page.
+        </p>
       </div>
       <DealForm />
     </div>

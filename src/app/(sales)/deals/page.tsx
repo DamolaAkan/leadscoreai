@@ -7,6 +7,7 @@ import { slGet } from "@/lib/sl-client";
 import { SlDeal, SlProduct, STAGE_META, SlStage } from "@/lib/sl-types";
 import { formatMoney, formatDate } from "@/lib/sl-format";
 import { StageBadge } from "@/components/sales/Badges";
+import GoalCard from "@/components/sales/GoalCard";
 
 interface Meta {
   products: SlProduct[];
@@ -81,6 +82,9 @@ export default function DealsPage() {
           Add Deal
         </Link>
       </div>
+
+      {/* Personal commission goal + company target */}
+      <GoalCard />
 
       {/* Filters */}
       <div className="bg-white rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-wrap gap-3">
