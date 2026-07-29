@@ -13,6 +13,7 @@ interface GoalData {
     setup_this_month_naira: number;
     deals_this_month: number;
     my_setup_this_month_naira: number;
+    my_monthly_floor_naira: number;
   };
 }
 
@@ -45,6 +46,10 @@ export default function GoalCard() {
     100,
     Math.round((c.setup_this_month_naira / c.monthly_setup_target_naira) * 100)
   );
+  const floorPct =
+    c.my_monthly_floor_naira > 0
+      ? Math.min(100, Math.round((c.my_setup_this_month_naira / c.my_monthly_floor_naira) * 100))
+      : 0;
 
   async function save() {
     const value = Number(draft.replace(/[^0-9]/g, ""));
@@ -135,6 +140,31 @@ export default function GoalCard() {
               path every time you log in.
             </p>
           )}
+        </div>
+
+        {/* My monthly floor — the company-set minimum per rep */}
+        <div className="min-w-[220px]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
+            My floor · this month
+          </p>
+          <p className="text-2xl font-bold text-[#111827] mt-1 tabular-nums">
+            {formatNaira(c.my_setup_this_month_naira)}
+            <span className="text-sm font-medium text-[#94a3b8]">
+              {" "}
+              of {formatNaira(c.my_monthly_floor_naira)} ({floorPct}%)
+            </span>
+          </p>
+          <div className="h-2 rounded-full bg-[#f1f5f9] mt-2 overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${floorPct}%`, backgroundColor: floorPct >= 100 ? "#16a34a" : "#d99409" }}
+            />
+          </div>
+          <p className="text-xs text-[#64748b] mt-2">
+            {floorPct >= 100
+              ? "Floor cleared. Now push for your goal."
+              : "The minimum in setup fees expected of you this month. At least 1 Scale-or-premium close."}
+          </p>
         </div>
 
         {/* Company goal — shared by the whole team */}

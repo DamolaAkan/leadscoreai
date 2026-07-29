@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 // Company-wide monthly revenue goal, shared across all reps. Mix and match:
 // 20 Starter (N500k), 5 premium (N2M), or anything in between.
 const COMPANY_MONTHLY_SETUP_NAIRA = 10_000_000;
+// Each rep's individual monthly revenue floor in setup fees.
+const REP_MONTHLY_FLOOR_NAIRA = 3_000_000;
 
 // GET /api/goals — the signed-in rep's personal commission goal + progress,
 // plus company-target progress for the current month.
@@ -53,6 +55,7 @@ export async function GET(request: Request) {
       setup_this_month_naira: companySetupMonth,
       deals_this_month: companyDealsMonth,
       my_setup_this_month_naira: mySetupMonth,
+      my_monthly_floor_naira: REP_MONTHLY_FLOOR_NAIRA,
     },
   });
 }
