@@ -61,9 +61,10 @@ export function buildFounderEmail({
           <p style="margin:0 0 26px;">
             <a href="${MANIFESTO_URL}" style="${btn}color:${ACCENT};border:2px solid ${ACCENT};background:#ffffff;">Read Manifesto No. 1 &rarr;</a>
           </p>
-          <p style="${p}">If you'd like, I'll walk through your specific situation and show you how to pre-score your applicants for repayment, live on your own pipeline:</p>
+          <p style="${p}">And if you're ready to fix what the check-up found, here's the investment, plainly: <strong>Starter</strong> is a $500 one-time setup then $60/mo (scorecard + qualification for a single offer). <strong>Scale</strong> is $2,000 setup then $100/mo (full analytics + the predictive layer). <strong>Enterprise</strong> is custom. Every engagement starts with a one-time setup, and you go live in 7 days.</p>
+          <p style="${p}">If that makes sense for your operation, book your setup call. One call: your loan products, your scorecard design, your go-live date.</p>
           <p style="margin:0 0 30px;">
-            <a href="${CALENDLY_URL}" style="${btn}color:#ffffff;background:${ACCENT};">Book a 30-minute call &rarr;</a>
+            <a href="${CALENDLY_URL}" style="${btn}color:#ffffff;background:${ACCENT};">Book my setup call &rarr;</a>
           </p>
           <p style="${p}">Either way, thanks for taking the time.</p>
           <p style="margin:0 0 2px;font-size:16px;line-height:1.5;color:#1e293b;font-weight:600;">Damola Akanbi</p>

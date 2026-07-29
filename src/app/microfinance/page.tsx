@@ -85,6 +85,17 @@ export default function MicrofinancePage() {
               A video walkthrough of how microfinance banks and lenders can strengthen repayment
               rates and reduce defaults with LeadScoreAI.
             </p>
+            <p
+              style={{
+                marginTop: 14,
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: "clamp(12px, 1.8vw, 13.5px)",
+                letterSpacing: "0.03em",
+                color: "#8a8598",
+              }}
+            >
+              LeadScoreAI builds software for lenders. We do not offer loans.
+            </p>
           </div>
 
           {/* Video */}

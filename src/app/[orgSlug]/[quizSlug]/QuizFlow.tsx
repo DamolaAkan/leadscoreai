@@ -646,25 +646,102 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                  <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
-                    Get your free loan-book review
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                  <h3 className="text-base font-semibold mb-1 text-center" style={{ color: "#1e293b" }}>
+                    Ready to fix it? Here is the investment.
                   </h3>
-                  <p className="text-sm mb-5 leading-relaxed max-w-md mx-auto" style={{ color: "#64748b" }}>
-                    Book a 15-minute call and we will show you exactly how to pre-score your applicants for
-                    repayment, live on your own pipeline.
+                  <p className="text-sm mb-6 leading-relaxed max-w-md mx-auto text-center" style={{ color: "#64748b" }}>
+                    Every engagement starts with a one-time setup and a low monthly. We build it for
+                    your business, and you go live in 7 days.
                   </p>
-                  <a
-                    href={quiz.cta_url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-8 py-3 rounded-lg text-white font-semibold text-base"
-                    style={{ backgroundColor: accent }}
-                  >
-                    Book my free review
-                  </a>
 
-                  <div className="mt-6 pt-6 border-t" style={{ borderColor: "#eef2f7" }}>
+                  <div className="space-y-3 text-left">
+                    {[
+                      {
+                        name: "STARTER",
+                        desc: "Scorecard + qualification for a single offer.",
+                        price: "$500",
+                        monthly: "then $60/mo",
+                        features: ["Custom scorecard build", "Hot / Warm / Cold scoring", "Branded results page", "Admin dashboard & CSV export"],
+                        popular: false,
+                      },
+                      {
+                        name: "SCALE",
+                        desc: "Full analytics + predictive layer for teams.",
+                        price: "$2,000",
+                        monthly: "then $100/mo",
+                        features: ["Everything in Starter", "Unlimited scorecards & responses", "Market intelligence analytics", "Predictive conversion insights", "Agent-level attribution"],
+                        popular: true,
+                      },
+                      {
+                        name: "ENTERPRISE",
+                        desc: "White-label, bespoke build, dedicated team.",
+                        price: "Custom",
+                        monthly: "let's talk",
+                        features: ["Everything in Scale", "White-label, your brand only", "Custom integrations & exports", "Dedicated account manager"],
+                        popular: false,
+                      },
+                    ].map((tier) => (
+                      <div
+                        key={tier.name}
+                        className="rounded-lg border p-5 relative"
+                        style={{ borderColor: tier.popular ? accent : "#e2e8f0", borderWidth: tier.popular ? 2 : 1 }}
+                      >
+                        {tier.popular && (
+                          <span
+                            className="absolute -top-2.5 left-4 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide text-white"
+                            style={{ backgroundColor: accent }}
+                          >
+                            MOST POPULAR
+                          </span>
+                        )}
+                        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                          <div>
+                            <p className="text-xs font-bold tracking-widest" style={{ color: tier.popular ? accent : "#64748b" }}>
+                              {tier.name}
+                            </p>
+                            <p className="text-sm mt-1" style={{ color: "#64748b" }}>{tier.desc}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-extrabold leading-none" style={{ color: "#1e293b" }}>
+                              {tier.price}
+                              {tier.price !== "Custom" && (
+                                <span className="text-[10px] font-semibold align-middle ml-1.5 px-1.5 py-0.5 rounded" style={{ backgroundColor: "#f3effc", color: accent }}>
+                                  ONE-TIME
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>{tier.monthly}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: "#f1f5f9" }}>
+                          {tier.features.map((f) => (
+                            <p key={f} className="text-[13px]" style={{ color: "#475569" }}>
+                              <span style={{ color: accent }}>+</span> {f}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center mt-6">
+                    <p className="text-sm mb-4 max-w-md mx-auto" style={{ color: "#64748b" }}>
+                      If this investment makes sense for your operation, book your setup call. One
+                      call: your loan products, your scorecard design, your go-live date.
+                    </p>
+                    <a
+                      href={quiz.cta_url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-8 py-3 rounded-lg text-white font-semibold text-base"
+                      style={{ backgroundColor: accent }}
+                    >
+                      Book my setup call
+                    </a>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t text-center" style={{ borderColor: "#eef2f7" }}>
                     <p className="text-sm mb-3" style={{ color: "#64748b" }}>
                       Or start with the founder&apos;s manifesto:
                     </p>
