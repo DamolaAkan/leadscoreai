@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { trackPixel } from "@/components/MetaPixel";
+import { trackLead } from "@/components/MetaPixel";
 import {
   Organization,
   Quiz,
@@ -250,8 +250,17 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       setStep("results");
       setIsSubmitting(false);
 
-      // Meta pixel conversion (loandoctor MFB campaign only; no-op elsewhere)
-      if (org.slug === "loandoctor") trackPixel("Lead");
+      // Meta pixel conversion with Advanced Matching (loandoctor MFB campaign
+      // only; no-op elsewhere). Passes the contact info we just collected so
+      // Meta can match the lead — big lift to Event Match Quality.
+      if (org.slug === "loandoctor") {
+        trackLead({
+          email: contactEmail,
+          phone: contactPhone || undefined,
+          fullName: contactName,
+          externalId: responseId || undefined,
+        });
+      }
 
       // Fire-and-forget: trigger email sequence server-side
       fetch("/api/email/trigger-sequence", {

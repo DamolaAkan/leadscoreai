@@ -14,6 +14,39 @@ export function trackPixel(event: string): void {
   }
 }
 
+type LeadUserData = {
+  email?: string;
+  phone?: string;
+  fullName?: string;
+  externalId?: string;
+};
+
+// Fire a Lead with Advanced Matching. We pass the contact info the scorecard
+// already collected so Meta can match the lead to a real person — this is what
+// lifts Event Match Quality (and therefore optimisation) well above the bare
+// browser-signal baseline. The browser pixel SHA-256 hashes em/ph/fn/ln itself,
+// so we send plain values. The eventID lets us de-dupe if we add server-side
+// (CAPI) events later.
+export function trackLead(data: LeadUserData): void {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { fbq?: (...args: unknown[]) => void };
+  if (typeof w.fbq !== "function") return;
+
+  const am: Record<string, string> = {};
+  if (data.email) am.em = data.email.trim().toLowerCase();
+  if (data.phone) am.ph = data.phone.replace(/[^0-9]/g, "");
+  if (data.fullName) {
+    const parts = data.fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts[0]) am.fn = parts[0].toLowerCase();
+    if (parts.length > 1) am.ln = parts[parts.length - 1].toLowerCase();
+  }
+  if (data.externalId) am.external_id = data.externalId;
+
+  // Re-init with the advanced-matching payload, then track.
+  w.fbq("init", META_PIXEL_ID, am);
+  w.fbq("track", "Lead", {}, data.externalId ? { eventID: data.externalId } : undefined);
+}
+
 export default function MetaPixel({ pixelId = META_PIXEL_ID }: { pixelId?: string }) {
   return (
     <>
