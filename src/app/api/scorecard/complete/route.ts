@@ -60,11 +60,13 @@ export async function POST(request: Request) {
           .from("response_answers")
           .select("question_id, points_awarded")
           .eq("response_id", responseId),
+        // Outcomes that can train WTP for this vertical: repayment labels or
+        // (for our own funnel) a closed sale.
         supabase
           .from("quiz_responses")
           .select("id", { count: "exact", head: true })
           .eq("organization_id", existing.organization_id)
-          .eq("converted_to_sale", true),
+          .or("outcome_label.in.(good,bad),converted_to_sale.eq.true"),
       ]);
 
       if (questions && answers) {

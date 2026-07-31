@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { QuizResponse } from "@/lib/types";
 import QualificationBadge from "./QualificationBadge";
 import { wtpBand } from "@/lib/wtp";
+import { OUTCOME_STAGES, outcomeMeta, labelColor } from "@/lib/outcomes";
 
 interface AnswerWithQuestion {
   id: string;
@@ -33,6 +34,30 @@ export default function ResponseDetailPanel({
   const [response, setResponse] = useState<QuizResponse | null>(null);
   const [answers, setAnswers] = useState<AnswerWithQuestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [outcomeDraft, setOutcomeDraft] = useState("");
+  const [savingOutcome, setSavingOutcome] = useState(false);
+
+  async function saveOutcome() {
+    if (!outcomeDraft || !responseId) return;
+    setSavingOutcome(true);
+    try {
+      const res = await fetch("/api/dashboard/outcomes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ responseId, stage: outcomeDraft }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setResponse((r) =>
+          r ? { ...r, outcome_stage: d.stage, outcome_label: d.label, outcome_at: new Date().toISOString() } : r
+        );
+        setOutcomeDraft("");
+      }
+    } catch {
+      /* ignore */
+    }
+    setSavingOutcome(false);
+  }
 
   useEffect(() => {
     if (!responseId) return;
@@ -246,6 +271,52 @@ export default function ResponseDetailPanel({
                   </div>
                 );
               })()}
+
+              {/* Loan outcome — the label that calibrates WTP */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 text-sm">Loan outcome</h3>
+                  {response.outcome_stage && (
+                    <span
+                      className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                      style={{
+                        color: labelColor(response.outcome_label),
+                        backgroundColor: labelColor(response.outcome_label) + "1a",
+                      }}
+                    >
+                      {outcomeMeta(response.outcome_stage)?.text || response.outcome_stage}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Tell us what happened to this applicant. These outcomes are what turn the WTP score
+                  from a directional index into a calibrated rating.
+                </p>
+                <div className="flex gap-2">
+                  <select
+                    value={outcomeDraft}
+                    onChange={(e) => setOutcomeDraft(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">
+                      {response.outcome_stage ? "Update outcome…" : "Record an outcome…"}
+                    </option>
+                    {OUTCOME_STAGES.map((o) => (
+                      <option key={o.stage} value={o.stage}>
+                        {o.text} — {o.hint}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={saveOutcome}
+                    disabled={!outcomeDraft || savingOutcome}
+                    className="text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                    style={{ backgroundColor: accent }}
+                  >
+                    {savingOutcome ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
 
               {/* Answers */}
               <div>
