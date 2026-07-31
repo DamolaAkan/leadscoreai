@@ -42,6 +42,14 @@ export default function ResponsesTab({
   // Delete confirm
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    total: number;
+    matched: number;
+    unmatched: number;
+    invalid: number;
+  } | null>(null);
+
   const fetchResponses = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({
@@ -159,6 +167,79 @@ export default function ResponsesTab({
     URL.revokeObjectURL(url);
   };
 
+  // Minimal CSV parser (quote-aware) → array of {header: value} rows.
+  function parseCsv(text: string): Record<string, string>[] {
+    const lines = text.replace(/\r\n?/g, "\n").split("\n").filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const splitLine = (line: string): string[] => {
+      const out: string[] = [];
+      let cur = "";
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ;
+        } else if (c === "," && !inQ) { out.push(cur); cur = ""; } else cur += c;
+      }
+      out.push(cur);
+      return out.map((s) => s.trim());
+    };
+    const headers = splitLine(lines[0]).map((h) => h.toLowerCase());
+    return lines.slice(1).map((line) => {
+      const cells = splitLine(line);
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => (row[h] = cells[i] ?? ""));
+      return row;
+    });
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const parsed = parseCsv(text);
+      const rows = parsed.map((r) => ({
+        email: r.email || "",
+        phone: r.phone || "",
+        stage: r.stage || r.outcome || "",
+        loan_amount: r.loan_amount || r.amount || "",
+        notes: r.notes || "",
+      }));
+      const res = await fetch("/api/dashboard/outcomes/import", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setImportResult(d);
+        load();
+      } else {
+        setImportResult({ total: rows.length, matched: 0, unmatched: 0, invalid: rows.length });
+      }
+    } catch {
+      setImportResult({ total: 0, matched: 0, unmatched: 0, invalid: 0 });
+    }
+    setImporting(false);
+  }
+
+  function downloadTemplate() {
+    const csv =
+      "email,phone,stage,loan_amount,notes\n" +
+      "borrower@example.com,,repaid,500000,paid in full\n" +
+      ",+2348012345678,defaulted,250000,3 missed payments\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "outcomes-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Responses</h1>
@@ -183,6 +264,31 @@ export default function ResponsesTab({
           value={`${stats.conversionRate}%`}
           accent={accent}
         />
+      </div>
+
+      {/* Bulk outcome import */}
+      <div className="bg-white rounded-xl p-4 flex flex-wrap items-center gap-3 border border-gray-100">
+        <div className="flex-1 min-w-[220px]">
+          <p className="text-sm font-semibold text-gray-900">Import loan outcomes</p>
+          <p className="text-xs text-gray-500">
+            Upload a CSV of repayment results to calibrate WTP. Matched to leads by email or phone.{" "}
+            <button onClick={downloadTemplate} className="font-medium underline" style={{ color: accent }}>
+              Download template
+            </button>
+          </p>
+        </div>
+        {importResult && (
+          <span className="text-xs text-gray-600 tabular-nums">
+            {importResult.matched} matched · {importResult.unmatched} unmatched · {importResult.invalid} invalid
+          </span>
+        )}
+        <label
+          className="text-sm font-medium px-4 py-2 rounded-md text-white cursor-pointer"
+          style={{ backgroundColor: accent, opacity: importing ? 0.6 : 1 }}
+        >
+          {importing ? "Importing…" : "Import CSV"}
+          <input type="file" accept=".csv,text/csv" onChange={handleImportFile} disabled={importing} className="hidden" />
+        </label>
       </div>
 
       {/* Filters */}
