@@ -66,6 +66,9 @@ export interface QuizResponse {
   is_super_lead: boolean;
   wtp_reasons: { signal: string; detail: string }[] | null;
   wtp_scored_at: string | null;
+  wtp_confidence: "low" | "medium" | "high" | null;
+  wtp_mode: "index" | "calibrated" | null;
+  wtp_factors: { question: string; earned: number; max: number; pct: number }[] | null;
 }
 
 export interface ResponseAnswer {

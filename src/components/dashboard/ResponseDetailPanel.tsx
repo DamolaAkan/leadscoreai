@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { QuizResponse } from "@/lib/types";
 import QualificationBadge from "./QualificationBadge";
+import { wtpBand } from "@/lib/wtp";
 
 interface AnswerWithQuestion {
   id: string;
@@ -178,6 +179,73 @@ export default function ResponseDetailPanel({
                   )}
                 </div>
               </div>
+
+              {/* WTP score */}
+              {response.wtp_score !== null && (() => {
+                const band = wtpBand(response.wtp_score);
+                const calibrated = response.wtp_mode === "calibrated";
+                return (
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                        Willingness-to-Pay score
+                      </h3>
+                      <span
+                        className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border"
+                        style={{
+                          color: calibrated ? "#115e59" : "#92400e",
+                          borderColor: calibrated ? "#99f6e4" : "#fde68a",
+                          backgroundColor: calibrated ? "#f0fdfa" : "#fffbeb",
+                        }}
+                        title={
+                          calibrated
+                            ? "Calibrated against real conversion outcomes."
+                            : "Directional index from the scorecard's WTP signals. Calibrates once enough outcomes are collected."
+                        }
+                      >
+                        {calibrated ? "Calibrated" : "Index · directional"}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <div className="text-4xl font-extrabold leading-none" style={{ color: band.color }}>
+                        {response.wtp_score}
+                        <span className="text-lg text-gray-400 font-bold">/100</span>
+                      </div>
+                      <span
+                        className="text-sm font-semibold px-2.5 py-1 rounded-md"
+                        style={{ backgroundColor: band.color + "1a", color: band.color }}
+                      >
+                        {band.label}
+                      </span>
+                      {response.wtp_confidence && (
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {response.wtp_confidence} confidence
+                        </span>
+                      )}
+                    </div>
+
+                    {response.wtp_factors && response.wtp_factors.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <p className="text-xs font-medium text-gray-500">What&apos;s driving it</p>
+                        {response.wtp_factors.slice(0, 4).map((f, i) => (
+                          <div key={i}>
+                            <div className="flex justify-between text-xs text-gray-600 mb-0.5">
+                              <span className="truncate pr-2">{f.question}</span>
+                              <span className="tabular-nums text-gray-400">{f.pct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${f.pct}%`, backgroundColor: wtpBand(f.pct).color }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Answers */}
               <div>

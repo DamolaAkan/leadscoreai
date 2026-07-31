@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { computeWtpIndex } from "@/lib/wtp";
 
 // Finalizes a scorecard response (writes contact details + score). Runs with the
 // service role so the public anon key never needs UPDATE/SELECT on the leads
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
 
     const { data: existing } = await supabase
       .from("quiz_responses")
-      .select("id, completed_at")
+      .select("id, completed_at, quiz_id, organization_id")
       .eq("id", responseId)
       .single();
 
@@ -46,6 +47,41 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[scorecard/complete] update error:", error.message);
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+    }
+
+    // Deterministic WTP index (Stage 1). Best-effort: never blocks completion.
+    try {
+      const [{ data: questions }, { data: answers }, { count: outcomeCount }] = await Promise.all([
+        supabase
+          .from("quiz_questions")
+          .select("id, question_text, max_points, wtp_signal")
+          .eq("quiz_id", existing.quiz_id),
+        supabase
+          .from("response_answers")
+          .select("question_id, points_awarded")
+          .eq("response_id", responseId),
+        supabase
+          .from("quiz_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", existing.organization_id)
+          .eq("converted_to_sale", true),
+      ]);
+
+      if (questions && answers) {
+        const wtp = computeWtpIndex(questions, answers, outcomeCount || 0);
+        await supabase
+          .from("quiz_responses")
+          .update({
+            wtp_score: wtp.score,
+            wtp_confidence: wtp.confidence,
+            wtp_mode: wtp.mode,
+            wtp_factors: wtp.factors,
+            wtp_scored_at: new Date().toISOString(),
+          })
+          .eq("id", responseId);
+      }
+    } catch (wtpErr) {
+      console.error("[scorecard/complete] WTP index error:", wtpErr);
     }
 
     return NextResponse.json({ ok: true });
