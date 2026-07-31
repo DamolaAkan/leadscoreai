@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import { labelForStage } from "@/lib/outcomes";
+import { calibrateOrg } from "@/lib/wtp-calibrate";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,17 @@ export async function POST(request: Request) {
     matched++;
   }
 
+  // If new labels landed, (re)train the WTP score. Self-gates on the threshold,
+  // so it's a cheap no-op until there are enough outcomes. Best-effort.
+  let calibration = null;
+  if (matched > 0) {
+    try {
+      calibration = await calibrateOrg(supabase, user.organizationId);
+    } catch (e) {
+      console.error("[outcomes/import] calibration error:", e);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     total: rows.length,
@@ -95,5 +107,6 @@ export async function POST(request: Request) {
     unmatched,
     invalid,
     problems: problems.slice(0, 20),
+    calibration,
   });
 }

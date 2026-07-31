@@ -49,6 +49,8 @@ export default function ResponsesTab({
     unmatched: number;
     invalid: number;
   } | null>(null);
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrateMsg, setCalibrateMsg] = useState("");
 
   const fetchResponses = useCallback(async () => {
     setLoading(true);
@@ -227,6 +229,29 @@ export default function ResponsesTab({
     setImporting(false);
   }
 
+  async function recalibrate() {
+    setCalibrating(true);
+    setCalibrateMsg("");
+    try {
+      const res = await fetch("/api/dashboard/wtp/calibrate", {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setCalibrateMsg("Not permitted.");
+      } else if (d.calibrated) {
+        setCalibrateMsg(`Calibrated on ${d.trainingSize} outcomes · re-scored ${d.rescored} leads.`);
+        load();
+      } else {
+        setCalibrateMsg(`${d.trainingSize}/${d.needed} outcomes — score stays a directional index until then.`);
+      }
+    } catch {
+      setCalibrateMsg("Something went wrong.");
+    }
+    setCalibrating(false);
+  }
+
   function downloadTemplate() {
     const csv =
       "email,phone,stage,loan_amount,notes\n" +
@@ -282,6 +307,14 @@ export default function ResponsesTab({
             {importResult.matched} matched · {importResult.unmatched} unmatched · {importResult.invalid} invalid
           </span>
         )}
+        <button
+          onClick={recalibrate}
+          disabled={calibrating}
+          className="text-sm font-medium px-4 py-2 rounded-md border disabled:opacity-50"
+          style={{ borderColor: accent, color: accent }}
+        >
+          {calibrating ? "Calibrating…" : "Recalibrate WTP"}
+        </button>
         <label
           className="text-sm font-medium px-4 py-2 rounded-md text-white cursor-pointer"
           style={{ backgroundColor: accent, opacity: importing ? 0.6 : 1 }}
@@ -289,6 +322,7 @@ export default function ResponsesTab({
           {importing ? "Importing…" : "Import CSV"}
           <input type="file" accept=".csv,text/csv" onChange={handleImportFile} disabled={importing} className="hidden" />
         </label>
+        {calibrateMsg && <span className="text-xs text-gray-600 w-full">{calibrateMsg}</span>}
       </div>
 
       {/* Filters */}
