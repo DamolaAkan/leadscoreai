@@ -217,7 +217,7 @@ export default function ResponsesTab({
       const d = await res.json();
       if (res.ok) {
         setImportResult(d);
-        load();
+        fetchResponses();
       } else {
         setImportResult({ total: rows.length, matched: 0, unmatched: 0, invalid: rows.length });
       }
@@ -240,7 +240,7 @@ export default function ResponsesTab({
         setCalibrateMsg("Not permitted.");
       } else if (d.calibrated) {
         setCalibrateMsg(`Calibrated on ${d.trainingSize} conversions · re-scored ${d.rescored} leads.`);
-        load();
+        fetchResponses();
       } else {
         setCalibrateMsg(`${d.trainingSize}/${d.needed} conversions — score stays a directional index until then.`);
       }

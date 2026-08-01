@@ -41,7 +41,7 @@ export default function ResponseDetailPanel({
     setSavingConv(true);
     try {
       const res = await fetch(`/api/dashboard/responses/${responseId}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ converted_to_sale: next }),
       });
