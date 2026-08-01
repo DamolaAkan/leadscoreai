@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { QuizResponse } from "@/lib/types";
 import QualificationBadge from "./QualificationBadge";
 import { wtpBand } from "@/lib/wtp";
-import { OUTCOME_STAGES, outcomeMeta, labelColor } from "@/lib/outcomes";
 
 interface AnswerWithQuestion {
   id: string;
@@ -34,29 +33,23 @@ export default function ResponseDetailPanel({
   const [response, setResponse] = useState<QuizResponse | null>(null);
   const [answers, setAnswers] = useState<AnswerWithQuestion[]>([]);
   const [loading, setLoading] = useState(false);
-  const [outcomeDraft, setOutcomeDraft] = useState("");
-  const [savingOutcome, setSavingOutcome] = useState(false);
+  const [savingConv, setSavingConv] = useState(false);
 
-  async function saveOutcome() {
-    if (!outcomeDraft || !responseId) return;
-    setSavingOutcome(true);
+  async function toggleConverted() {
+    if (!responseId || !response) return;
+    const next = !response.converted_to_sale;
+    setSavingConv(true);
     try {
-      const res = await fetch("/api/dashboard/outcomes", {
-        method: "POST",
+      const res = await fetch(`/api/dashboard/responses/${responseId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ responseId, stage: outcomeDraft }),
+        body: JSON.stringify({ converted_to_sale: next }),
       });
-      if (res.ok) {
-        const d = await res.json();
-        setResponse((r) =>
-          r ? { ...r, outcome_stage: d.stage, outcome_label: d.label, outcome_at: new Date().toISOString() } : r
-        );
-        setOutcomeDraft("");
-      }
+      if (res.ok) setResponse((r) => (r ? { ...r, converted_to_sale: next } : r));
     } catch {
       /* ignore */
     }
-    setSavingOutcome(false);
+    setSavingConv(false);
   }
 
   useEffect(() => {
@@ -272,50 +265,26 @@ export default function ResponseDetailPanel({
                 );
               })()}
 
-              {/* Loan outcome — the label that calibrates WTP */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">Loan outcome</h3>
-                  {response.outcome_stage && (
-                    <span
-                      className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                      style={{
-                        color: labelColor(response.outcome_label),
-                        backgroundColor: labelColor(response.outcome_label) + "1a",
-                      }}
-                    >
-                      {outcomeMeta(response.outcome_stage)?.text || response.outcome_stage}
-                    </span>
-                  )}
+              {/* Conversion — the single outcome that calibrates WTP */}
+              <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Converted?</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Mark leads who converted. Conversions are what calibrate the WTP score.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Tell us what happened to this applicant. These outcomes are what turn the WTP score
-                  from a directional index into a calibrated rating.
-                </p>
-                <div className="flex gap-2">
-                  <select
-                    value={outcomeDraft}
-                    onChange={(e) => setOutcomeDraft(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
-                  >
-                    <option value="">
-                      {response.outcome_stage ? "Update outcome…" : "Record an outcome…"}
-                    </option>
-                    {OUTCOME_STAGES.map((o) => (
-                      <option key={o.stage} value={o.stage}>
-                        {o.text} — {o.hint}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={saveOutcome}
-                    disabled={!outcomeDraft || savingOutcome}
-                    className="text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50"
-                    style={{ backgroundColor: accent }}
-                  >
-                    {savingOutcome ? "Saving…" : "Save"}
-                  </button>
-                </div>
+                <button
+                  onClick={toggleConverted}
+                  disabled={savingConv}
+                  className="text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 shrink-0"
+                  style={
+                    response.converted_to_sale
+                      ? { backgroundColor: "#16a34a1a", color: "#16a34a" }
+                      : { backgroundColor: accent, color: "#fff" }
+                  }
+                >
+                  {savingConv ? "Saving…" : response.converted_to_sale ? "✓ Converted" : "Mark converted"}
+                </button>
               </div>
 
               {/* Answers */}

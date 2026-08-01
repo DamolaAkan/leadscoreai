@@ -207,9 +207,7 @@ export default function ResponsesTab({
       const rows = parsed.map((r) => ({
         email: r.email || "",
         phone: r.phone || "",
-        stage: r.stage || r.outcome || "",
-        loan_amount: r.loan_amount || r.amount || "",
-        notes: r.notes || "",
+        converted: r.converted ?? r.conversion ?? "true",
       }));
       const res = await fetch("/api/dashboard/outcomes/import", {
         method: "POST",
@@ -241,10 +239,10 @@ export default function ResponsesTab({
       if (!res.ok) {
         setCalibrateMsg("Not permitted.");
       } else if (d.calibrated) {
-        setCalibrateMsg(`Calibrated on ${d.trainingSize} outcomes · re-scored ${d.rescored} leads.`);
+        setCalibrateMsg(`Calibrated on ${d.trainingSize} conversions · re-scored ${d.rescored} leads.`);
         load();
       } else {
-        setCalibrateMsg(`${d.trainingSize}/${d.needed} outcomes — score stays a directional index until then.`);
+        setCalibrateMsg(`${d.trainingSize}/${d.needed} conversions — score stays a directional index until then.`);
       }
     } catch {
       setCalibrateMsg("Something went wrong.");
@@ -254,13 +252,14 @@ export default function ResponsesTab({
 
   function downloadTemplate() {
     const csv =
-      "email,phone,stage,loan_amount,notes\n" +
-      "borrower@example.com,,repaid,500000,paid in full\n" +
-      ",+2348012345678,defaulted,250000,3 missed payments\n";
+      "email,phone,converted\n" +
+      "borrower@example.com,,yes\n" +
+      ",+2348012345678,yes\n" +
+      "notqualified@example.com,,no\n";
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "outcomes-template.csv";
+    a.download = "conversions-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -294,9 +293,9 @@ export default function ResponsesTab({
       {/* Bulk outcome import */}
       <div className="bg-white rounded-xl p-4 flex flex-wrap items-center gap-3 border border-gray-100">
         <div className="flex-1 min-w-[220px]">
-          <p className="text-sm font-semibold text-gray-900">Import loan outcomes</p>
+          <p className="text-sm font-semibold text-gray-900">Import conversions</p>
           <p className="text-xs text-gray-500">
-            Upload a CSV of repayment results to calibrate WTP. Matched to leads by email or phone.{" "}
+            Upload a CSV of who converted to calibrate WTP. Matched to leads by email or phone.{" "}
             <button onClick={downloadTemplate} className="font-medium underline" style={{ color: accent }}>
               Download template
             </button>

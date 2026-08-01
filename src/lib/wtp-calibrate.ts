@@ -122,30 +122,32 @@ export async function calibrateOrg(
   wtpQ.forEach((q) => (qText[q.id] = q.question_text));
   if (wtpIds.length === 0) return { calibrated: false, trainingSize: 0, needed: WTP_CALIBRATION_THRESHOLD, rescored: 0 };
 
-  // Labeled training responses (good/bad).
-  const { data: labeled } = await sb
+  // Training set: every completed lead, labeled simply by whether it converted.
+  // One binary outcome the client actually maintains — no lifecycle to track.
+  const { data: convRows } = await sb
     .from("quiz_responses")
-    .select("id, outcome_label")
+    .select("id, converted_to_sale")
     .eq("organization_id", orgId)
-    .in("outcome_label", ["good", "bad"]);
-  const labeledRows = (labeled || []) as { id: string; outcome_label: string }[];
-  if (labeledRows.length < WTP_CALIBRATION_THRESHOLD) {
-    return { calibrated: false, trainingSize: labeledRows.length, needed: WTP_CALIBRATION_THRESHOLD, rescored: 0 };
+    .not("completed_at", "is", null);
+  const trainRows = (convRows || []) as { id: string; converted_to_sale: boolean | null }[];
+  const conversions = trainRows.filter((r) => r.converted_to_sale).length;
+  if (conversions < WTP_CALIBRATION_THRESHOLD) {
+    return { calibrated: false, trainingSize: conversions, needed: WTP_CALIBRATION_THRESHOLD, rescored: 0 };
   }
 
-  const labelById = new Map(labeledRows.map((r) => [r.id, r.outcome_label]));
+  const convById = new Map(trainRows.map((r) => [r.id, !!r.converted_to_sale]));
   const { data: trainAns } = await sb
     .from("response_answers")
     .select("response_id, question_id, points_awarded")
-    .in("response_id", labeledRows.map((r) => r.id))
+    .in("response_id", trainRows.map((r) => r.id))
     .in("question_id", wtpIds);
 
   const trainByResp = new Map<string, { question_id: string; points_awarded: number }[]>();
   for (const a of (trainAns || []) as { response_id: string; question_id: string; points_awarded: number }[]) {
     (trainByResp.get(a.response_id) ?? trainByResp.set(a.response_id, []).get(a.response_id)!).push(a);
   }
-  const training: TrainingRow[] = labeledRows.map((r) => ({
-    outcomeGood: labelById.get(r.id) === "good",
+  const training: TrainingRow[] = trainRows.map((r) => ({
+    outcomeGood: convById.get(r.id) === true,
     answers: trainByResp.get(r.id) || [],
   }));
 
@@ -155,8 +157,8 @@ export async function calibrateOrg(
   await sb.from("wtp_rubrics").insert({
     organization_id: orgId,
     rubric,
-    model: "deterministic-outcomes",
-    summary: `Calibrated on ${training.length} outcomes. Base good-rate ${Math.round(rubric.baseRate * 100)}%.`,
+    model: "deterministic-conversions",
+    summary: `Calibrated on ${conversions} conversions across ${training.length} leads. Base conversion rate ${Math.round(rubric.baseRate * 100)}%.`,
     super_lead_threshold: 80,
   });
 
@@ -196,5 +198,5 @@ export async function calibrateOrg(
     rescored++;
   }
 
-  return { calibrated: true, trainingSize: training.length, needed: WTP_CALIBRATION_THRESHOLD, rescored };
+  return { calibrated: true, trainingSize: conversions, needed: WTP_CALIBRATION_THRESHOLD, rescored };
 }

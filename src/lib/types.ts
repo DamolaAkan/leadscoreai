@@ -69,9 +69,6 @@ export interface QuizResponse {
   wtp_confidence: "low" | "medium" | "high" | null;
   wtp_mode: "index" | "calibrated" | null;
   wtp_factors: { question: string; earned: number; max: number; pct: number }[] | null;
-  outcome_stage: string | null;
-  outcome_label: string | null;
-  outcome_at: string | null;
 }
 
 export interface ResponseAnswer {
