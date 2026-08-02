@@ -9,14 +9,12 @@ import AnalyticsTab from "@/components/dashboard/AnalyticsTab";
 import UsersTab from "@/components/dashboard/UsersTab";
 import SettingsTab from "@/components/dashboard/SettingsTab";
 import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab";
-import AIAnalystTab from "@/components/dashboard/AIAnalystTab";
 import DemoTab from "@/components/dashboard/DemoTab";
 
 export type DashboardTab =
   | "responses"
   | "analytics"
   | "insights"
-  | "analyst"
   | "demo"
   | "users"
   | "settings";
@@ -87,14 +85,6 @@ export default function DashboardPage() {
           )}
           {activeTab === "insights" && (
             <PredictiveInsightsTab
-              user={user}
-              accent={accent}
-              getAuthHeaders={getAuthHeaders}
-              isAdmin={isAdmin}
-            />
-          )}
-          {activeTab === "analyst" && (
-            <AIAnalystTab
               user={user}
               accent={accent}
               getAuthHeaders={getAuthHeaders}
