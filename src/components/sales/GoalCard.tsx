@@ -17,9 +17,6 @@ interface GoalData {
   };
 }
 
-const SCALE_COMMISSION = 25_000; // 2.5% of ₦1M Scale setup
-const STARTER_COMMISSION = 12_500; // 2.5% of ₦500k Starter setup
-
 export default function GoalCard() {
   const [data, setData] = useState<GoalData | null>(null);
   const [editing, setEditing] = useState(false);
@@ -36,20 +33,12 @@ export default function GoalCard() {
   const target = data.annual_target_naira;
   const earned = data.earned_year_naira;
   const pct = target > 0 ? Math.min(100, Math.round((earned / target) * 100)) : 0;
-  const remaining = Math.max(0, target - earned);
-  const monthsLeft = Math.max(1, 12 - new Date().getMonth());
-  const scaleDeals = Math.ceil(remaining / SCALE_COMMISSION);
-  const starterDeals = Math.ceil(remaining / STARTER_COMMISSION);
 
   const c = data.company;
   const companyPct = Math.min(
     100,
     Math.round((c.setup_this_month_naira / c.monthly_setup_target_naira) * 100)
   );
-  const floorPct =
-    c.my_monthly_floor_naira > 0
-      ? Math.min(100, Math.round((c.my_setup_this_month_naira / c.my_monthly_floor_naira) * 100))
-      : 0;
 
   async function save() {
     const value = Number(draft.replace(/[^0-9]/g, ""));
@@ -67,9 +56,9 @@ export default function GoalCard() {
 
   return (
     <div className="bg-white rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.05)] p-5 mb-6">
-      <div className="flex flex-wrap gap-6 items-start justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Personal dream goal */}
-        <div className="flex-1 min-w-[280px]">
+        <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
               My {year} commission goal
@@ -122,53 +111,16 @@ export default function GoalCard() {
                   style={{ width: `${pct}%`, backgroundColor: "#7C3AED" }}
                 />
               </div>
-              <p className="text-xs text-[#64748b] mt-2">
-                Your path: {remaining > 0 ? (
-                  <>
-                    ≈ <strong>{scaleDeals}</strong> Scale deals ({formatNaira(SCALE_COMMISSION)} each) or{" "}
-                    <strong>{starterDeals}</strong> Starter deals to go — about{" "}
-                    <strong>{Math.ceil(scaleDeals / monthsLeft)}</strong> Scale closes a month from here.
-                  </>
-                ) : (
-                  <strong>Goal reached. Raise it. 🎉</strong>
-                )}
-              </p>
             </>
           ) : (
             <p className="text-sm text-[#64748b] mt-1">
-              How much do you want to earn in commissions this year? Set it, and this card shows your
-              path every time you log in.
+              How much do you want to earn in commissions this year? Set it to track your progress.
             </p>
           )}
         </div>
 
-        {/* My monthly floor — the company-set minimum per rep */}
-        <div className="min-w-[220px]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
-            My floor · this month
-          </p>
-          <p className="text-2xl font-bold text-[#111827] mt-1 tabular-nums">
-            {formatNaira(c.my_setup_this_month_naira)}
-            <span className="text-sm font-medium text-[#94a3b8]">
-              {" "}
-              of {formatNaira(c.my_monthly_floor_naira)} ({floorPct}%)
-            </span>
-          </p>
-          <div className="h-2 rounded-full bg-[#f1f5f9] mt-2 overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${floorPct}%`, backgroundColor: floorPct >= 100 ? "#16a34a" : "#d99409" }}
-            />
-          </div>
-          <p className="text-xs text-[#64748b] mt-2">
-            {floorPct >= 100
-              ? "Floor cleared. Now push for your goal."
-              : "The minimum in setup fees expected of you this month. At least 1 Scale-or-premium close."}
-          </p>
-        </div>
-
         {/* Company goal — shared by the whole team */}
-        <div className="min-w-[260px]">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
             Company goal · this month
           </p>
@@ -185,13 +137,6 @@ export default function GoalCard() {
               style={{ width: `${companyPct}%`, backgroundColor: "#115e59" }}
             />
           </div>
-          <p className="text-xs text-[#64748b] mt-2 tabular-nums">
-            {c.deals_this_month} deal{c.deals_this_month === 1 ? "" : "s"} closed · your part:{" "}
-            {formatNaira(c.my_setup_this_month_naira)}
-          </p>
-          <p className="text-xs text-[#94a3b8] mt-1">
-            Mix &amp; match: 20 Starter · 5 premium · anything in between
-          </p>
         </div>
       </div>
     </div>
