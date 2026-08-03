@@ -14,6 +14,7 @@ interface GoalData {
     deals_this_month: number;
     my_setup_this_month_naira: number;
     my_monthly_floor_naira: number;
+    my_monthly_target_naira: number;
   };
 }
 
@@ -35,10 +36,10 @@ export default function GoalCard() {
   const pct = target > 0 ? Math.min(100, Math.round((earned / target) * 100)) : 0;
 
   const c = data.company;
-  const companyPct = Math.min(
-    100,
-    Math.round((c.setup_this_month_naira / c.monthly_setup_target_naira) * 100)
-  );
+  const salesPct =
+    c.my_monthly_target_naira > 0
+      ? Math.min(100, Math.round((c.my_setup_this_month_naira / c.my_monthly_target_naira) * 100))
+      : 0;
 
   async function save() {
     const value = Number(draft.replace(/[^0-9]/g, ""));
@@ -119,22 +120,22 @@ export default function GoalCard() {
           )}
         </div>
 
-        {/* Company goal — shared by the whole team */}
+        {/* Personal sales target — the rep's own setup-fee closes this month */}
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
-            Company goal · this month
+            Sales target · this month
           </p>
           <p className="text-2xl font-bold text-[#111827] mt-1 tabular-nums">
-            {formatNaira(c.setup_this_month_naira)}
+            {formatNaira(c.my_setup_this_month_naira)}
             <span className="text-sm font-medium text-[#94a3b8]">
               {" "}
-              of {formatNaira(c.monthly_setup_target_naira)} ({companyPct}%)
+              of {formatNaira(c.my_monthly_target_naira)} ({salesPct}%)
             </span>
           </p>
           <div className="h-2 rounded-full bg-[#f1f5f9] mt-2 overflow-hidden">
             <div
               className="h-full rounded-full"
-              style={{ width: `${companyPct}%`, backgroundColor: "#115e59" }}
+              style={{ width: `${salesPct}%`, backgroundColor: "#115e59" }}
             />
           </div>
         </div>
