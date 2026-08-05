@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { slGet, slSend } from "@/lib/sl-client";
 import { SlDeal, SlCommission, STAGE_ORDER, STAGE_META, USD_COMMISSION_RATE_CAP } from "@/lib/sl-types";
 import { formatMoney, formatNaira, formatDate } from "@/lib/sl-format";
@@ -17,6 +17,7 @@ interface DealNote {
 
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [deal, setDeal] = useState<SlDeal | null>(null);
   const [commission, setCommission] = useState<SlCommission | null>(null);
   const [err, setErr] = useState("");
@@ -50,6 +51,18 @@ export default function DealDetailPage() {
       setErr(e instanceof Error ? e.message : "Failed");
     }
     setBusy(false);
+  }
+
+  async function del() {
+    setBusy(true);
+    try {
+      await slSend(`/api/deals/${id}`, "DELETE");
+      router.push("/deals");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to delete");
+      setConfirm(null);
+      setBusy(false);
+    }
   }
 
   if (err) return <div className="text-sm text-red-600">{err}</div>;
@@ -92,6 +105,19 @@ export default function DealDetailPage() {
                 Edit
               </Link>
             )}
+            <button
+              onClick={() =>
+                setConfirm({
+                  action: "delete",
+                  title: "Delete this deal?",
+                  message: `This removes "${deal.contact_name}" from the pipeline. You can only undo this from the database.`,
+                  cta: "Delete deal",
+                })
+              }
+              className="text-sm font-medium px-3 py-1.5 rounded-md border border-[#fecaca] text-[#dc2626] hover:bg-[#fef2f2]"
+            >
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -302,7 +328,7 @@ export default function DealDetailPage() {
           cta={confirm.cta}
           busy={busy}
           onCancel={() => setConfirm(null)}
-          onConfirm={() => advance(confirm.action)}
+          onConfirm={() => (confirm.action === "delete" ? del() : advance(confirm.action))}
         />
       )}
     </div>
