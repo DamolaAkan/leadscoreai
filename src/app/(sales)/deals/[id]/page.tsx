@@ -83,6 +83,10 @@ export default function DealDetailPage() {
     deal.stage === "contact_added" ||
     deal.stage === "meeting_booked" ||
     deal.stage === "proposal_sent";
+  // The single "next" step in the funnel (undefined at the end, or when next is Paid,
+  // which needs the payment modal rather than a one-click advance).
+  const nextStage = STAGE_ORDER[currentIdx + 1];
+  const nextAdvance = nextStage ? NEXT_ACTION[nextStage] : undefined;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -146,107 +150,91 @@ export default function DealDetailPage() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center">
-            {STAGE_ORDER.map((s, i) => {
-              const done = i <= currentIdx;
-              return (
-                <div key={s} className="flex-1 flex items-center last:flex-none">
-                  <div className="flex flex-col items-center text-center">
+          <>
+            <div className="flex items-start">
+              {STAGE_ORDER.map((s, i) => {
+                const filled = i <= currentIdx;
+                const current = i === currentIdx;
+                const isNext = i === currentIdx + 1 && !!NEXT_ACTION[s];
+                return (
+                  <div key={s} className="flex-1 flex items-start last:flex-none min-w-0">
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
-                      style={{
-                        backgroundColor: done ? STAGE_META[s].bg : "#f1f5f9",
-                        color: done ? STAGE_META[s].text : "#cbd5e1",
-                      }}
+                      className={`flex flex-col items-center text-center ${isNext ? "cursor-pointer" : ""}`}
+                      onClick={isNext && !busy ? () => setConfirm(NEXT_ACTION[s]) : undefined}
                     >
-                      {done ? "✓" : i + 1}
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition"
+                        style={
+                          filled
+                            ? {
+                                backgroundColor: STAGE_META[s].bg,
+                                color: STAGE_META[s].text,
+                                boxShadow: current ? "0 0 0 3px #ede9fe" : "none",
+                                border: current ? "2px solid #7C3AED" : "2px solid transparent",
+                              }
+                            : isNext
+                            ? { backgroundColor: "#fff", color: "#7C3AED", border: "2px dashed #7C3AED" }
+                            : { backgroundColor: "#f1f5f9", color: "#cbd5e1", border: "2px solid transparent" }
+                        }
+                      >
+                        {filled ? "✓" : isNext ? "→" : i + 1}
+                      </div>
+                      <span
+                        className="text-[11px] mt-1.5 w-20"
+                        style={{ color: isNext ? "#7C3AED" : "#475569", fontWeight: isNext ? 600 : 400 }}
+                      >
+                        {STAGE_META[s].label}
+                      </span>
+                      <span className="text-[10px] mt-0.5" style={{ color: isNext ? "#7C3AED" : "#94a3b8" }}>
+                        {isNext ? "click to advance" : stampFor[s] ? formatDate(stampFor[s]) : ""}
+                      </span>
                     </div>
-                    <span className="text-[11px] mt-1.5 w-20 text-[#475569]">{STAGE_META[s].label}</span>
-                    <span className="text-[10px] text-[#94a3b8]">{stampFor[s] ? formatDate(stampFor[s]) : ""}</span>
+                    {i < STAGE_ORDER.length - 1 && (
+                      <div className="flex-1 h-0.5 mx-1 mt-4" style={{ backgroundColor: i < currentIdx ? "#a78bfa" : "#e2e8f0" }} />
+                    )}
                   </div>
-                  {i < STAGE_ORDER.length - 1 && (
-                    <div className="flex-1 h-0.5 mx-1 -mt-6" style={{ backgroundColor: i < currentIdx ? "#a78bfa" : "#e2e8f0" }} />
+                );
+              })}
+            </div>
+
+            {!isPaid && (
+              <div className="flex items-center gap-3 mt-6 pt-4 border-t border-[#f1f5f9] flex-wrap">
+                <span className="text-xs text-[#94a3b8]">
+                  {nextAdvance ? (
+                    <>
+                      Click <span className="font-semibold text-[#64748b]">{STAGE_META[nextStage].label}</span> above to advance.
+                    </>
+                  ) : (
+                    "Final step — mark it paid when payment lands."
+                  )}
+                </span>
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button onClick={() => setPayOpen(true)} disabled={busy} className={miniPay}>
+                    Mark as Paid
+                  </button>
+                  <button onClick={() => setLostOpen(true)} disabled={busy} className={miniGhost}>
+                    Mark as Lost
+                  </button>
+                  {canGoBack && (
+                    <button
+                      onClick={() =>
+                        setConfirm({
+                          action: "back",
+                          title: "Move back a stage?",
+                          message: "This steps the deal back one stage and clears that stage's date.",
+                          cta: "Move back",
+                        })
+                      }
+                      disabled={busy}
+                      className={miniGhost}
+                    >
+                      ← Back
+                    </button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Stage actions */}
-        {!isPaid && !isLost && (
-          <div className="flex flex-wrap gap-2 mt-6 pt-5 border-t border-[#f1f5f9]">
-            {deal.stage === "prospecting" && (
-              <button
-                onClick={() =>
-                  setConfirm({
-                    action: "interested",
-                    title: "Mark as interested?",
-                    message: "This moves the deal from Prospecting to Interested and stamps today's date.",
-                    cta: "Yes, interested",
-                  })
-                }
-                disabled={busy}
-                className={btnPrimary}
-              >
-                Mark Interested
-              </button>
+              </div>
             )}
-            {deal.stage === "contact_added" && (
-              <button
-                onClick={() =>
-                  setConfirm({
-                    action: "meeting_booked",
-                    title: "Mark meeting booked?",
-                    message: "This moves the deal to Meeting Booked and stamps today's date.",
-                    cta: "Yes, meeting booked",
-                  })
-                }
-                disabled={busy}
-                className={btnPrimary}
-              >
-                Mark Meeting Booked
-              </button>
-            )}
-            {(deal.stage === "contact_added" || deal.stage === "meeting_booked") && (
-              <button
-                onClick={() =>
-                  setConfirm({
-                    action: "proposal_sent",
-                    title: "Mark proposal sent?",
-                    message: "This moves the deal to Proposal Sent and stamps today's date.",
-                    cta: "Yes, proposal sent",
-                  })
-                }
-                disabled={busy}
-                className={btnSecondary}
-              >
-                Mark Proposal Sent
-              </button>
-            )}
-            <button onClick={() => setPayOpen(true)} disabled={busy} className={btnPay}>
-              Mark as Paid
-            </button>
-            <button onClick={() => setLostOpen(true)} disabled={busy} className={btnGhost}>
-              Mark as Lost
-            </button>
-            {canGoBack && (
-              <button
-                onClick={() =>
-                  setConfirm({
-                    action: "back",
-                    title: "Move back a stage?",
-                    message: "This steps the deal back to the previous stage and clears that stage's date. Use it if a stage was marked by mistake.",
-                    cta: "Move back",
-                  })
-                }
-                disabled={busy}
-                className={`${btnGhost} ml-auto`}
-              >
-                ← Back a stage
-              </button>
-            )}
-          </div>
+          </>
         )}
       </div>
 
@@ -336,9 +324,32 @@ export default function DealDetailPage() {
 }
 
 const btnPrimary = "text-sm font-medium px-4 py-2 rounded-md text-white bg-[#7C3AED] hover:bg-[#6d28d9] disabled:opacity-50";
-const btnSecondary = "text-sm font-medium px-4 py-2 rounded-md border border-[#7C3AED] text-[#7C3AED] hover:bg-[#f5f3ff] disabled:opacity-50";
 const btnPay = "text-sm font-medium px-4 py-2 rounded-md text-white bg-[#0d9488] hover:bg-[#0f766e] disabled:opacity-50";
-const btnGhost = "text-sm font-medium px-4 py-2 rounded-md text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50";
+const miniPay = "text-xs font-semibold px-3 py-1.5 rounded-md text-[#0d9488] bg-[#f0fdfa] hover:bg-[#ccfbf1] border border-[#99f6e4] disabled:opacity-50";
+const miniGhost = "text-xs font-semibold px-3 py-1.5 rounded-md text-[#64748b] bg-white hover:bg-[#f8fafc] border border-[#e2e8f0] disabled:opacity-50";
+
+// The one-click "next step" advance for each target stage in the funnel. Paid is
+// deliberately absent — it needs the payment modal, not a plain advance.
+const NEXT_ACTION: Record<string, { action: string; title: string; message: string; cta: string }> = {
+  contact_added: {
+    action: "interested",
+    title: "Mark as interested?",
+    message: "Moves the deal from Prospecting to Interested and stamps today's date.",
+    cta: "Yes, interested",
+  },
+  meeting_booked: {
+    action: "meeting_booked",
+    title: "Mark meeting booked?",
+    message: "Moves the deal to Meeting Booked and stamps today's date.",
+    cta: "Yes, meeting booked",
+  },
+  proposal_sent: {
+    action: "proposal_sent",
+    title: "Mark proposal sent?",
+    message: "Moves the deal to Proposal Sent and stamps today's date.",
+    cta: "Yes, proposal sent",
+  },
+};
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
