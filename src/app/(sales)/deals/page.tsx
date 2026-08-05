@@ -15,7 +15,7 @@ interface Meta {
   me: { id: string; full_name: string; role: string; canManage: boolean };
 }
 
-const STAGES: SlStage[] = ["contact_added", "meeting_booked", "proposal_sent", "paid", "lost"];
+const STAGES: SlStage[] = ["prospecting", "contact_added", "meeting_booked", "proposal_sent", "paid", "lost"];
 
 export default function DealsPage() {
   const router = useRouter();

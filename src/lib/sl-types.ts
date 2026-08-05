@@ -1,6 +1,7 @@
 // Sales Ledger (sl_) shared types — mirrors the DB schema.
 
 export type SlStage =
+  | "prospecting"
   | "contact_added"
   | "meeting_booked"
   | "proposal_sent"
@@ -35,6 +36,7 @@ export interface SlDeal {
   setup_fee: number;
   monthly_amount: number;
   stage: SlStage;
+  interested_at: string | null;
   meeting_booked_at: string | null;
   proposal_sent_at: string | null;
   paid_at: string | null;
@@ -83,6 +85,7 @@ export interface SlBalances {
 // Stage badges — deliberately NOT the scorecard tier colours (green/amber/blue/red),
 // which mean Hot/Warm/Cold/Not-Qualified elsewhere in the product.
 export const STAGE_META: Record<SlStage, { label: string; bg: string; text: string }> = {
+  prospecting: { label: "Prospecting", bg: "#f5f5f4", text: "#78716c" },
   contact_added: { label: "Interested", bg: "#f1f5f9", text: "#475569" },
   meeting_booked: { label: "Meeting Booked", bg: "#ede9fe", text: "#5b21b6" },
   proposal_sent: { label: "Proposal Sent", bg: "#e0e7ff", text: "#3730a3" },
@@ -91,6 +94,7 @@ export const STAGE_META: Record<SlStage, { label: string; bg: string; text: stri
 };
 
 export const STAGE_ORDER: SlStage[] = [
+  "prospecting",
   "contact_added",
   "meeting_booked",
   "proposal_sent",

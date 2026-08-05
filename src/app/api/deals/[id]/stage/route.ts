@@ -31,7 +31,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const now = new Date().toISOString();
   const patch: Record<string, unknown> = { updated_at: now };
 
-  if (action === "meeting_booked") {
+  if (action === "interested") {
+    patch.stage = "contact_added";
+    patch.interested_at = now;
+  } else if (action === "meeting_booked") {
     patch.stage = "meeting_booked";
     patch.meeting_booked_at = now;
   } else if (action === "proposal_sent") {
@@ -49,6 +52,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     } else if (deal.stage === "meeting_booked") {
       patch.stage = "contact_added";
       patch.meeting_booked_at = null;
+    } else if (deal.stage === "contact_added") {
+      patch.stage = "prospecting";
+      patch.interested_at = null;
     } else if (deal.stage === "lost") {
       // Reopen a lost deal back to the start of the funnel.
       patch.stage = "contact_added";

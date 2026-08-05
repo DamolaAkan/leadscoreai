@@ -56,7 +56,8 @@ export default function DealDetailPage() {
   if (!deal) return <div className="text-gray-400 text-sm">Loading...</div>;
 
   const stampFor: Record<string, string | null> = {
-    contact_added: deal.created_at,
+    prospecting: deal.created_at,
+    contact_added: deal.interested_at || deal.created_at,
     meeting_booked: deal.meeting_booked_at,
     proposal_sent: deal.proposal_sent_at,
     paid: deal.paid_at,
@@ -65,7 +66,10 @@ export default function DealDetailPage() {
   const isLost = deal.stage === "lost";
   const isPaid = deal.stage === "paid";
   const eligible = deal.product?.is_commission_eligible;
-  const canGoBack = deal.stage === "meeting_booked" || deal.stage === "proposal_sent";
+  const canGoBack =
+    deal.stage === "contact_added" ||
+    deal.stage === "meeting_booked" ||
+    deal.stage === "proposal_sent";
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -146,6 +150,22 @@ export default function DealDetailPage() {
         {/* Stage actions */}
         {!isPaid && !isLost && (
           <div className="flex flex-wrap gap-2 mt-6 pt-5 border-t border-[#f1f5f9]">
+            {deal.stage === "prospecting" && (
+              <button
+                onClick={() =>
+                  setConfirm({
+                    action: "interested",
+                    title: "Mark as interested?",
+                    message: "This moves the deal from Prospecting to Interested and stamps today's date.",
+                    cta: "Yes, interested",
+                  })
+                }
+                disabled={busy}
+                className={btnPrimary}
+              >
+                Mark Interested
+              </button>
+            )}
             {deal.stage === "contact_added" && (
               <button
                 onClick={() =>
