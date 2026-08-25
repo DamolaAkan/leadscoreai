@@ -54,7 +54,7 @@ export default function UpdateBanner() {
               • Lead every pitch with <b>&ldquo;free build, then a simple monthly.&rdquo;</b>
             </li>
             <li>
-              • Commission re-based: <b>first-month activation bounty + 15% trailing</b> on the monthly.
+              • Commission is being updated to match the new model — final structure to follow.
             </li>
           </ul>
           <button

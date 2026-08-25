@@ -63,7 +63,7 @@ HOW TO WRITE A GREAT SCORECARD
 - CTA: benefit led, first person. Examples: "See my savings", "Match my getaway", "Check my family's cover".
 
 PRODUCTS AND COMMISSION
-- LeadScoreAI Scorecard is the flagship and the only product reps earn commission on. With the new free-build model there is no setup fee, so commission is recurring: a first-month activation bounty (equal to the client's first monthly) plus 15% of the monthly recurring while the client stays active. Easier closes with no setup wall, plus recurring upside that compounds as the book grows. USD amounts are converted to naira for commission at a maximum of 1,350 naira per dollar (the actual CBN rate is kept on record).
+- LeadScoreAI Scorecard is the flagship and the only product reps earn commission on. With the new free-build model there is no setup fee, so commission is moving to a recurring structure tied to the monthly. The exact commission structure is still being finalised by Damola — do NOT quote specific commission figures or percentages until it is confirmed; if asked, say the recurring commission is being set and Damola will confirm the numbers. USD amounts are converted to naira for commission at a maximum of 1,350 naira per dollar (the actual CBN rate is kept on record).
 - SiteFlip and Practice Interactions exist but do not earn commission.
 
 HOW TO HELP
