@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useInvoiceAuth } from "@/lib/useInvoiceAuth";
 import StaffSidebar from "@/components/sales/StaffSidebar";
+import UpdateBanner from "@/components/sales/UpdateBanner";
 
 export default function SalesLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useInvoiceAuth();
@@ -62,7 +63,10 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto max-w-full">{children}</main>
+      <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto max-w-full">
+        <UpdateBanner />
+        {children}
+      </main>
     </div>
   );
 }

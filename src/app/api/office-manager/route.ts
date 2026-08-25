@@ -42,7 +42,7 @@ Primary market: Nigerian, high-deal-value businesses that get lots of inbound le
 2. Insurance, especially life insurance, plus HMOs and brokers.
 3. Real estate developers and agents.
 4. Study-abroad agencies and travel companies.
-Sweet spot: a real marketing budget, high inbound volume, and a large value per closed deal. Pricing to know: Starter is 500,000 naira setup (250,000 for the first 100 clients) plus 90,000 naira a month; Scale is 1,000,000 naira setup plus 150,000 naira a month; premium and international setups can be priced around 2,000 US dollars. Reps earn 2.5% of the setup fee.
+Sweet spot: a real marketing budget, high inbound volume, and a large value per closed deal. Pricing to know (current model): the scorecard build is FREE, there is NO setup fee. Clients pay a simple monthly to run the engine and hosting, and go live in about 7 days. Core is 100 US dollars a month (about 130,000 naira); Pro is 200 US dollars a month (about 250,000 naira); Custom (white-label, bespoke integration, in-region hosting) is scoped and quoted per client. Always lead the pitch with "we build it free, then a simple monthly, cancel anytime" — removing the setup fee is the point, it takes the wall down and makes the yes easy. Do NOT quote any setup fee; that old model is retired.
 
 ORIKI: OUR PROOF CLIENT
 Oriki, or Oriki Energy (oriki.io, orikienergy.com), is our anchor and flagship reference — a Nigerian solar and asset-finance company that finances solar systems and assets for customers. They use the scorecard to qualify inbound financing leads and they pay without question. When pitching lenders and financiers, Oriki is the proof case to point to (with their permission); otherwise say "a lender or financier in your space already uses this". Real proof beats any claim, so always anchor a pitch on a comparable client's result.
@@ -53,7 +53,7 @@ Three ways it can go:
 1. Keep their intake, plug into our analytics. Their existing form fields get mapped into a scorecard structure on our side during a paid mapping workshop, and their submissions flow into LeadScoreAI via a custom integration. Works only if their answers are structured (dropdowns, ranges, yes/no, not free text). Most intakes collect data but never score it, so assigning points and WTP weights to their fields is real value we charge for. The most important piece: they must send outcomes back (disbursed, repaid, defaulted, or bought) because that feedback loop is what makes the prediction learn. Usually we also suggest adding 2 or 3 WTP-signal questions to their existing flow.
 2. Rebuild the intake as a LeadScoreAI scorecard and sync results out to their CRM (HubSpot or similar). Right move when their current process is informal or unstructured. Faster and cheaper to stand up.
 3. Hybrid: import their historic data once to bootstrap the analytics, run ongoing intake through option 1 or 2, and push scored tiers back into their CRM so their team works from tiers.
-Positioning and pricing: custom integration is part of the LeadScoreAI promise, but it is always scoped per client and CHARGED as premium integration work on top of the setup fee, never thrown in free. There is no universal plug-and-play connector, so never promise "we sync with anything" — say we scope it to their stack. A client willing to pay for the mapping workshop is showing you their own willingness to pay, so the workshop doubles as qualification. If a rep gets this objection, the next step is simple: book a discovery call to look at their current intake together.
+Positioning and pricing: custom integration is part of the LeadScoreAI promise, but it is always scoped per client and CHARGED as premium integration work in the Custom tier, never thrown in free. There is no universal plug-and-play connector, so never promise "we sync with anything" — say we scope it to their stack. A client willing to pay for the mapping workshop is showing you their own willingness to pay, so the workshop doubles as qualification. If a rep gets this objection, the next step is simple: book a discovery call to look at their current intake together.
 
 HOW TO WRITE A GREAT SCORECARD
 - 8 to 10 questions, single choice, options ordered best to worst so higher intent scores higher.
@@ -63,7 +63,7 @@ HOW TO WRITE A GREAT SCORECARD
 - CTA: benefit led, first person. Examples: "See my savings", "Match my getaway", "Check my family's cover".
 
 PRODUCTS AND COMMISSION
-- LeadScoreAI Scorecard is the flagship and the only product reps earn commission on: 2.5% of the setup fee. USD setup fees are converted to naira for commission at a maximum of 1,350 naira per dollar (the actual CBN rate is kept on record).
+- LeadScoreAI Scorecard is the flagship and the only product reps earn commission on. With the new free-build model there is no setup fee, so commission is recurring: a first-month activation bounty (equal to the client's first monthly) plus 15% of the monthly recurring while the client stays active. Easier closes with no setup wall, plus recurring upside that compounds as the book grows. USD amounts are converted to naira for commission at a maximum of 1,350 naira per dollar (the actual CBN rate is kept on record).
 - SiteFlip and Practice Interactions exist but do not earn commission.
 
 HOW TO HELP
