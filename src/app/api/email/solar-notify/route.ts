@@ -5,7 +5,9 @@ import { sendSequenceEmail } from "@/lib/email";
 
 // Notifies the team of a new Solar Fit lead and sends the lead a thank-you.
 const ORG_ID = "b2053990-51ee-4e98-ac7b-bbf4602655dc";
-const ADMIN_EMAIL = "akanbidamola@gmail.com";
+// Stella handles all follow-ups; Akanbi is copied. Both get the lead alert.
+const TEAM_EMAILS = ["akanbi@leadscoreai.com", "stella@leadscoreai.com"];
+const STELLA_EMAIL = "stella@leadscoreai.com";
 
 const LABELS: Record<number, string> = {
   1: "Enquiries / month",
@@ -98,12 +100,14 @@ ${answerRows}
 </td></tr></table></td></tr></table></body></html>`;
 
     const { error: notifyError } = await sendSequenceEmail({
-      to: ADMIN_EMAIL,
+      to: TEAM_EMAILS,
       subject: `Solar Fit lead — ${contactName} · ${score}/100 ${qualified ? "(qualified)" : ""}`,
       html: notifyHtml,
       apiKey,
       fromEmail,
       fromName,
+      // Reply goes straight to the lead so Stella can follow up in one click.
+      replyTo: contactEmail || undefined,
     });
 
     // --- 2. Lead thank-you ---
@@ -135,6 +139,8 @@ ${body}
         apiKey,
         fromEmail,
         fromName,
+        // Lead replies land with Stella, who handles all follow-ups.
+        replyTo: STELLA_EMAIL,
       });
       leadError = res.error;
     }
