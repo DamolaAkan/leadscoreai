@@ -26,10 +26,15 @@ export async function POST(request: Request) {
 
     const supabase = createServiceClient();
 
+    // Use the same stored LeadScoreAI Resend key the invoices send with — the
+    // first org_features row that has one (leadscoreai.com is verified on that
+    // account, which is why billing@leadscoreai.com works). Env key is a last
+    // resort only.
     const { data: features } = await supabase
       .from("org_features")
-      .select("resend_api_key, resend_from_email, resend_from_name")
-      .eq("organization_id", ORG_ID)
+      .select("resend_api_key")
+      .not("resend_api_key", "is", null)
+      .limit(1)
       .single();
 
     const apiKey = features?.resend_api_key
@@ -41,8 +46,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
     }
 
-    const fromEmail = features?.resend_from_email || "support@practiceinteractions.com";
-    const fromName = features?.resend_from_name || "LeadScoreAI";
+    const fromEmail = "hello@leadscoreai.com";
+    const fromName = "LeadScoreAI";
 
     const { data: response, error: respError } = await supabase
       .from("quiz_responses")
