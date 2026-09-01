@@ -303,73 +303,120 @@ const ROWS: Row[] = [
   { init: "KN", title: "Inverter only · Ibadan", sub: "No budget stated", tier: "cold", score: 31 },
   { init: "??", title: '"How much?"', sub: "No details · went quiet", tier: "cold", score: 18 },
 ];
+// Mobile card uses shorter subtitles/titles (matches the mobile reference).
+const ROWS_M: Row[] = [
+  { init: "AO", title: "10kW · Abuja", sub: "Budget confirmed", tier: "hot", score: 96 },
+  { init: "CE", title: "5kW · Lekki", sub: "Install within 30 days", tier: "hot", score: 91 },
+  { init: "TB", title: "3kW · Ikeja", sub: "Comparing quotes", tier: "warm", score: 68 },
+  { init: "KN", title: "Inverter only", sub: "No budget stated", tier: "cold", score: 31 },
+  { init: "??", title: '"How much?"', sub: "Went quiet", tier: "cold", score: 18 },
+];
 const STEPS = [
   { t: "Take the 2-minute scorecard", d: "A few questions about how enquiries reach you today." },
   { t: "Get your Solar Fit assessment", d: "See where time is leaking and what a ready buyer looks like." },
   { t: "Open your free dashboard", d: "Your enquiries scored HOT, WARM or COLD — buyers to the top." },
 ];
 
+function EnquiriesCard({ rows }: { rows: Row[] }) {
+  return (
+    <div className="lp-card">
+      <div className="lp-card-head">
+        <span className="lp-card-title">YOUR ENQUIRIES · SCORED</span>
+        <span className="lp-card-week">this week</span>
+      </div>
+      {rows.map((r) => (
+        <div key={r.init + r.score} className={`lp-row lp-${r.tier}`}>
+          <span className="lp-av">{r.init}</span>
+          <span className="lp-row-main">
+            <span className="lp-row-t">{r.title}</span>
+            <span className="lp-row-s">{r.sub}</span>
+          </span>
+          <span className={`lp-badge2 lp-b-${r.tier}`}>{r.tier.toUpperCase()}</span>
+          <span className="lp-score">{r.score}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Steps() {
+  return (
+    <>
+      {STEPS.map((s, i) => (
+        <div className="lp-step" key={i}>
+          <span className="lp-step-n">{i + 1}</span>
+          <div>
+            <div className="lp-step-t">{s.t}</div>
+            <div className="lp-step-d">{s.d}</div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function SolarLanding({ onStart }: { onStart: () => void }) {
   return (
     <div className="lp-page">
-      <div className="lp">
-        <div className="lp-top">
-          <div className="lp-logo">{LOGO_BARS} LeadScoreAI</div>
-          <div className="lp-tag"><span className="lp-dot" /> Solar Fit scorecard · 2 minutes</div>
-        </div>
-
-        <div className="lp-hero">
-          <div className="lp-left">
-            <h1 className="lp-h1">Tired of time-wasting enquiries in your solar business?</h1>
-            <p className="lp-sub">
-              We score the enquiries you already get, so you know which ones are ready to pay before you
-              book a site visit. Take the 2-minute scorecard to see if you qualify.
-            </p>
-            <div className="lp-cta-row">
-              <button className="lp-cta" onClick={onStart}>See if I qualify <span>→</span></button>
-              <span className="lp-note">No card. No commitment.</span>
-            </div>
-            <div className="lp-badges">
-              <span className="lp-badge"><span className="lp-ck lp-ck1">✓</span> Free scorecard</span>
-              <span className="lp-badge"><span className="lp-ck lp-ck2">✓</span> Free assessment</span>
-              <span className="lp-badge"><span className="lp-ck lp-ck3">✓</span> Free dashboard</span>
-            </div>
+      {/* ===== DESKTOP (>=768px) ===== */}
+      <div className="lp-d">
+        <div className="lp">
+          <div className="lp-top">
+            <div className="lp-logo">{LOGO_BARS} LeadScoreAI</div>
+            <div className="lp-tag"><span className="lp-dot" /> Solar Fit scorecard · 2 minutes</div>
           </div>
-
-          <div className="lp-right">
-            <div className="lp-card">
-              <div className="lp-card-head">
-                <span className="lp-card-title">YOUR ENQUIRIES · SCORED</span>
-                <span className="lp-card-week">this week</span>
+          <div className="lp-hero">
+            <div className="lp-left">
+              <h1 className="lp-h1">Tired of time-wasting enquiries in your solar business?</h1>
+              <p className="lp-sub">
+                We score the enquiries you already get, so you know which ones are ready to pay before you
+                book a site visit. Take the 2-minute scorecard to see if you qualify.
+              </p>
+              <div className="lp-cta-row">
+                <button className="lp-cta" onClick={onStart}>See if I qualify <span>→</span></button>
+                <span className="lp-note">No card. No commitment.</span>
               </div>
-              {ROWS.map((r) => (
-                <div key={r.init + r.score} className={`lp-row lp-${r.tier}`}>
-                  <span className="lp-av">{r.init}</span>
-                  <span className="lp-row-main">
-                    <span className="lp-row-t">{r.title}</span>
-                    <span className="lp-row-s">{r.sub}</span>
-                  </span>
-                  <span className={`lp-badge2 lp-b-${r.tier}`}>{r.tier.toUpperCase()}</span>
-                  <span className="lp-score">{r.score}</span>
-                </div>
-              ))}
+              <div className="lp-badges">
+                <span className="lp-badge"><span className="lp-ck lp-ck1">✓</span> Free scorecard</span>
+                <span className="lp-badge"><span className="lp-ck lp-ck2">✓</span> Free assessment</span>
+                <span className="lp-badge"><span className="lp-ck lp-ck3">✓</span> Free dashboard</span>
+              </div>
             </div>
-            <div className="lp-illus">Illustrative. Your own enquiries, your own scores.</div>
+            <div className="lp-right">
+              <EnquiriesCard rows={ROWS} />
+              <div className="lp-illus">Illustrative. Your own enquiries, your own scores.</div>
+            </div>
           </div>
+        </div>
+        <div className="lp-steps-wrap">
+          <div className="lp-steps"><Steps /></div>
         </div>
       </div>
 
-      <div className="lp-steps-wrap">
-        <div className="lp-steps">
-          {STEPS.map((s, i) => (
-            <div className="lp-step" key={i}>
-              <span className="lp-step-n">{i + 1}</span>
-              <div>
-                <div className="lp-step-t">{s.t}</div>
-                <div className="lp-step-d">{s.d}</div>
-              </div>
-            </div>
-          ))}
+      {/* ===== MOBILE (<768px) ===== */}
+      <div className="lp-m">
+        <div className="lp-m-hero">
+          <div className="lp-m-top">
+            <div className="lp-logo">{LOGO_BARS} LeadScoreAI</div>
+            <div className="lp-m-tag">2-min scorecard</div>
+          </div>
+          <h1 className="lp-m-h1">Tired of time-wasting enquiries in your solar business?</h1>
+          <p className="lp-m-sub">
+            We score the enquiries you already get, so you know which ones are ready to pay before you
+            book a site visit.
+          </p>
+          <button className="lp-m-cta" onClick={onStart}>See if I qualify <span>→</span></button>
+          <div className="lp-m-badges">
+            <span className="lp-m-badge"><span className="lp-m-ck c1">✓</span> Free scorecard</span>
+            <span className="lp-m-badge"><span className="lp-m-ck c2">✓</span> Free assessment</span>
+            <span className="lp-m-badge lp-m-badge3"><span className="lp-m-ck c3">✓</span> Free dashboard</span>
+          </div>
+          <EnquiriesCard rows={ROWS_M} />
+          <div className="lp-illus">Illustrative. Your own enquiries, your own scores.</div>
+        </div>
+        <div className="lp-m-steps">
+          <Steps />
+          <button className="lp-m-cta lp-m-cta2" onClick={onStart}>See if I qualify <span>→</span></button>
         </div>
       </div>
     </div>
