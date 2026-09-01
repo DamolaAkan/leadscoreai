@@ -314,7 +314,7 @@ const ROWS_M: Row[] = [
 const STEPS = [
   { t: "Take the 2-minute scorecard", d: "A few questions about how enquiries reach you today." },
   { t: "Get your Solar Fit assessment", d: "See where time is leaking and what a ready buyer looks like." },
-  { t: "Open your free dashboard", d: "Your enquiries scored HOT, WARM or COLD — buyers to the top." },
+  { t: "A rep sets up your dashboard", d: "If you qualify, a LeadScoreAI rep reaches out to set up your own dashboard — enquiries scored HOT, WARM or COLD, buyers to the top." },
 ];
 
 function EnquiriesCard({ rows }: { rows: Row[] }) {
@@ -376,11 +376,6 @@ function SolarLanding({ onStart }: { onStart: () => void }) {
                 <button className="lp-cta" onClick={onStart}>See if I qualify <span>→</span></button>
                 <span className="lp-note">No card. No commitment.</span>
               </div>
-              <div className="lp-badges">
-                <span className="lp-badge"><span className="lp-ck lp-ck1">✓</span> Free scorecard</span>
-                <span className="lp-badge"><span className="lp-ck lp-ck2">✓</span> Free assessment</span>
-                <span className="lp-badge"><span className="lp-ck lp-ck3">✓</span> Free dashboard</span>
-              </div>
             </div>
             <div className="lp-right">
               <EnquiriesCard rows={ROWS} />
@@ -406,11 +401,7 @@ function SolarLanding({ onStart }: { onStart: () => void }) {
             book a site visit.
           </p>
           <button className="lp-m-cta" onClick={onStart}>See if I qualify <span>→</span></button>
-          <div className="lp-m-badges">
-            <span className="lp-m-badge"><span className="lp-m-ck c1">✓</span> Free scorecard</span>
-            <span className="lp-m-badge"><span className="lp-m-ck c2">✓</span> Free assessment</span>
-            <span className="lp-m-badge lp-m-badge3"><span className="lp-m-ck c3">✓</span> Free dashboard</span>
-          </div>
+          <div className="lp-m-cardgap" />
           <EnquiriesCard rows={ROWS_M} />
           <div className="lp-illus">Illustrative. Your own enquiries, your own scores.</div>
         </div>
