@@ -136,10 +136,10 @@ export default function SolarScorecard() {
     inner = (
       <div className="sc-card sc-hero">
         <img className="sc-hero-logo" src="/logos/leadscoreai.svg" alt="LeadScoreAI" width={56} height={56} />
-        <h1 className="sc-hero-h1">Which of your solar leads are actually ready to buy?</h1>
-        <p className="sc-hero-sub">Answer 7 quick questions to see your Solar Fit score — and claim a free scorecard for your own enquiries.</p>
-        <button className="sc-btn next sc-hero-cta" onClick={() => setStarted(true)}>Start assessment <span>→</span></button>
-        <div className="sc-hero-meta"><span>✓ 7 questions</span><span>✓ About 2 minutes</span><span>✓ Free</span></div>
+        <h1 className="sc-hero-h1">Tired of time-wasting enquiries for your solar business?</h1>
+        <p className="sc-hero-sub">Let&apos;s help you turn your enquiries into a list of qualified buyers. Take the 2-minute scorecard to see if you qualify.</p>
+        <button className="sc-btn next sc-hero-cta" onClick={() => setStarted(true)}>See if I qualify <span>→</span></button>
+        <div className="sc-hero-meta"><span>✓ Free scorecard</span><span>✓ Free assessment</span><span>✓ Free dashboard</span></div>
       </div>
     );
   } else if (step === 0) {

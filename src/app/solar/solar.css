@@ -55,7 +55,7 @@
 /* hero intro screen */
 .sc-hero{background:linear-gradient(160deg,#3a1d0b 0%,#b4470f 55%,#f97316 120%);padding:44px 30px 30px;text-align:center;color:#fff;border:none}
 .sc-hero-logo{display:block;margin:0 auto 22px;border-radius:14px;box-shadow:0 8px 24px -8px rgba(0,0,0,.4)}
-.sc-hero-h1{font-size:29px;line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:0 auto 14px;max-width:15ch}
+.sc-hero-h1{font-size:27px;line-height:1.18;font-weight:800;letter-spacing:-.02em;margin:0 auto 14px;max-width:19ch}
 .sc-hero-sub{font-size:15px;line-height:1.55;color:rgba(255,255,255,.86);margin:0 auto 26px;max-width:38ch}
 .sc-btn.sc-hero-cta{background:#fff;color:#ea580c;box-shadow:0 10px 26px -10px rgba(0,0,0,.5)}
 .sc-hero-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;margin-top:20px;font-size:13px;font-weight:600;color:rgba(255,255,255,.82)}
