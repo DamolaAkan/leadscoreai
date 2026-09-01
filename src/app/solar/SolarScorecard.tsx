@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackLead, META_PIXEL_ID } from "@/components/MetaPixel";
 import "./solar.css";
 
 // order (1-based) matches the seeded question_order.
@@ -107,6 +108,16 @@ export default function SolarScorecard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ responseId: data.responseId }),
       }).catch(() => {});
+      // Fire the Meta Lead conversion (Siteflipmarket pixel) with advanced matching.
+      trackLead(
+        {
+          email: contact.email.trim(),
+          phone: contact.phone.trim(),
+          fullName: contact.name.trim(),
+          externalId: data.responseId,
+        },
+        META_PIXEL_ID
+      );
     } catch (e) {
       console.error("[solar] save exception", e);
     }

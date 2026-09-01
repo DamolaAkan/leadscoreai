@@ -6,6 +6,8 @@ import Script from "next/script";
 // the MFB funnel pages (landing + Loan Doctor scorecard), never on client
 // dashboards. Fire conversion events elsewhere with `trackPixel("Lead")`.
 export const META_PIXEL_ID = "1351695133750893";
+// Leadscoreai dataset — used by the /solar solar-funnel campaign.
+export const SOLAR_PIXEL_ID = "8861400513919696";
 
 export function trackPixel(event: string): void {
   if (typeof window !== "undefined") {
@@ -27,7 +29,7 @@ type LeadUserData = {
 // browser-signal baseline. The browser pixel SHA-256 hashes em/ph/fn/ln itself,
 // so we send plain values. The eventID lets us de-dupe if we add server-side
 // (CAPI) events later.
-export function trackLead(data: LeadUserData): void {
+export function trackLead(data: LeadUserData, pixelId: string = META_PIXEL_ID): void {
   if (typeof window === "undefined") return;
   const w = window as unknown as { fbq?: (...args: unknown[]) => void };
   if (typeof w.fbq !== "function") return;
@@ -42,8 +44,8 @@ export function trackLead(data: LeadUserData): void {
   }
   if (data.externalId) am.external_id = data.externalId;
 
-  // Re-init with the advanced-matching payload, then track.
-  w.fbq("init", META_PIXEL_ID, am);
+  // Re-init with the advanced-matching payload, then track against this pixel.
+  w.fbq("init", pixelId, am);
   w.fbq("track", "Lead", {}, data.externalId ? { eventID: data.externalId } : undefined);
 }
 
