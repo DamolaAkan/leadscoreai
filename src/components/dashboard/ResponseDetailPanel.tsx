@@ -167,6 +167,12 @@ export default function ResponseDetailPanel({
                       {response.agent_code || "—"}
                     </p>
                   </div>
+                  {response.dashboard_interest && (
+                    <div>
+                      <span className="text-gray-500">Interested in dashboard:</span>
+                      <p className="text-green-700 font-semibold">Yes ✓</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

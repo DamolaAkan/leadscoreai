@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { trackLead, META_PIXEL_ID } from "@/components/MetaPixel";
+import { trackLead, SOLAR_PIXEL_ID } from "@/components/MetaPixel";
 import "./solar.css";
 
 // order (1-based) matches the seeded question_order.
@@ -17,8 +17,8 @@ const QUESTIONS: Q[] = [
     opts: [["Under ₦500k", 0], ["₦500k – 2M", 0], ["₦2M – 5M", 0], ["Over ₦5M", 0]] },
   { order: 5, q: "Do you offer financing — pay-small-small, installments or PAYGo?",
     opts: [["Yes, we do", 0], ["Planning to", 0], ["No", 0]] },
-  { order: 6, q: "How soon could you start?",
-    opts: [["This week", 15], ["This month", 10], ["Just exploring for now", 3]] },
+  { order: 6, q: "Once we set up your scorecard and dashboard, how soon could you start driving traffic and enquiries to it?",
+    opts: [["Right away", 15], ["Within a month", 10], ["Just exploring for now", 3]] },
   { order: 7, q: "One extra closed deal covers it many times over. Can you commit to ₦130,000/month?",
     opts: [["Yes, that works", 50], ["I'd need to think", 20], ["Not right now", 0]] },
 ];
@@ -45,6 +45,7 @@ export default function SolarScorecard() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [claimed, setClaimed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [responseId, setResponseId] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
 
   function startAssessment() {
@@ -103,12 +104,13 @@ export default function SolarScorecard() {
         console.error("[solar] save failed", data);
         return;
       }
+      setResponseId(data.responseId);
       fetch("/api/email/solar-notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ responseId: data.responseId }),
       }).catch(() => {});
-      // Fire the Meta Lead conversion (Siteflipmarket pixel) with advanced matching.
+      // Fire the Meta Lead conversion (Leadscoreai pixel) with advanced matching.
       trackLead(
         {
           email: contact.email.trim(),
@@ -116,7 +118,7 @@ export default function SolarScorecard() {
           fullName: contact.name.trim(),
           externalId: data.responseId,
         },
-        META_PIXEL_ID
+        SOLAR_PIXEL_ID
       );
     } catch (e) {
       console.error("[solar] save exception", e);
@@ -127,6 +129,18 @@ export default function SolarScorecard() {
   function goToScore() {
     setStep(N);
     saveLead();
+  }
+
+  // Lead clicked "Claim my free scorecard" — record the extra intent so the
+  // team sees "Interested in dashboard" on the response.
+  function claimDashboard() {
+    setClaimed(true);
+    if (!responseId) return;
+    fetch("/api/solar/interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ responseId }),
+    }).catch(() => {});
   }
 
   // ---------- render ----------
@@ -260,7 +274,7 @@ export default function SolarScorecard() {
               {claimed ? (
                 <div className="sc-done">✓ You&apos;re in — we&apos;ll email {contact.email} shortly.</div>
               ) : (
-                <button className="sc-btn next full sc-cta" onClick={() => setClaimed(true)}>
+                <button className="sc-btn next full sc-cta" onClick={claimDashboard}>
                   Claim my free scorecard →
                 </button>
               )}

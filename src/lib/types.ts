@@ -58,6 +58,7 @@ export interface QuizResponse {
   contact_company: string | null;
   contact_website: string | null;
   agent_code: string | null;
+  dashboard_interest?: boolean;
   converted_to_sale: boolean;
   created_at: string;
   completed_at: string | null;
