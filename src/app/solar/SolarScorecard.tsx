@@ -122,7 +122,7 @@ export default function SolarScorecard() {
   const Header = (idx: number) => (
     <div className="sc-hd">
       <div className="sc-hd-top">
-        <div className="sc-hd-title"><span className="sun">☀️</span> Solar Fit Assessment</div>
+        <div className="sc-hd-title"><img className="sun" src="/logos/leadscoreai.svg" alt="LeadScoreAI" width={26} height={26} /> Solar Fit Assessment</div>
         <span className="sc-chip">{Math.min(idx + 1, N)} of {N}</span>
       </div>
       <div className="sc-bar"><i style={{ width: `${Math.max(8, pct + 8)}%` }} /></div>
