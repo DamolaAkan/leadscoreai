@@ -22,24 +22,8 @@ export const dynamic = "force-dynamic";
 
 export default function SolarPage() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#faf7f2",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 16px",
-        fontFamily:
-          "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
-      }}
-    >
+    <div className="sc-page">
       <MetaPixel pixelId={META_PIXEL_ID} />
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-      />
       <SolarScorecard />
     </div>
   );

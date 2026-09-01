@@ -141,19 +141,13 @@ export default function SolarScorecard() {
     </div>
   );
 
+  if (!started) {
+    return <SolarLanding onStart={() => setStarted(true)} />;
+  }
+
   let inner: React.ReactNode;
 
-  if (!started) {
-    inner = (
-      <div className="sc-card sc-hero">
-        <img className="sc-hero-logo" src="/logos/leadscoreai.svg" alt="LeadScoreAI" width={56} height={56} />
-        <h1 className="sc-hero-h1">Tired of time-wasting enquiries in your solar business?</h1>
-        <p className="sc-hero-sub">Let&apos;s turn your enquiries into a shortlist of buyers who are actually ready to pay. Take the 2-minute scorecard to see if you qualify.</p>
-        <button className="sc-btn next sc-hero-cta" onClick={() => setStarted(true)}>See if I qualify <span>→</span></button>
-        <div className="sc-hero-meta"><span>✓ Free scorecard</span><span>✓ Free assessment</span><span>✓ Free dashboard</span></div>
-      </div>
-    );
-  } else if (step === 0) {
+  if (step === 0) {
     inner = (
       <div className="sc-card">
         {Header(0)}
@@ -285,5 +279,99 @@ export default function SolarScorecard() {
     );
   }
 
-  return <div className="sc-wrap">{inner}</div>;
+  return (
+    <div className="sc-stage">
+      <div className="sc-wrap">{inner}</div>
+    </div>
+  );
+}
+
+const LOGO_BARS = (
+  <svg width="30" height="26" viewBox="0 0 30 26" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <rect x="0" y="16" width="5.5" height="10" rx="1.5" fill="#FCD34D" />
+    <rect x="8" y="11" width="5.5" height="15" rx="1.5" fill="#FBBF24" />
+    <rect x="16" y="6" width="5.5" height="20" rx="1.5" fill="#F59E0B" />
+    <rect x="24" y="0" width="5.5" height="26" rx="1.5" fill="#EA580C" />
+  </svg>
+);
+
+type Row = { init: string; title: string; sub: string; tier: "hot" | "warm" | "cold"; score: number };
+const ROWS: Row[] = [
+  { init: "AO", title: "10kW · Abuja", sub: "Business · budget confirmed", tier: "hot", score: 96 },
+  { init: "CE", title: "5kW · Lekki", sub: "Home · install within 30 days", tier: "hot", score: 91 },
+  { init: "TB", title: "3kW · Ikeja", sub: "Home · comparing quotes", tier: "warm", score: 68 },
+  { init: "KN", title: "Inverter only · Ibadan", sub: "No budget stated", tier: "cold", score: 31 },
+  { init: "??", title: '"How much?"', sub: "No details · went quiet", tier: "cold", score: 18 },
+];
+const STEPS = [
+  { t: "Take the 2-minute scorecard", d: "A few questions about how enquiries reach you today." },
+  { t: "Get your Solar Fit assessment", d: "See where time is leaking and what a ready buyer looks like." },
+  { t: "Open your free dashboard", d: "Your enquiries scored HOT, WARM or COLD — buyers to the top." },
+];
+
+function SolarLanding({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="lp-page">
+      <div className="lp">
+        <div className="lp-top">
+          <div className="lp-logo">{LOGO_BARS} LeadScoreAI</div>
+          <div className="lp-tag"><span className="lp-dot" /> Solar Fit scorecard · 2 minutes</div>
+        </div>
+
+        <div className="lp-hero">
+          <div className="lp-left">
+            <h1 className="lp-h1">Tired of time-wasting enquiries in your solar business?</h1>
+            <p className="lp-sub">
+              We score the enquiries you already get, so you know which ones are ready to pay before you
+              book a site visit. Take the 2-minute scorecard to see if you qualify.
+            </p>
+            <div className="lp-cta-row">
+              <button className="lp-cta" onClick={onStart}>See if I qualify <span>→</span></button>
+              <span className="lp-note">No card. No commitment.</span>
+            </div>
+            <div className="lp-badges">
+              <span className="lp-badge"><span className="lp-ck lp-ck1">✓</span> Free scorecard</span>
+              <span className="lp-badge"><span className="lp-ck lp-ck2">✓</span> Free assessment</span>
+              <span className="lp-badge"><span className="lp-ck lp-ck3">✓</span> Free dashboard</span>
+            </div>
+          </div>
+
+          <div className="lp-right">
+            <div className="lp-card">
+              <div className="lp-card-head">
+                <span className="lp-card-title">YOUR ENQUIRIES · SCORED</span>
+                <span className="lp-card-week">this week</span>
+              </div>
+              {ROWS.map((r) => (
+                <div key={r.init + r.score} className={`lp-row lp-${r.tier}`}>
+                  <span className="lp-av">{r.init}</span>
+                  <span className="lp-row-main">
+                    <span className="lp-row-t">{r.title}</span>
+                    <span className="lp-row-s">{r.sub}</span>
+                  </span>
+                  <span className={`lp-badge2 lp-b-${r.tier}`}>{r.tier.toUpperCase()}</span>
+                  <span className="lp-score">{r.score}</span>
+                </div>
+              ))}
+            </div>
+            <div className="lp-illus">Illustrative. Your own enquiries, your own scores.</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="lp-steps-wrap">
+        <div className="lp-steps">
+          {STEPS.map((s, i) => (
+            <div className="lp-step" key={i}>
+              <span className="lp-step-n">{i + 1}</span>
+              <div>
+                <div className="lp-step-t">{s.t}</div>
+                <div className="lp-step-d">{s.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
