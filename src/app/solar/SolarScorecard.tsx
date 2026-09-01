@@ -44,6 +44,7 @@ export default function SolarScorecard() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [claimed, setClaimed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [started, setStarted] = useState(false);
 
   function startAssessment() {
     const errs: Record<string, string> = {};
@@ -131,7 +132,17 @@ export default function SolarScorecard() {
 
   let inner: React.ReactNode;
 
-  if (step === 0) {
+  if (!started) {
+    inner = (
+      <div className="sc-card sc-hero">
+        <img className="sc-hero-logo" src="/logos/leadscoreai.svg" alt="LeadScoreAI" width={56} height={56} />
+        <h1 className="sc-hero-h1">Which of your solar leads are actually ready to buy?</h1>
+        <p className="sc-hero-sub">Answer 7 quick questions to see your Solar Fit score — and claim a free scorecard for your own enquiries.</p>
+        <button className="sc-btn next sc-hero-cta" onClick={() => setStarted(true)}>Start assessment <span>→</span></button>
+        <div className="sc-hero-meta"><span>✓ 7 questions</span><span>✓ About 2 minutes</span><span>✓ Free</span></div>
+      </div>
+    );
+  } else if (step === 0) {
     inner = (
       <div className="sc-card">
         {Header(0)}
