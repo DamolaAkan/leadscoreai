@@ -5,16 +5,16 @@ import { trackLead, SOLAR_PIXEL_ID } from "@/components/MetaPixel";
 import "./mortgage.css";
 
 // order (1-based) matches the seeded question_order.
-type Q = { order: number; q: string; opts: [string, number][] };
+type Q = { order: number; q: string; opts: [string, number][]; multi?: boolean };
 const QUESTIONS: Q[] = [
   { order: 1, q: "Roughly how many people request mortgage properties from you each month?",
     opts: [["Over 300", 20], ["100 – 300", 16], ["Under 100", 8], ["Hard to say", 0]] },
   { order: 2, q: "How many of those actually become buyers?",
     opts: [["Only a few — most go nowhere", 15], ["About half", 10], ["I'm not sure", 8], ["Most of them", 5]] },
-  { order: 3, q: "What do you mainly sell?",
-    opts: [["Homes / estates", 0], ["Land", 0], ["Commercial", 0], ["A mix", 0]] },
+  { order: 3, q: "What kind of homes do you mainly sell?", multi: true,
+    opts: [["Detached / duplexes", 0], ["Semi-detached / terraces", 0], ["Apartments / flats", 0], ["Estates / off-plan", 0]] },
   { order: 4, q: "What's your average property price?",
-    opts: [["Under ₦10M", 0], ["₦10 – 30M", 0], ["₦30 – 60M", 0], ["Over ₦60M", 0]] },
+    opts: [["Under ₦100M", 0], ["₦100 – 500M", 0], ["₦500M – 1B", 0], ["Over ₦1B", 0]] },
   { order: 5, q: "How do your buyers usually pay?",
     opts: [["Mortgage (NHF / MREIF)", 0], ["Bank mortgage", 0], ["In-house installment / rent-to-own", 0], ["Outright cash", 0], ["A mix", 0]] },
   { order: 6, q: "Once we set up your scorecard and dashboard, how soon could you start sending your enquiries to it?",
@@ -60,6 +60,22 @@ export default function MortgageScorecard() {
 
   function pick(qi: number, text: string, points: number) {
     setAnswers((p) => ({ ...p, [qi]: { text, points } }));
+  }
+
+  // Multi-select (tickbox) questions store the picks joined; points stay 0 (info).
+  const MULTI_SEP = ", ";
+  function toggleMulti(qi: number, text: string) {
+    setAnswers((p) => {
+      const cur = p[qi]?.text ? p[qi].text.split(MULTI_SEP) : [];
+      const next = cur.includes(text) ? cur.filter((t) => t !== text) : [...cur, text];
+      const copy = { ...p };
+      if (next.length) copy[qi] = { text: next.join(MULTI_SEP), points: 0 };
+      else delete copy[qi];
+      return copy;
+    });
+  }
+  function multiHas(qi: number, text: string) {
+    return (answers[qi]?.text ? answers[qi].text.split(MULTI_SEP) : []).includes(text);
   }
 
   // ---- scoring ----
@@ -208,18 +224,22 @@ export default function MortgageScorecard() {
         {Header(step)}
         <div className="sc-bd">
           <h2 className="sc-qh">{Q.q}</h2>
+          {Q.multi && <p className="sc-hint">Select all that apply.</p>}
           <div className="sc-opts">
-            {Q.opts.map(([text, points], i) => (
-              <button key={i} type="button"
-                className={`sc-opt ${answers[qi]?.text === text ? "sel" : ""}`}
-                onClick={() => pick(qi, text, points)}>
-                <span className="rd" />{text}
-              </button>
-            ))}
+            {Q.opts.map(([text, points], i) => {
+              const sel = Q.multi ? multiHas(qi, text) : answers[qi]?.text === text;
+              return (
+                <button key={i} type="button"
+                  className={`sc-opt ${Q.multi ? "multi" : ""} ${sel ? "sel" : ""}`}
+                  onClick={() => (Q.multi ? toggleMulti(qi, text) : pick(qi, text, points))}>
+                  <span className="rd" />{text}
+                </button>
+              );
+            })}
           </div>
           <div className="sc-nav">
             <button className="sc-btn prev" onClick={() => setStep(step - 1)}>← Previous</button>
-            <button className="sc-btn next" disabled={answers[qi] == null}
+            <button className="sc-btn next" disabled={Q.multi ? !answers[qi]?.text : answers[qi] == null}
               onClick={() => (last ? goToScore() : setStep(step + 1))}>
               {last ? "See my result" : "Next"} <span>→</span>
             </button>
@@ -392,7 +412,7 @@ function MortgageLanding({ onStart }: { onStart: () => void }) {
           </div>
           <div className="lp-hero">
             <div className="lp-left">
-              <h1 className="lp-h1">Tired of time-wasting mortgage enquiries in your real estate business?</h1>
+              <h1 className="lp-h1">Tired of time-wasting <em>mortgage</em> enquiries in your real estate business?</h1>
               <p className="lp-sub">
                 We score the mortgage and instalment enquiries you already get, so you know which buyers can
                 actually finance before you book a viewing. Take the 2-minute scorecard to see if you qualify.
@@ -421,7 +441,7 @@ function MortgageLanding({ onStart }: { onStart: () => void }) {
             <div className="lp-logo">{LOGO_BARS} LeadScoreAI</div>
             <div className="lp-m-tag">2-min scorecard</div>
           </div>
-          <h1 className="lp-m-h1">Tired of time-wasting mortgage enquiries in your real estate business?</h1>
+          <h1 className="lp-m-h1">Tired of time-wasting <em>mortgage</em> enquiries in your real estate business?</h1>
           <p className="lp-m-sub">
             We score the mortgage and instalment enquiries you already get, so you know which buyers can
             actually finance before you book a viewing.
