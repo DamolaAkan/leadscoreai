@@ -129,6 +129,7 @@
 .sc-bd { padding: 30px 26px 26px; }
 .sc-qh { font-family: var(--display); font-size: 23px; font-weight: 800; letter-spacing: -.02em; line-height: 1.18; margin: 0 0 20px; }
 .sc-sub { font-size: 14.5px; color: var(--muted); margin: -10px 0 22px; line-height: 1.5; }
+.sc-hint { font-size: 13px; color: var(--muted); margin: -12px 0 18px; line-height: 1.45; }
 .sc-opts { display: flex; flex-direction: column; gap: 11px; }
 .sc-opt { display: flex; align-items: center; gap: 13px; border: 1.5px solid var(--line); border-radius: 13px; padding: 15px 16px; cursor: pointer; transition: .14s; font-size: 15px; font-weight: 500; background: #fff; text-align: left; width: 100%; font-family: inherit; color: var(--ink); }
 .sc-opt:hover { border-color: #f3d79b; background: #fffdf8; }

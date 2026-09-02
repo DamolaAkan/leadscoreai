@@ -10,13 +10,14 @@ import { pushLeadToPipeline } from "@/lib/sales-pipeline";
 const SOLAR_ORG_ID = "b2053990-51ee-4e98-ac7b-bbf4602655dc";
 const SOLAR_QUIZ_ID = "b1a84145-562c-46f3-a2de-3309c3986532";
 const QID: Record<number, string> = {
-  1: "45d8b0d8-f9ae-4d8e-99da-da70f4ed3ebd",
-  2: "6d7c0f03-cd00-4718-a468-fce63e2216f6",
-  3: "059cec8e-11ae-42a8-9367-0ab88c16b6ba",
-  4: "f1418899-3c67-47f7-a69d-a42ecc738e81",
-  5: "144f7802-dd49-45a6-95be-160280aab59b",
-  6: "0fda7d43-e1ba-4fbc-9cc5-6e38ed9d3409",
-  7: "41f69e23-1d5b-4ac0-b8ee-fee35ef3a6b8",
+  1: "45d8b0d8-f9ae-4d8e-99da-da70f4ed3ebd", // enquiries
+  2: "6d7c0f03-cd00-4718-a468-fce63e2216f6", // become customers
+  3: "059cec8e-11ae-42a8-9367-0ab88c16b6ba", // size installed
+  4: "f1418899-3c67-47f7-a69d-a42ecc738e81", // average sale
+  5: "a2cdc7b7-a3cd-4b4c-a595-65641ca41f01", // marketing budget
+  6: "144f7802-dd49-45a6-95be-160280aab59b", // financing
+  7: "0fda7d43-e1ba-4fbc-9cc5-6e38ed9d3409", // how soon
+  8: "41f69e23-1d5b-4ac0-b8ee-fee35ef3a6b8", // commit ₦130k
 };
 const VALID_QUAL = new Set(["HOT_LEAD", "WARM_LEAD", "COLD_LEAD", "NOT_QUALIFIED"]);
 
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
         contact_email: email,
         contact_phone: String(contact.phone || "").trim() || null,
         contact_company: String(contact.co || "").trim() || null,
+        contact_website: String(contact.web || "").trim() || null,
         score,
         max_score: 100,
         percentage: score,
@@ -119,6 +121,7 @@ export async function POST(request: Request) {
       email,
       phone: String(contact.phone || ""),
       company: String(contact.co || ""),
+      website: String(contact.web || ""),
       score,
       qualification,
       answers,

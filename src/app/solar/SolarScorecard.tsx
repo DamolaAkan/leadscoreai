@@ -4,44 +4,55 @@ import { useState } from "react";
 import { trackLead, META_PIXEL_ID } from "@/components/MetaPixel";
 import "./solar.css";
 
-// order (1-based) matches the seeded question_order.
-type Q = { order: number; q: string; opts: [string, number][] };
+// order (1-based) matches the seeded question_order. Options are ordered so the
+// highest-scoring choice is NOT first — a tap-through straight-liner scores low
+// and self-selects out, while anyone who actually reads is unaffected.
+type Q = { order: number; q: string; opts: [string, number][]; hint?: string };
 const QUESTIONS: Q[] = [
-  { order: 1, q: "Roughly how many enquiries do you get a month?",
-    opts: [["Over 300", 20], ["100 – 300", 16], ["Under 100", 8], ["Hard to say", 0]] },
+  { order: 1, q: "Roughly how many enquiries does your business already get each month?",
+    hint: "The ones that already come to you — we score them, we don't send you leads.",
+    opts: [["Under 100", 8], ["100 – 300", 16], ["Over 300", 20], ["Hard to say", 0]] },
   { order: 2, q: "How many of those actually become paying customers?",
-    opts: [["Only a few — most go nowhere", 15], ["About half", 10], ["I'm not sure", 8], ["Most of them", 5]] },
-  { order: 3, q: "What do you mainly sell?",
-    opts: [["Home systems", 0], ["Business & commercial", 0], ["Mini-grid", 0], ["A mix", 0]] },
+    opts: [["Most of them", 5], ["About half", 10], ["Only a few — most go nowhere", 15], ["I'm not sure", 8]] },
+  { order: 3, q: "What size solar systems do you install most?",
+    opts: [["Small home (1–2kVA)", 0], ["Mid home (3–5kVA)", 0], ["Large home or business (5–10kVA)", 0], ["Big commercial (10kVA+)", 0], ["We mostly supply, not install", 0]] },
   { order: 4, q: "How much is your average solar system sale?",
     opts: [["Under ₦500k", 0], ["₦500k – 2M", 0], ["₦2M – 5M", 0], ["Over ₦5M", 0]] },
-  { order: 5, q: "Do you offer financing — pay-small-small, installments or PAYGo?",
+  { order: 5, q: "How much do you spend on marketing or getting new customers each month?",
+    opts: [["Nothing yet", 0], ["Under ₦100k", 0], ["₦100k – 300k", 0], ["₦300k – 1M", 0], ["Over ₦1M", 0]] },
+  { order: 6, q: "Do you offer financing — pay-small-small, installments or PAYGo?",
     opts: [["Yes, we do", 0], ["Planning to", 0], ["No", 0]] },
-  { order: 6, q: "Once we set up your scorecard and dashboard, how soon could you start driving traffic and enquiries to it?",
-    opts: [["Right away", 15], ["Within a month", 10], ["Just exploring for now", 3]] },
-  { order: 7, q: "One extra closed deal covers it many times over. Can you commit to ₦130,000/month?",
-    opts: [["Yes, that works", 50], ["I'd need to think", 20], ["Not right now", 0]] },
+  { order: 7, q: "Once we set up your scorecard and dashboard, how soon could you start driving traffic and enquiries to it?",
+    opts: [["Just exploring for now", 3], ["Within a month", 10], ["Right away", 15]] },
+  { order: 8, q: "One extra closed deal covers it many times over. Can you commit to ₦130,000/month?",
+    opts: [["Not right now", 0], ["I'd need to think", 20], ["Yes, that works", 50]] },
 ];
 
 // index into QUESTIONS for the three headline factors
 const FACTORS = [
-  { label: "Ability to invest", qi: 6, max: 50 },
+  { label: "Ability to invest", qi: 7, max: 50 },
   { label: "Lead volume", qi: 0, max: 20 },
-  { label: "Readiness to start", qi: 5, max: 15 },
+  { label: "Readiness to start", qi: 6, max: 15 },
 ];
 
 type Answer = { text: string; points: number };
-type Contact = { name: string; co: string; email: string; phone: string };
+type Contact = { name: string; co: string; email: string; phone: string; web: string };
 
 function emailOk(e: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+// A plausible website or Instagram/Facebook handle — a real business has one.
+function linkOk(v: string) {
+  const s = v.trim();
+  if (s.length < 4) return false;
+  return /\.[a-z]{2,}/i.test(s) || /^@?[\w.]+$/.test(s) || /instagram|facebook|fb\.|wa\.me/i.test(s);
 }
 
 export default function SolarScorecard() {
   const QN = QUESTIONS.length; // 7 questions
   const N = QN + 1; // + the details step, asked last
   const [step, setStep] = useState(0); // 0..QN-1 = questions, QN = details, N = score
-  const [contact, setContact] = useState<Contact>({ name: "", co: "", email: "", phone: "" });
+  const [contact, setContact] = useState<Contact>({ name: "", co: "", email: "", phone: "", web: "" });
   const [answers, setAnswers] = useState<Record<number, Answer>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [claimed, setClaimed] = useState(false);
@@ -76,7 +87,7 @@ export default function SolarScorecard() {
   async function submitContact() {
     const errs: Record<string, string> = {};
     const name = contact.name.trim(), co = contact.co.trim();
-    const email = contact.email.trim(), phone = contact.phone.trim();
+    const email = contact.email.trim(), phone = contact.phone.trim(), web = contact.web.trim();
     if (name.length < 2) errs.name = "Please add your name";
     if (!co) errs.co = "Please add your company";
     else { const p = companyProblem(co, name, email); if (p) errs.co = p; }
@@ -84,6 +95,8 @@ export default function SolarScorecard() {
     else if (!emailOk(email)) errs.email = "That email doesn't look right";
     if (!phone) errs.phone = "Please add your phone number";
     else if (!phoneOk(phone)) errs.phone = "Enter a valid Nigerian number, e.g. 08110000000";
+    if (!web) errs.web = "Please add your website or Instagram";
+    else if (!linkOk(web)) errs.web = "Add your business website or @instagram handle";
     setErrors(errs);
     setAlert(null);
     if (Object.keys(errs).length) return;
@@ -142,6 +155,7 @@ export default function SolarScorecard() {
           co: contact.co.trim(),
           email: contact.email.trim(),
           phone: contact.phone.trim(),
+          web: contact.web.trim(),
         },
         answers: QUESTIONS.map((q, i) => ({
           order: q.order,
@@ -226,6 +240,7 @@ export default function SolarScorecard() {
         {Header(step)}
         <div className="sc-bd">
           <h2 className="sc-qh">{Q.q}</h2>
+          {Q.hint && <p className="sc-hint">{Q.hint}</p>}
           <div className="sc-opts">
             {Q.opts.map(([text, points], i) => (
               <button key={i} type="button"
@@ -283,6 +298,12 @@ export default function SolarScorecard() {
                 value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
               {errors.phone && <div className="sc-errtext">{errors.phone}</div>}
             </div>
+          </div>
+          <div className="sc-field">
+            <label>Business website or Instagram</label>
+            <input className={errors.web ? "err" : ""} placeholder="e.g. brightsun.com  or  @brightsunsolar"
+              value={contact.web} onChange={(e) => setContact({ ...contact, web: e.target.value })} />
+            {errors.web && <div className="sc-errtext">{errors.web}</div>}
           </div>
           <div className="sc-nav">
             <button className="sc-btn prev" onClick={() => setStep(QN - 1)}>← Previous</button>

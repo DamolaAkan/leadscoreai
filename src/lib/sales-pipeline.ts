@@ -11,8 +11,9 @@ const TIER: Record<string, string> = {
   WARM_LEAD: "Strong fit",
   COLD_LEAD: "Warm fit",
 };
-// The answers that decide the deal: enquiries/mo, become customers, how soon, ₦130k commit.
-const KEY_ORDERS = [1, 2, 6, 7];
+// The scored answers that decide the deal (enquiries, become-customers, how-soon,
+// ₦130k commit) — their question_order differs by funnel.
+const KEY_ORDERS_BY_FUNNEL: Record<string, number[]> = { solar: [1, 2, 7, 8], mortgage: [1, 2, 6, 7] };
 
 export interface PipelineLead {
   funnel: "solar" | "mortgage";
@@ -21,9 +22,23 @@ export interface PipelineLead {
   email: string;
   phone?: string;
   company?: string;
+  website?: string;
   score: number;
   qualification: string;
   answers: { order: number; text: string }[];
+}
+
+// Soft "is this a real, ready business?" signals for the rep to eyeball — never
+// a gate (qualification is purely score >= 50), just a heads-up in the notes.
+function validitySignals(lead: PipelineLead): string[] {
+  const flags: string[] = [];
+  const a = (o: number) => (lead.answers.find((x) => x.order === o)?.text || "").toLowerCase();
+  if (lead.funnel === "solar") {
+    if (a(5).includes("nothing yet")) flags.push("no marketing budget");
+    if (a(3).includes("mostly supply")) flags.push("supplies, doesn't install");
+  }
+  if (!lead.website) flags.push("no website/socials");
+  return flags;
 }
 
 export async function pushLeadToPipeline(lead: PipelineLead): Promise<void> {
@@ -50,14 +65,17 @@ export async function pushLeadToPipeline(lead: PipelineLead): Promise<void> {
 
     const byOrder = new Map(lead.answers.map((a) => [a.order, a.text]));
     const funnelLabel = lead.funnel === "solar" ? "Solar" : "Mortgage";
-    const key = KEY_ORDERS.map((o) => byOrder.get(o)).filter(Boolean).join(" · ");
+    const key = (KEY_ORDERS_BY_FUNNEL[lead.funnel] || []).map((o) => byOrder.get(o)).filter(Boolean).join(" · ");
     const all = lead.answers
       .slice()
       .sort((a, b) => a.order - b.order)
       .map((a) => `Q${a.order}: ${a.text || "—"}`)
       .join("\n");
+    const flags = validitySignals(lead);
     const notes = [
       `Inbound · ${funnelLabel} Fit scorecard · ${lead.score}/100 · ${TIER[lead.qualification] || lead.qualification}`,
+      flags.length ? `⚠️ Verify before investing time: ${flags.join(", ")}` : "",
+      lead.website ? `Website/socials: ${lead.website}` : "",
       key ? `Key answers: ${key}` : "",
       all,
       `Scorecard response: ${lead.responseId}`,

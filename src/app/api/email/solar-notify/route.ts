@@ -12,11 +12,12 @@ const STELLA_EMAIL = "stella@leadscoreai.com";
 const LABELS: Record<number, string> = {
   1: "Enquiries / month",
   2: "Become customers",
-  3: "Mainly sells",
+  3: "Installs (size)",
   4: "Average sale",
-  5: "Financing",
-  6: "How soon",
-  7: "Commit ₦130k/mo",
+  5: "Marketing budget",
+  6: "Financing",
+  7: "How soon",
+  8: "Commit ₦130k/mo",
 };
 
 export async function POST(request: Request) {
@@ -70,8 +71,21 @@ export async function POST(request: Request) {
 
     const contactName = response.contact_name || "there";
     const contactEmail = response.contact_email as string | null;
+    const website = (response.contact_website as string | null) || "";
     const score = response.score ?? 0;
     const qualified = response.qualification && response.qualification !== "NOT_QUALIFIED";
+
+    // Soft "verify before investing time" signals — never gates, just a heads-up.
+    const ansOf = (order: number) =>
+      ((answers || []).find((a) => a.question_order === order)?.answer_value as { value?: string })?.value?.toLowerCase() || "";
+    const flags: string[] = [];
+    if (ansOf(5).includes("nothing yet")) flags.push("no marketing budget");
+    if (ansOf(3).includes("mostly supply")) flags.push("supplies, doesn't install");
+    if (!website) flags.push("no website/socials");
+    const flagRow = flags.length
+      ? `<tr><td style="padding:9px 14px;background:#fff7ed;border-bottom:1px solid #eee;font-weight:700;color:#b45309;font-size:13px;">⚠️ Verify</td><td style="padding:9px 14px;background:#fff7ed;border-bottom:1px solid #eee;color:#b45309;font-size:13px;">${flags.join(", ")}</td></tr>`
+      : "";
+    const websiteRow = `<tr><td style="padding:9px 14px;background:#f9fafb;border-bottom:1px solid #eee;font-weight:600;color:#374151;font-size:13px;">Website / socials</td><td style="padding:9px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:13px;">${website || "—"}</td></tr>`;
 
     const answerRows = (answers || [])
       .map((a) => {
@@ -94,6 +108,8 @@ export async function POST(request: Request) {
 <tr><td style="padding:9px 14px;background:#f9fafb;border-bottom:1px solid #eee;font-weight:600;color:#374151;font-size:13px;">Company</td><td style="padding:9px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:13px;">${response.contact_company || "—"}</td></tr>
 <tr><td style="padding:9px 14px;background:#f9fafb;border-bottom:1px solid #eee;font-weight:600;color:#374151;font-size:13px;">Email</td><td style="padding:9px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:13px;"><a href="mailto:${contactEmail}" style="color:#ea580c;">${contactEmail}</a></td></tr>
 <tr><td style="padding:9px 14px;background:#f9fafb;border-bottom:1px solid #eee;font-weight:600;color:#374151;font-size:13px;">Phone</td><td style="padding:9px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:13px;">${response.contact_phone || "—"}</td></tr>
+${websiteRow}
+${flagRow}
 ${answerRows}
 </table>
 <p style="margin:0;font-size:13px;color:#6b7280;">Score ${score}/100 · ${response.qualification}. View all Solar leads in the LeadScoreAI dashboard.</p>
