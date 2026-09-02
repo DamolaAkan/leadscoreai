@@ -1,10 +1,10 @@
 import crypto from "crypto";
 
 // Server-side Meta Conversions API (CAPI). Fires a `Lead` event to the
-// Leadscoreai dataset for every completed scorecard — un-blockable by ad-blockers
+// Siteflipmarket dataset (the pixel the ads run on) for every completed scorecard — un-blockable by ad-blockers
 // / iOS, unlike the browser pixel. It de-dupes against the browser pixel because
 // both send the SAME event_id (the responseId). No-ops until META_CAPI_TOKEN is set.
-const PIXEL_ID = "8861400513919696"; // Leadscoreai dataset
+const PIXEL_ID = "1351695133750893"; // Siteflipmarket dataset (matches the ads)
 const API_VERSION = "v21.0";
 
 function sha256(v: string): string {

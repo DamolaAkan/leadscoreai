@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { trackLead, SOLAR_PIXEL_ID } from "@/components/MetaPixel";
+import { trackLead, META_PIXEL_ID } from "@/components/MetaPixel";
 import "./mortgage.css";
 
 // order (1-based) matches the seeded question_order.
@@ -126,7 +126,7 @@ export default function MortgageScorecard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ responseId: data.responseId }),
       }).catch(() => {});
-      // Fire the Meta Lead conversion (Leadscoreai pixel) with advanced matching.
+      // Fire the Meta Lead conversion (Siteflipmarket pixel) with advanced matching.
       trackLead(
         {
           email: contact.email.trim(),
@@ -134,7 +134,7 @@ export default function MortgageScorecard() {
           fullName: contact.name.trim(),
           externalId: data.responseId,
         },
-        SOLAR_PIXEL_ID
+        META_PIXEL_ID
       );
     } catch (e) {
       console.error("[mortgage] save exception", e);

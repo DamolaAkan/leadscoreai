@@ -5,9 +5,9 @@ import Script from "next/script";
 // Meta (Facebook) pixel used for the microfinance ad campaign. Loaded only on
 // the MFB funnel pages (landing + Loan Doctor scorecard), never on client
 // dashboards. Fire conversion events elsewhere with `trackPixel("Lead")`.
+// Siteflipmarket dataset — the pixel the Meta ads are published against; shared
+// across the microfinance, solar and mortgage funnels.
 export const META_PIXEL_ID = "1351695133750893";
-// Leadscoreai dataset — used by the /solar solar-funnel campaign.
-export const SOLAR_PIXEL_ID = "8861400513919696";
 
 export function trackPixel(event: string): void {
   if (typeof window !== "undefined") {

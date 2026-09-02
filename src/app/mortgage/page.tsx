@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import MortgageScorecard from "./MortgageScorecard";
-import MetaPixel, { SOLAR_PIXEL_ID } from "@/components/MetaPixel";
+import MetaPixel, { META_PIXEL_ID } from "@/components/MetaPixel";
 
 const TITLE = "Mortgage Fit Assessment | LeadScoreAI";
 const DESCRIPTION =
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default function MortgagePage() {
   return (
     <div className="sc-page">
-      <MetaPixel pixelId={SOLAR_PIXEL_ID} />
+      <MetaPixel pixelId={META_PIXEL_ID} />
       <MortgageScorecard />
     </div>
   );

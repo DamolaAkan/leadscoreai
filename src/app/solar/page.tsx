@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SolarScorecard from "./SolarScorecard";
-import MetaPixel, { SOLAR_PIXEL_ID } from "@/components/MetaPixel";
+import MetaPixel, { META_PIXEL_ID } from "@/components/MetaPixel";
 
 const TITLE = "Solar Fit Assessment | LeadScoreAI";
 const DESCRIPTION =
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default function SolarPage() {
   return (
     <div className="sc-page">
-      <MetaPixel pixelId={SOLAR_PIXEL_ID} />
+      <MetaPixel pixelId={META_PIXEL_ID} />
       <SolarScorecard />
     </div>
   );
