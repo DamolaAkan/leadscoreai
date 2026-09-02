@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { computeWtpIndex } from "@/lib/wtp";
+import { sendMetaLead, clientSignals } from "@/lib/meta-capi";
 
 // Persists a Mortgage Fit submission (service role, so RLS/anon grants don't
 // block the public funnel). One round trip: response + answers + WTP index.
@@ -108,6 +109,20 @@ export async function POST(request: Request) {
     } catch (wtpErr) {
       console.error("[mortgage/submit] WTP error:", wtpErr);
     }
+
+    // Conversions API Lead (server-side) — de-dupes with the browser pixel via
+    // the shared event_id (resp.id). Awaited; never throws.
+    const sig = clientSignals(request);
+    await sendMetaLead({
+      eventId: resp.id,
+      email,
+      phone: String(contact.phone || "").trim(),
+      name: String(contact.name || "").trim(),
+      funnel: "mortgage",
+      eventSourceUrl: sig.eventSourceUrl || "https://app.leadscoreai.com/mortgage",
+      clientIp: sig.clientIp,
+      userAgent: sig.userAgent,
+    });
 
     return NextResponse.json({ responseId: resp.id });
   } catch (err) {
