@@ -140,9 +140,8 @@ export default function MortgageScorecard() {
   const scoredMax = 100;
   const total = QUESTIONS.reduce((s, _q, i) => s + (answers[i]?.points || 0), 0);
   const score = Math.round((total / scoredMax) * 100);
-  const gateFail =
-    answers[0]?.text === "Hard to say" || answers[6]?.text === "Not right now";
-  const qualified = !gateFail && score >= 50;
+  // The rule is simply: 50% and above qualifies, below 50% does not.
+  const qualified = score >= 50;
   const tier = qualified
     ? score >= 80 ? { t: "HOT FIT", e: "🔥" } : score >= 60 ? { t: "Strong fit", e: "✅" } : { t: "Warm fit", e: "🌤️" }
     : { t: "Not the right fit yet", e: "🌱" };
