@@ -9,6 +9,7 @@ export async function sendSequenceEmail({
   fromName,
   attachments,
   replyTo,
+  cc,
 }: {
   to: string | string[];
   subject: string;
@@ -18,6 +19,7 @@ export async function sendSequenceEmail({
   fromName: string;
   attachments?: { filename: string; content: Buffer }[];
   replyTo?: string;
+  cc?: string | string[];
 }): Promise<{ id: string | null; error: string | null }> {
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
@@ -27,6 +29,7 @@ export async function sendSequenceEmail({
     html,
     attachments,
     replyTo,
+    cc,
   });
   if (error) {
     console.error("[email] Send error:", error);

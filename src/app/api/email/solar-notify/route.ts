@@ -21,7 +21,7 @@ const LABELS: Record<number, string> = {
 
 export async function POST(request: Request) {
   try {
-    const { responseId } = await request.json();
+    const { responseId, ccLead, leadOnly } = await request.json();
     if (!responseId) {
       return NextResponse.json({ error: "responseId required" }, { status: 400 });
     }
@@ -99,16 +99,21 @@ ${answerRows}
 <p style="margin:0;font-size:13px;color:#6b7280;">Score ${score}/100 · ${response.qualification}. View all Solar leads in the LeadScoreAI dashboard.</p>
 </td></tr></table></td></tr></table></body></html>`;
 
-    const { error: notifyError } = await sendSequenceEmail({
-      to: TEAM_EMAILS,
-      subject: `Solar Fit lead — ${contactName} · ${score}/100 ${qualified ? "(qualified)" : ""}`,
-      html: notifyHtml,
-      apiKey,
-      fromEmail,
-      fromName,
-      // Reply goes straight to the lead so Stella can follow up in one click.
-      replyTo: contactEmail || undefined,
-    });
+    // leadOnly: send only the lead's email (used to re-send a corrected result),
+    // skipping the team alert so nobody gets a duplicate.
+    let notifyError: string | null = null;
+    if (!leadOnly) {
+      ({ error: notifyError } = await sendSequenceEmail({
+        to: TEAM_EMAILS,
+        subject: `Solar Fit lead — ${contactName} · ${score}/100 ${qualified ? "(qualified)" : ""}`,
+        html: notifyHtml,
+        apiKey,
+        fromEmail,
+        fromName,
+        // Reply goes straight to the lead so Stella can follow up in one click.
+        replyTo: contactEmail || undefined,
+      }));
+    }
 
     // --- 2. Lead thank-you ---
     let leadError: unknown = null;
@@ -141,6 +146,7 @@ ${body}
         fromName,
         // Lead replies land with Stella, who handles all follow-ups.
         replyTo: STELLA_EMAIL,
+        cc: typeof ccLead === "string" && ccLead.includes("@") ? ccLead : undefined,
       });
       leadError = res.error;
     }
