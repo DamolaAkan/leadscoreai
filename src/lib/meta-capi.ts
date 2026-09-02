@@ -15,7 +15,7 @@ function normEmail(e?: string): string {
 }
 // Meta wants digits only, incl. country code. Normalise Nigerian numbers.
 function normPhone(p?: string): string {
-  let d = (p || "").replace(/[^0-9]/g, "");
+  const d = (p || "").replace(/[^0-9]/g, "");
   if (!d) return "";
   if (d.startsWith("234")) return d;
   if (d.startsWith("0") && d.length === 11) return "234" + d.slice(1);
