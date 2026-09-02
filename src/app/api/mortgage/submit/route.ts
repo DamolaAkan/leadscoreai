@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { computeWtpIndex } from "@/lib/wtp";
 import { sendMetaLead, clientSignals } from "@/lib/meta-capi";
+import { pushLeadToPipeline } from "@/lib/sales-pipeline";
 
 // Persists a Mortgage Fit submission (service role, so RLS/anon grants don't
 // block the public funnel). One round trip: response + answers + WTP index.
@@ -109,6 +110,19 @@ export async function POST(request: Request) {
     } catch (wtpErr) {
       console.error("[mortgage/submit] WTP error:", wtpErr);
     }
+
+    // Push qualified leads into Stella's sales pipeline (sl_deals). Best-effort.
+    await pushLeadToPipeline({
+      funnel: "mortgage",
+      responseId: resp.id,
+      name: String(contact.name || ""),
+      email,
+      phone: String(contact.phone || ""),
+      company: String(contact.co || ""),
+      score,
+      qualification,
+      answers,
+    });
 
     // Conversions API Lead (server-side) — de-dupes with the browser pixel via
     // the shared event_id (resp.id). Awaited; never throws.

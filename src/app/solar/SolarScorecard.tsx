@@ -48,31 +48,71 @@ export default function SolarScorecard() {
   const [saved, setSaved] = useState(false);
   const [responseId, setResponseId] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [alert, setAlert] = useState<string | null>(null);
 
   // Nigerian mobile: 11 digits starting 0 (e.g. 08110000000), or 234 + 10 digits.
   function phoneOk(p: string) {
     const d = p.replace(/[^0-9]/g, "");
     return /^0\d{10}$/.test(d) || /^234\d{10}$/.test(d);
   }
-  // Catches junk like "yyy": needs 2+ chars, a letter, and not one repeated character.
-  function companyOk(c: string) {
-    return c.length >= 2 && /[a-zA-Z]/.test(c) && !/^(.)\1+$/.test(c);
+  // Instant rules that catch the obvious junk before we ask the AI.
+  function companyProblem(c: string, name: string, email: string): string | null {
+    const v = c.trim(), low = v.toLowerCase();
+    const junk = ["none", "n/a", "na", "nil", "null", "test", "testing", "abc", "xyz", "self",
+      "personal", "individual", "me", "myself", "nothing", "no", "no company", "company", "business"];
+    if (v.length < 3) return "Please enter your full company name";
+    if (/@/.test(v) || /\.(com|ng|org|net|co)\b/i.test(v)) return "That looks like an email or website — what's your company called?";
+    if (v.replace(/[^0-9]/g, "").length / v.length > 0.5) return "That looks like a phone number — what's your company called?";
+    if (low === name.trim().toLowerCase() || low === email.trim().toLowerCase()) return "Company should be your business name, not your own name or email";
+    if (junk.includes(low) || !/[a-zA-Z]/.test(v) || /^(.)\1+$/.test(v) || /^(asdf|qwer|zxcv|qwerty)/i.test(low)) return "Please enter your real company name";
+    return null;
   }
 
   // Details step (asked last, before the result) — every field is required.
-  function submitContact() {
+  // Two layers: the instant rules above, then an AI check for the subtle
+  // nonsense a rule can't see. The AI check FAILS OPEN — a real lead is never
+  // blocked because the check was slow or down.
+  async function submitContact() {
     const errs: Record<string, string> = {};
     const name = contact.name.trim(), co = contact.co.trim();
     const email = contact.email.trim(), phone = contact.phone.trim();
     if (name.length < 2) errs.name = "Please add your name";
     if (!co) errs.co = "Please add your company";
-    else if (!companyOk(co)) errs.co = "Please enter your real company name";
+    else { const p = companyProblem(co, name, email); if (p) errs.co = p; }
     if (!email) errs.email = "Please add your email";
     else if (!emailOk(email)) errs.email = "That email doesn't look right";
     if (!phone) errs.phone = "Please add your phone number";
     else if (!phoneOk(phone)) errs.phone = "Enter a valid Nigerian number, e.g. 08110000000";
     setErrors(errs);
+    setAlert(null);
     if (Object.keys(errs).length) return;
+
+    setChecking(true);
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 7000);
+      const res = await fetch("/api/details/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, company: co, email, phone, funnel: "solar" }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      const data = await res.json().catch(() => ({}));
+      const issues: { field: string; message: string }[] = Array.isArray(data?.issues) ? data.issues : [];
+      if (res.ok && issues.length) {
+        const flagged: Record<string, string> = {};
+        for (const i of issues) if (["name", "co", "email", "phone"].includes(i.field)) flagged[i.field] = i.message;
+        setErrors(flagged);
+        setAlert("Hmm — some of these details don't look right. Please check the highlighted fields.");
+        return;
+      }
+    } catch {
+      // fail open
+    } finally {
+      setChecking(false);
+    }
     goToScore();
   }
 
@@ -214,6 +254,11 @@ export default function SolarScorecard() {
         <div className="sc-bd">
           <h2 className="sc-qh">Almost done!</h2>
           <p className="sc-sub">Just need your details so we know where to send your result and your free scorecard.</p>
+          {alert && (
+            <div role="alert" style={{ background: "#fff1f0", border: "1px solid #f3b9b5", color: "#b42318", borderRadius: 12, padding: "10px 14px", fontSize: 13.5, lineHeight: 1.45, marginBottom: 14 }}>
+              {alert}
+            </div>
+          )}
           <div className="sc-field">
             <label>Your name</label>
             <input className={errors.name ? "err" : ""} placeholder="e.g. Tunde Bello"
@@ -242,7 +287,7 @@ export default function SolarScorecard() {
           </div>
           <div className="sc-nav">
             <button className="sc-btn prev" onClick={() => setStep(QN - 1)}>← Previous</button>
-            <button className="sc-btn next" onClick={submitContact}>See my result <span>→</span></button>
+            <button className="sc-btn next" disabled={checking} onClick={submitContact}>{checking ? "Checking…" : "See my result"} <span>→</span></button>
           </div>
         </div>
       </div>
