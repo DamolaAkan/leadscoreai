@@ -38,8 +38,9 @@ function emailOk(e: string) {
 }
 
 export default function MortgageScorecard() {
-  const N = QUESTIONS.length + 1; // contact + questions
-  const [step, setStep] = useState(0); // 0 = contact, 1..7 = questions, N = score
+  const QN = QUESTIONS.length; // 7 questions
+  const N = QN + 1; // + the details step, asked last
+  const [step, setStep] = useState(0); // 0..QN-1 = questions, QN = details, N = score
   const [contact, setContact] = useState<Contact>({ name: "", co: "", email: "", phone: "" });
   const [answers, setAnswers] = useState<Record<number, Answer>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,14 +49,31 @@ export default function MortgageScorecard() {
   const [started, setStarted] = useState(false);
   const [responseId, setResponseId] = useState<string | null>(null);
 
-  function startAssessment() {
+  // Nigerian mobile: 11 digits starting 0 (e.g. 08110000000), or 234 + 10 digits.
+  function phoneOk(p: string) {
+    const d = p.replace(/[^0-9]/g, "");
+    return /^0\d{10}$/.test(d) || /^234\d{10}$/.test(d);
+  }
+  // Catches junk like "yyy": needs 2+ chars, a letter, and not one repeated character.
+  function companyOk(c: string) {
+    return c.length >= 2 && /[a-zA-Z]/.test(c) && !/^(.)\1+$/.test(c);
+  }
+
+  // Details step (asked last, before the result) — every field is required.
+  function submitContact() {
     const errs: Record<string, string> = {};
-    if (!contact.name.trim()) errs.name = "Please add your name";
-    if (!contact.email.trim()) errs.email = "Please add your email";
-    else if (!emailOk(contact.email.trim())) errs.email = "That email doesn't look right";
+    const name = contact.name.trim(), co = contact.co.trim();
+    const email = contact.email.trim(), phone = contact.phone.trim();
+    if (name.length < 2) errs.name = "Please add your name";
+    if (!co) errs.co = "Please add your company";
+    else if (!companyOk(co)) errs.co = "Please enter your real company name";
+    if (!email) errs.email = "Please add your email";
+    else if (!emailOk(email)) errs.email = "That email doesn't look right";
+    if (!phone) errs.phone = "Please add your phone number";
+    else if (!phoneOk(phone)) errs.phone = "Enter a valid Nigerian number, e.g. 08110000000";
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    setStep(1);
+    goToScore();
   }
 
   function pick(qi: number, text: string, points: number) {
@@ -177,48 +195,9 @@ export default function MortgageScorecard() {
 
   let inner: React.ReactNode;
 
-  if (step === 0) {
-    inner = (
-      <div className="sc-card">
-        {Header(0)}
-        <div className="sc-bd">
-          <h2 className="sc-qh">First, a little about you</h2>
-          <p className="sc-sub">So we know where to send your results and your free scorecard.</p>
-          <div className="sc-field">
-            <label>Your name</label>
-            <input className={errors.name ? "err" : ""} placeholder="e.g. Tunde Bello"
-              value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
-            {errors.name && <div className="sc-errtext">{errors.name}</div>}
-          </div>
-          <div className="sc-field">
-            <label>Company</label>
-            <input placeholder="e.g. Lekki Homes Ltd"
-              value={contact.co} onChange={(e) => setContact({ ...contact, co: e.target.value })} />
-          </div>
-          <div className="sc-row2">
-            <div className="sc-field">
-              <label>Email</label>
-              <input className={errors.email ? "err" : ""} placeholder="you@company.com"
-                value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
-              {errors.email && <div className="sc-errtext">{errors.email}</div>}
-            </div>
-            <div className="sc-field">
-              <label>Phone</label>
-              <input placeholder="0801 234 5678"
-                value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
-            </div>
-          </div>
-          <div className="sc-nav">
-            <span />
-            <button className="sc-btn next" onClick={startAssessment}>Start assessment <span>→</span></button>
-          </div>
-        </div>
-      </div>
-    );
-  } else if (step <= QUESTIONS.length) {
-    const qi = step - 1;
+  if (step < QN) {
+    const qi = step;
     const Q = QUESTIONS[qi];
-    const last = step === QUESTIONS.length;
     inner = (
       <div className="sc-card">
         {Header(step)}
@@ -238,11 +217,52 @@ export default function MortgageScorecard() {
             })}
           </div>
           <div className="sc-nav">
-            <button className="sc-btn prev" onClick={() => setStep(step - 1)}>← Previous</button>
+            <button className="sc-btn prev" onClick={() => (step === 0 ? setStarted(false) : setStep(step - 1))}>← Previous</button>
             <button className="sc-btn next" disabled={Q.multi ? !answers[qi]?.text : answers[qi] == null}
-              onClick={() => (last ? goToScore() : setStep(step + 1))}>
-              {last ? "See my result" : "Next"} <span>→</span>
+              onClick={() => setStep(step + 1)}>
+              Next <span>→</span>
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (step === QN) {
+    // Details — asked last, once they've invested in the questions.
+    inner = (
+      <div className="sc-card">
+        {Header(QN)}
+        <div className="sc-bd">
+          <h2 className="sc-qh">Almost done!</h2>
+          <p className="sc-sub">Just need your details so we know where to send your result and your free scorecard.</p>
+          <div className="sc-field">
+            <label>Your name</label>
+            <input className={errors.name ? "err" : ""} placeholder="e.g. Tunde Bello"
+              value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
+            {errors.name && <div className="sc-errtext">{errors.name}</div>}
+          </div>
+          <div className="sc-field">
+            <label>Company</label>
+            <input className={errors.co ? "err" : ""} placeholder="e.g. Lekki Homes Ltd"
+              value={contact.co} onChange={(e) => setContact({ ...contact, co: e.target.value })} />
+            {errors.co && <div className="sc-errtext">{errors.co}</div>}
+          </div>
+          <div className="sc-row2">
+            <div className="sc-field">
+              <label>Email</label>
+              <input type="email" className={errors.email ? "err" : ""} placeholder="you@company.com"
+                value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
+              {errors.email && <div className="sc-errtext">{errors.email}</div>}
+            </div>
+            <div className="sc-field">
+              <label>Phone</label>
+              <input type="tel" inputMode="tel" className={errors.phone ? "err" : ""} placeholder="08110000000"
+                value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
+              {errors.phone && <div className="sc-errtext">{errors.phone}</div>}
+            </div>
+          </div>
+          <div className="sc-nav">
+            <button className="sc-btn prev" onClick={() => setStep(QN - 1)}>← Previous</button>
+            <button className="sc-btn next" onClick={submitContact}>See my result <span>→</span></button>
           </div>
         </div>
       </div>
