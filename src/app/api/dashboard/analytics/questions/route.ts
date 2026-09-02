@@ -32,9 +32,11 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
   const orgId = user.organizationId;
+  const { searchParams } = new URL(request.url);
+  const quizId = searchParams.get("quizId") || "";
 
   // Categorical questions (radio/matrix) for this org's quizzes.
-  const { data: qData } = await supabase
+  let qQuery = supabase
     .from("quiz_questions")
     .select(
       "id, question_text, question_order, question_type, options, quizzes!inner(organization_id)"
@@ -42,6 +44,8 @@ export async function GET(request: Request) {
     .eq("quizzes.organization_id", orgId)
     .in("question_type", ["radio", "matrix"])
     .order("question_order", { ascending: true });
+  if (quizId) qQuery = qQuery.eq("quiz_id", quizId);
+  const { data: qData } = await qQuery;
 
   const questions = (qData || []) as unknown as QuestionMeta[];
   if (questions.length === 0) {
@@ -52,14 +56,15 @@ export async function GET(request: Request) {
   const PAGE = 1000;
   const answers: AnswerRow[] = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
+    let aQuery = supabase
       .from("response_answers")
       .select(
-        "question_id, answer_value, quiz_responses!inner(organization_id, completed_at)"
+        "question_id, answer_value, quiz_responses!inner(organization_id, completed_at, quiz_id)"
       )
       .eq("quiz_responses.organization_id", orgId)
-      .not("quiz_responses.completed_at", "is", null)
-      .range(from, from + PAGE - 1);
+      .not("quiz_responses.completed_at", "is", null);
+    if (quizId) aQuery = aQuery.eq("quiz_responses.quiz_id", quizId);
+    const { data, error } = await aQuery.range(from, from + PAGE - 1);
     if (error) {
       return NextResponse.json(
         { error: "Failed to fetch answers" },

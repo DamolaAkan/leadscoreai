@@ -36,41 +36,39 @@ export default function TopNav({
   const visible = tabs.filter((t) => canSee(t.minRole));
 
   return (
-    <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+    <header className="bg-white border-b border-[#e9ebf0] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Top row: brand + user/logout */}
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
             {user.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.logoUrl} alt={user.orgName} className="w-10 h-10 rounded-lg" />
+              <img src={user.logoUrl} alt={user.orgName} className="w-10 h-10 rounded-xl object-contain" />
             ) : (
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                style={{ backgroundColor: accent }}
-              >
-                {user.orgName[0]}
-              </div>
+              <BrandBars />
             )}
             <div>
-              <h1 className="text-xl font-bold leading-tight" style={{ color: "#1e293b" }}>
+              <h1 className="text-lg font-bold leading-tight tracking-[-0.01em]" style={{ color: "#16202e" }}>
                 {user.orgName}
               </h1>
-              <p className="text-xs" style={{ color: "#94a3b8" }}>
+              <p className="text-xs font-medium" style={{ color: "#98a2b3" }}>
                 Lead scoring dashboard
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-sm" style={{ color: "#64748b" }}>
-              Welcome, <span className="font-medium" style={{ color: "#1e293b" }}>{user.fullName}</span>
+            <span className="hidden sm:inline text-sm" style={{ color: "#667085" }}>
+              Welcome,{" "}
+              <span className="font-semibold" style={{ color: "#16202e" }}>
+                {user.fullName}
+              </span>
             </span>
             <button
               onClick={onLogout}
-              className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-md border transition-colors"
-              style={{ color: "#475569", borderColor: "#cbd5e1", backgroundColor: "white" }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+              className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg border transition-colors"
+              style={{ color: "#344054", borderColor: "#e9ebf0", backgroundColor: "white" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,32 +80,58 @@ export default function TopNav({
         </div>
 
         {/* Tab bar */}
-        <nav className="flex items-center gap-1 overflow-x-auto -mb-px">
+        <nav className="flex items-center gap-1 overflow-x-auto">
           {visible.map((t) => {
             const active = activeTab === t.key;
             return (
               <button
                 key={t.key}
                 onClick={() => onTabChange(t.key)}
-                className="whitespace-nowrap px-4 py-3 text-sm transition-colors border-b-2"
+                className="relative whitespace-nowrap px-3.5 py-3 text-sm transition-colors rounded-t-lg"
                 style={{
-                  color: active ? "#1e293b" : "#64748b",
+                  color: active ? accent : "#667085",
                   fontWeight: active ? 600 : 500,
-                  borderBottomColor: active ? accent : "transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.color = "#1e293b";
+                  if (!active) e.currentTarget.style.color = "#16202e";
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.color = "#64748b";
+                  if (!active) e.currentTarget.style.color = "#667085";
                 }}
               >
                 {t.label}
+                {active && (
+                  <span
+                    className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full"
+                    style={{ backgroundColor: accent }}
+                  />
+                )}
               </button>
             );
           })}
         </nav>
       </div>
     </header>
+  );
+}
+
+// LeadScoreAI mark — four ascending bars in the logo palette.
+function BrandBars() {
+  const bars = [
+    { h: 10, c: "#dc2626" },
+    { h: 16, c: "#2563eb" },
+    { h: 22, c: "#d99409" },
+    { h: 28, c: "#16a34a" },
+  ];
+  return (
+    <div className="w-10 h-10 rounded-xl bg-[#f5f2fe] flex items-end justify-center gap-[3px] p-2">
+      {bars.map((b, i) => (
+        <span
+          key={i}
+          className="w-1.5 rounded-sm"
+          style={{ height: b.h, backgroundColor: b.c }}
+        />
+      ))}
+    </div>
   );
 }

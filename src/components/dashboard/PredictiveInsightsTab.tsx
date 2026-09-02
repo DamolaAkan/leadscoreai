@@ -89,8 +89,10 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Predictive Insights</h1>
-          <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+          <h1 className="text-2xl font-bold tracking-[-0.01em]" style={{ color: "#16202e" }}>
+            Predictive Insights
+          </h1>
+          <p className="text-sm text-[#667085] mt-1 max-w-2xl">
             Willingness-to-pay analysis — which answers reveal a lead can and will actually pay.
             This flags <span className="font-medium">super leads</span> to call first and never
             changes the scorecard tier.
@@ -126,7 +128,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
       )}
 
       {data?.configured && !data.hasRubric && !generating && (
-        <div className="rounded-lg bg-white p-8 text-center text-gray-500 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div className="rounded-lg bg-white p-8 text-center text-gray-500 border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
           No analysis yet. Click <span className="font-medium">Generate analysis</span> to have the
           AI read this scorecard and your conversions, then score every lead&apos;s willingness to
           pay.
@@ -136,7 +138,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
       {data?.hasRubric && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <KPICard label="Super Leads" value={data.stats.superLeads} accent="#d97706" />
+            <KPICard label="Super Leads" value={data.stats.superLeads} accent="#d99409" />
             <KPICard
               label="Leads Scored"
               value={data.stats.scored}
@@ -170,7 +172,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {data.signals.map((s) => (
-                <div key={s.questionId} className="bg-white rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                <div key={s.questionId} className="bg-white rounded-lg p-6 border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
                   <h3 className="font-semibold text-gray-900">{s.questionText}</h3>
                   <p className="text-sm text-gray-500 mt-1 mb-4">{s.rationale}</p>
                   <div className="space-y-2">
@@ -184,7 +186,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
                               className="h-full rounded-full"
                               style={{
                                 width: `${(w.weight / maxWeight) * 100}%`,
-                                backgroundColor: "#d97706",
+                                backgroundColor: "#d99409",
                               }}
                             />
                           </div>
@@ -199,7 +201,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
 
           {/* Suggested questions */}
           {data.suggestedQuestions.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <div className="rounded-lg bg-white p-6 border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
               <h2 className="text-lg font-bold text-gray-900 mb-1">
                 Questions worth adding
               </h2>
@@ -227,7 +229,7 @@ export default function PredictiveInsightsTab({ accent, getAuthHeaders, isAdmin 
 
           {/* Top super leads */}
           {data.stats.topSuperLeads.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <div className="rounded-lg bg-white p-6 border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Top super leads — call first</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

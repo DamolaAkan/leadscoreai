@@ -32,9 +32,15 @@ export default function ResponsesTab({
 
   // Filters
   const [qualification, setQualification] = useState("");
+  const [quizId, setQuizId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
+
+  // The org's active scorecards, for the Scorecard filter + column context.
+  const [quizzes, setQuizzes] = useState<
+    { id: string; name: string; slug: string }[]
+  >([]);
 
   // Detail panel
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -59,6 +65,7 @@ export default function ResponsesTab({
       pageSize: "20",
     });
     if (qualification) params.set("qualification", qualification);
+    if (quizId) params.set("quizId", quizId);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
     if (search) params.set("search", search);
@@ -82,11 +89,19 @@ export default function ResponsesTab({
       // Ignore
     }
     setLoading(false);
-  }, [page, qualification, dateFrom, dateTo, search, getAuthHeaders]);
+  }, [page, qualification, quizId, dateFrom, dateTo, search, getAuthHeaders]);
 
   useEffect(() => {
     fetchResponses();
   }, [fetchResponses]);
+
+  // Load the org's active scorecards once (reused from the Demo tab endpoint).
+  useEffect(() => {
+    fetch("/api/dashboard/quiz-link", { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => setQuizzes(d.quizzes || []))
+      .catch(() => {});
+  }, [getAuthHeaders]);
 
   // Debounce search
   const [searchInput, setSearchInput] = useState("");
@@ -153,6 +168,7 @@ export default function ResponsesTab({
   const handleExport = async () => {
     const params = new URLSearchParams();
     if (qualification) params.set("qualification", qualification);
+    if (quizId) params.set("quizId", quizId);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
     if (search) params.set("search", search);
@@ -266,7 +282,14 @@ export default function ResponsesTab({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Responses</h1>
+      <div>
+        <h1 className="text-2xl font-bold tracking-[-0.01em]" style={{ color: "#16202e" }}>
+          Responses
+        </h1>
+        <p className="text-sm mt-0.5" style={{ color: "#667085" }}>
+          Every lead your scorecards have captured, ranked and ready to work.
+        </p>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -281,7 +304,7 @@ export default function ResponsesTab({
           label="Qualified Leads"
           value={stats.qualified}
           sublabel="Hot + Warm"
-          accent="#f59e0b"
+          accent="#d99409"
         />
         <KPICard
           label="Conversion Rate"
@@ -291,7 +314,7 @@ export default function ResponsesTab({
       </div>
 
       {/* Bulk outcome import */}
-      <div className="bg-white rounded-xl p-4 flex flex-wrap items-center gap-3 border border-gray-100">
+      <div className="bg-white rounded-xl p-4 flex flex-wrap items-center gap-3 border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
         <div className="flex-1 min-w-[220px]">
           <p className="text-sm font-semibold text-gray-900">Import conversions</p>
           <p className="text-xs text-gray-500">
@@ -327,11 +350,17 @@ export default function ResponsesTab({
       {/* Filters */}
       <FilterBar
         qualification={qualification}
+        quizId={quizId}
+        quizzes={quizzes}
         dateFrom={dateFrom}
         dateTo={dateTo}
         search={searchInput}
         onQualificationChange={(v) => {
           setQualification(v);
+          setPage(1);
+        }}
+        onQuizIdChange={(v) => {
+          setQuizId(v);
           setPage(1);
         }}
         onDateFromChange={(v) => {
@@ -349,12 +378,13 @@ export default function ResponsesTab({
 
       {/* Table */}
       {loading ? (
-        <div className="bg-white rounded-xl p-8 text-center text-gray-500">
+        <div className="bg-white rounded-xl p-8 text-center text-[#667085] border border-[#eceef2] shadow-[0_1px_3px_rgba(16,24,40,0.06),0_1px_2px_rgba(16,24,40,0.04)]">
           Loading responses...
         </div>
       ) : (
         <ResponseTable
           responses={responses}
+          multiScorecard={quizzes.length > 1}
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}

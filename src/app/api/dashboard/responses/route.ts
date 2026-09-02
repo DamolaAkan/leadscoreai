@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("dateFrom") || "";
   const dateTo = searchParams.get("dateTo") || "";
   const search = searchParams.get("search") || "";
+  const quizId = searchParams.get("quizId") || "";
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = parseInt(searchParams.get("pageSize") || "20");
 
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
       .eq("organization_id", user.organizationId)
       .not("completed_at", "is", null);
     if (qualification) q = q.eq("qualification", qualification);
+    if (quizId) q = q.eq("quiz_id", quizId);
     if (dateFrom) q = q.gte("completed_at", `${dateFrom}T00:00:00`);
     if (dateTo) q = q.lte("completed_at", `${dateTo}T23:59:59`);
     if (search) {
@@ -82,6 +84,24 @@ export async function GET(request: Request) {
 
   // The dynamic string select() widens the row type, so cast back to rows.
   const rows = (data || []) as unknown as QuizResponse[];
+
+  // Attach each response's scorecard (quiz) so a multi-scorecard org can tell
+  // leads apart. One extra round-trip keyed by the distinct quiz_ids on the page.
+  const quizIds = Array.from(new Set(rows.map((r) => r.quiz_id).filter(Boolean)));
+  if (quizIds.length > 0) {
+    const { data: quizzes } = await supabase
+      .from("quizzes")
+      .select("id, name, slug")
+      .in("id", quizIds);
+    const quizMap: Record<string, { name: string; slug: string }> = {};
+    for (const q of quizzes || []) {
+      quizMap[q.id] = { name: q.name, slug: q.slug };
+    }
+    for (const r of rows) {
+      r.quiz_name = quizMap[r.quiz_id]?.name ?? null;
+      r.quiz_slug = quizMap[r.quiz_id]?.slug ?? null;
+    }
+  }
 
   // Fetch email sequence status for these responses
   const responseIds = rows.map((r) => r.id);

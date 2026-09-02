@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("dateFrom") || "";
   const dateTo = searchParams.get("dateTo") || "";
   const search = searchParams.get("search") || "";
+  const quizId = searchParams.get("quizId") || "";
 
   const supabase = createServiceClient();
 
@@ -30,6 +31,9 @@ export async function GET(request: Request) {
 
   if (qualification) {
     query = query.eq("qualification", qualification);
+  }
+  if (quizId) {
+    query = query.eq("quiz_id", quizId);
   }
   if (dateFrom) {
     query = query.gte("completed_at", `${dateFrom}T00:00:00`);
@@ -53,7 +57,20 @@ export async function GET(request: Request) {
   }
 
   const rows = data || [];
+
+  // Resolve each row's scorecard name for the export column.
+  const quizIds = Array.from(new Set(rows.map((r) => r.quiz_id).filter(Boolean)));
+  const quizNames: Record<string, string> = {};
+  if (quizIds.length > 0) {
+    const { data: quizzes } = await supabase
+      .from("quizzes")
+      .select("id, name")
+      .in("id", quizIds);
+    for (const q of quizzes || []) quizNames[q.id] = q.name;
+  }
+
   const headers = [
+    "Scorecard",
     "Name",
     "Email",
     "Phone",
@@ -73,6 +90,7 @@ export async function GET(request: Request) {
     headers.join(","),
     ...rows.map((r) =>
       [
+        escCsv(quizNames[r.quiz_id] || ""),
         escCsv(r.contact_name),
         escCsv(r.contact_email),
         escCsv(r.contact_phone),

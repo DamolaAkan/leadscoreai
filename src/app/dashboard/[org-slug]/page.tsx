@@ -43,9 +43,9 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  // Design system: dashboard chrome standardizes on Primary Slate (per-client
-  // brand color lives on the public scorecard, not the dashboard).
-  const accent = "#64748b";
+  // Design system: dashboard chrome standardizes on LeadScoreAI brand purple
+  // (per-client brand color lives on the public scorecard, not the dashboard).
+  const accent = "#6d28d9";
 
   const handleLogout = async () => {
     await logout();

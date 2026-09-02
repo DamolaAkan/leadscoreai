@@ -70,6 +70,10 @@ export interface QuizResponse {
   wtp_confidence: "low" | "medium" | "high" | null;
   wtp_mode: "index" | "calibrated" | null;
   wtp_factors: { question: string; earned: number; max: number; pct: number }[] | null;
+  // Scorecard (quiz) this response came from — joined in the responses API so a
+  // multi-scorecard org can tell leads apart. Optional so nothing else breaks.
+  quiz_name?: string | null;
+  quiz_slug?: string | null;
 }
 
 export interface ResponseAnswer {

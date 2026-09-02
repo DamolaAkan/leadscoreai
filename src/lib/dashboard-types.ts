@@ -41,20 +41,21 @@ export interface ResponseFilters {
   pageSize?: number;
 }
 
-// Solid colors for charts (pie/bar fills) — design-system semantic hues.
+// Solid chart fills — the LeadScoreAI logo palette mapped to semantic tiers:
+// green (hot), amber (warm), blue (cold), red (not qualified).
 export const QUALIFICATION_COLORS: Record<string, string> = {
-  HOT_LEAD: "#10b981",
-  WARM_LEAD: "#f59e0b",
-  COLD_LEAD: "#3b82f6",
-  NOT_QUALIFIED: "#ef4444",
+  HOT_LEAD: "#16a34a",
+  WARM_LEAD: "#d99409",
+  COLD_LEAD: "#2563eb",
+  NOT_QUALIFIED: "#dc2626",
 };
 
-// Soft badge tints (bg + text) — straight-edge, no border, dark text.
+// Status badges — 15%-tint background with AA-dark text of the same hue.
 export const QUALIFICATION_BADGE: Record<string, { bg: string; text: string }> = {
-  HOT_LEAD: { bg: "#dcfce7", text: "#166534" },
-  WARM_LEAD: { bg: "#fef3c7", text: "#92400e" },
-  COLD_LEAD: { bg: "#dbeafe", text: "#0c2d6b" },
-  NOT_QUALIFIED: { bg: "#fee2e2", text: "#991b1b" },
+  HOT_LEAD: { bg: "rgba(22,163,74,0.14)", text: "#166534" },
+  WARM_LEAD: { bg: "rgba(217,148,9,0.14)", text: "#92510a" },
+  COLD_LEAD: { bg: "rgba(37,99,235,0.14)", text: "#1e40af" },
+  NOT_QUALIFIED: { bg: "rgba(220,38,38,0.14)", text: "#991b1b" },
 };
 
 export const QUALIFICATION_LABELS: Record<string, string> = {

@@ -53,21 +53,27 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
   const orgId = user.organizationId;
+  const { searchParams } = new URL(request.url);
+  const quizId = searchParams.get("quizId") || "";
 
   // Started = every response including incomplete ones (cheap head count).
-  const { count: startedCount } = await supabase
+  let startedQ = supabase
     .from("quiz_responses")
     .select("*", { count: "exact", head: true })
     .eq("organization_id", orgId);
+  if (quizId) startedQ = startedQ.eq("quiz_id", quizId);
+  const { count: startedCount } = await startedQ;
 
   // Pull completed rows once; everything else is computed from this set.
-  const { data, error } = await supabase
+  let rowsQ = supabase
     .from("quiz_responses")
     .select(
       "percentage, qualification, gender, age, location, contact_email, converted_to_sale, completed_at, converted_at"
     )
     .eq("organization_id", orgId)
     .not("completed_at", "is", null);
+  if (quizId) rowsQ = rowsQ.eq("quiz_id", quizId);
+  const { data, error } = await rowsQ;
 
   if (error) {
     return NextResponse.json(
