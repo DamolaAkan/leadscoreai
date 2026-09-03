@@ -16,6 +16,7 @@ interface OrgInfo {
   name: string;
   slug: string;
   primary_color: string;
+  logo_url: string | null;
   plan: string;
 }
 
@@ -39,6 +40,9 @@ export default function SettingsTab({
   const [editColor, setEditColor] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoMsg, setLogoMsg] = useState("");
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -51,6 +55,7 @@ export default function SettingsTab({
       setQuizzes(data.quizzes || []);
       setEditName(data.org?.name || "");
       setEditColor(data.org?.primary_color || "#6366f1");
+      setLogoUrl(data.org?.logo_url || null);
     } catch {
       // Ignore
     }
@@ -78,6 +83,52 @@ export default function SettingsTab({
       setSaveMsg("Failed to save.");
     }
     setSaving(false);
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (file.size > 3 * 1024 * 1024) {
+      setLogoMsg("Logo is too large (max 3MB).");
+      return;
+    }
+    setLogoBusy(true);
+    setLogoMsg("");
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      const res = await fetch("/api/dashboard/settings/logo", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.logo_url) {
+        setLogoUrl(data.logo_url);
+        setLogoMsg("Logo saved — it now shows on your scorecard.");
+      } else {
+        setLogoMsg(data.error || "Upload failed.");
+      }
+    } catch {
+      setLogoMsg("Upload failed.");
+    }
+    setLogoBusy(false);
+  };
+
+  const handleRemoveLogo = async () => {
+    setLogoBusy(true);
+    setLogoMsg("");
+    const res = await fetch("/api/dashboard/settings/logo", {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      setLogoUrl(null);
+      setLogoMsg("Logo removed.");
+    }
+    setLogoBusy(false);
   };
 
   const handleToggleQuiz = async (id: string, current: boolean) => {
@@ -122,6 +173,48 @@ export default function SettingsTab({
               onChange={(e) => setEditName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Company Logo
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <span className="text-[11px] text-gray-400">No logo</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  className="px-3 py-2 text-sm font-medium text-white rounded-lg cursor-pointer inline-block w-fit"
+                  style={{ backgroundColor: accent, opacity: logoBusy ? 0.5 : 1 }}
+                >
+                  {logoBusy ? "Uploading…" : logoUrl ? "Replace logo" : "Upload logo"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    disabled={logoBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleLogoUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {logoUrl && (
+                  <button type="button" onClick={handleRemoveLogo} disabled={logoBusy}
+                    className="text-xs text-red-600 hover:underline text-left w-fit">
+                    Remove
+                  </button>
+                )}
+                <span className="text-[11px] text-gray-400">PNG, JPG, WebP or SVG · max 3MB</span>
+              </div>
+            </div>
+            {logoMsg && <p className="text-sm text-gray-600 mt-2">{logoMsg}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
