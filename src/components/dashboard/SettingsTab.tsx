@@ -43,6 +43,12 @@ export default function SettingsTab({
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoMsg, setLogoMsg] = useState("");
+  const [billing, setBilling] = useState<{
+    tier: string | null; status: string | null; currentPeriodEnd: string | null;
+    paid: boolean; prices: { core: number; pro: number }; configured: boolean;
+  } | null>(null);
+  const [subBusy, setSubBusy] = useState<string | null>(null);
+  const [subMsg, setSubMsg] = useState("");
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -56,11 +62,35 @@ export default function SettingsTab({
       setEditName(data.org?.name || "");
       setEditColor(data.org?.primary_color || "#6366f1");
       setLogoUrl(data.org?.logo_url || null);
+      const bRes = await fetch("/api/dashboard/billing", { headers: getAuthHeaders() });
+      if (bRes.ok) setBilling(await bRes.json());
     } catch {
       // Ignore
     }
     setLoading(false);
   }, [getAuthHeaders]);
+
+  const handleSubscribe = async (tier: "core" | "pro") => {
+    setSubBusy(tier);
+    setSubMsg("");
+    try {
+      const res = await fetch("/api/dashboard/billing/checkout", {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.authorization_url) {
+        window.location.href = data.authorization_url; // → Paystack checkout
+      } else {
+        setSubMsg(data.error || "Could not start checkout.");
+        setSubBusy(null);
+      }
+    } catch {
+      setSubMsg("Could not start checkout.");
+      setSubBusy(null);
+    }
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -257,6 +287,61 @@ export default function SettingsTab({
           <p>
             Plan: <span className="capitalize">{org?.plan}</span>
           </p>
+        </div>
+      </div>
+
+      {/* Billing */}
+      <div className="bg-white rounded-xl p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Billing &amp; Plan</h3>
+        <div className="space-y-4 max-w-md">
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+            <div>
+              <div className="text-sm text-gray-500">Current plan</div>
+              <div className="text-lg font-bold text-gray-900">
+                {billing?.tier === "core" ? "Core" : billing?.tier === "pro" ? "Pro" : "Free"}
+              </div>
+            </div>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${billing?.paid ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+              {billing?.paid ? "Active" : "Not subscribed"}
+            </span>
+          </div>
+
+          {billing?.paid && billing?.currentPeriodEnd && (
+            <p className="text-sm text-gray-600">
+              Renews on{" "}
+              <b>{new Date(billing.currentPeriodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</b>.
+              Pay again before then to keep your dashboard active.
+            </p>
+          )}
+          {billing && !billing.configured && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Card / bank billing isn&apos;t switched on yet.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(["core", "pro"] as const).map((t) => {
+              const price = billing?.prices?.[t] ?? (t === "core" ? 130000 : 250000);
+              const isCurrent = billing?.paid && billing?.tier === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => handleSubscribe(t)}
+                  disabled={!!subBusy || (billing ? !billing.configured : false)}
+                  className="rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  style={{ borderColor: accent }}
+                >
+                  <div className="font-bold text-gray-900">{t === "core" ? "Core" : "Pro"}</div>
+                  <div className="text-sm text-gray-600">₦{price.toLocaleString()}/month</div>
+                  <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
+                    {subBusy === t ? "Starting…" : isCurrent ? "Renew →" : "Subscribe →"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400">Pay by card, bank transfer or USSD via Paystack.</p>
+          {subMsg && <p className="text-sm text-red-600">{subMsg}</p>}
         </div>
       </div>
 

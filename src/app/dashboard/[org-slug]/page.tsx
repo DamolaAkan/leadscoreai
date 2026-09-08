@@ -19,6 +19,38 @@ export type DashboardTab =
   | "users"
   | "settings";
 
+function PaywallGate({
+  feature,
+  accent,
+  onSubscribe,
+}: {
+  feature: string;
+  accent: string;
+  onSubscribe: () => void;
+}) {
+  return (
+    <div
+      className="bg-white rounded-2xl border border-[#eceef2] p-10 sm:p-12 text-center max-w-xl mx-auto mt-6"
+      style={{ boxShadow: "0 1px 2px rgba(20,40,30,.04), 0 12px 34px -18px rgba(109,40,217,.22)" }}
+    >
+      <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: "#f3effe" }}>
+        <span className="text-2xl">🔒</span>
+      </div>
+      <h2 className="text-xl font-bold text-[#16202e] mb-2">{feature} is a paid feature</h2>
+      <p className="text-[#667085] leading-relaxed mb-6 max-w-md mx-auto">
+        Subscribe to a plan to unlock {feature.toLowerCase()} — see who&apos;s ready and able to buy, not just who filled the form.
+      </p>
+      <button
+        onClick={onSubscribe}
+        className="px-6 py-3 rounded-lg text-white font-semibold transition-transform hover:-translate-y-0.5"
+        style={{ backgroundColor: accent }}
+      >
+        Subscribe to access →
+      </button>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -26,12 +58,22 @@ export default function DashboardPage() {
   const { user, loading, logout, getAuthHeaders, isAdmin, isSuperAdmin } =
     useAuth(orgSlug);
   const [activeTab, setActiveTab] = useState<DashboardTab>("responses");
+  const [paid, setPaid] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push(`/dashboard/${orgSlug}/login`);
     }
   }, [loading, user, router, orgSlug]);
+
+  // Billing state drives the paid-feature gate (Analytics + Predictive Insights).
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/dashboard/billing", { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => setPaid(d?.paid !== false))
+      .catch(() => setPaid(true)); // fail open — never gate on an error
+  }, [user, getAuthHeaders]);
 
   if (loading) {
     return (
@@ -76,21 +118,27 @@ export default function DashboardPage() {
               getAuthHeaders={getAuthHeaders}
             />
           )}
-          {activeTab === "analytics" && (
-            <AnalyticsTab
-              user={user}
-              accent={accent}
-              getAuthHeaders={getAuthHeaders}
-            />
-          )}
-          {activeTab === "insights" && (
-            <PredictiveInsightsTab
-              user={user}
-              accent={accent}
-              getAuthHeaders={getAuthHeaders}
-              isAdmin={isAdmin}
-            />
-          )}
+          {activeTab === "analytics" &&
+            (paid === false ? (
+              <PaywallGate feature="Analytics" accent={accent} onSubscribe={() => setActiveTab("settings")} />
+            ) : (
+              <AnalyticsTab
+                user={user}
+                accent={accent}
+                getAuthHeaders={getAuthHeaders}
+              />
+            ))}
+          {activeTab === "insights" &&
+            (paid === false ? (
+              <PaywallGate feature="Predictive Insights" accent={accent} onSubscribe={() => setActiveTab("settings")} />
+            ) : (
+              <PredictiveInsightsTab
+                user={user}
+                accent={accent}
+                getAuthHeaders={getAuthHeaders}
+                isAdmin={isAdmin}
+              />
+            ))}
           {activeTab === "demo" && (
             <DemoTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />
           )}
