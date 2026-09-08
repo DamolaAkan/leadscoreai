@@ -99,6 +99,13 @@ export async function PUT(request: Request) {
   const updates: Record<string, unknown> = {};
   if (body.name) updates.name = body.name;
   if (body.primary_color) updates.primary_color = body.primary_color;
+  if (typeof body.email === "string") {
+    const email = body.email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+    }
+    updates.email = email;
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No updates" }, { status: 400 });

@@ -49,6 +49,9 @@ export default function SettingsTab({
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailMsg, setEmailMsg] = useState("");
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -62,6 +65,7 @@ export default function SettingsTab({
       setEditName(data.org?.name || "");
       setEditColor(data.org?.primary_color || "#6366f1");
       setLogoUrl(data.org?.logo_url || null);
+      setBillingEmail(data.org?.email || "");
       const bRes = await fetch("/api/dashboard/billing", { headers: getAuthHeaders() });
       if (bRes.ok) setBilling(await bRes.json());
     } catch {
@@ -90,6 +94,27 @@ export default function SettingsTab({
       setSubMsg("Could not start checkout.");
       setSubBusy(null);
     }
+  };
+
+  const handleSaveBillingEmail = async () => {
+    setEmailBusy(true);
+    setEmailMsg("");
+    try {
+      const res = await fetch("/api/dashboard/settings", {
+        method: "PUT",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ email: billingEmail.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setEmailMsg("Saved.");
+      } else {
+        setEmailMsg(data.error || "Could not save email.");
+      }
+    } catch {
+      setEmailMsg("Could not save email.");
+    }
+    setEmailBusy(false);
   };
 
   useEffect(() => {
@@ -318,6 +343,32 @@ export default function SettingsTab({
               Card / bank billing isn&apos;t switched on yet.
             </p>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Billing email</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={billingEmail}
+                onChange={(e) => { setBillingEmail(e.target.value); setEmailMsg(""); }}
+                placeholder="you@company.com"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={{ ["--tw-ring-color" as string]: accent }}
+              />
+              <button
+                onClick={handleSaveBillingEmail}
+                disabled={emailBusy || !billingEmail.trim()}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ backgroundColor: accent }}
+              >
+                {emailBusy ? "Saving…" : "Save"}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Your Paystack receipts and renewals go here.</p>
+            {emailMsg && (
+              <p className={`text-sm mt-1 ${emailMsg === "Saved." ? "text-green-600" : "text-red-600"}`}>{emailMsg}</p>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(["core", "pro"] as const).map((t) => {
