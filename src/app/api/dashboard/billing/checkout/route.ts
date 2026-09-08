@@ -30,10 +30,19 @@ export async function POST(request: Request) {
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 
-  const email = org.email || user.username;
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  // Paystack rejects placeholder/demo domains, so pick the first genuinely valid
+  // email: the org's billing email, else the logged-in user's.
+  const realEmail = (e?: string | null): e is string => {
+    if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
+    const domain = e.split("@")[1].toLowerCase();
+    if (/\.(example|test|invalid|localhost)$/.test(domain)) return false;
+    if (["example.com", "example.org", "example.net"].includes(domain)) return false;
+    return true;
+  };
+  const email = realEmail(org.email) ? org.email : realEmail(user.username) ? user.username : null;
+  if (!email) {
     return NextResponse.json(
-      { error: "Add a billing email in Settings first." },
+      { error: "Add a valid billing email in Settings first." },
       { status: 400 }
     );
   }
@@ -41,7 +50,13 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success`;
 
-  const init = await initTransaction({ email, tier, orgId: org.id, callbackUrl });
+  let init;
+  try {
+    init = await initTransaction({ email, tier, orgId: org.id, callbackUrl });
+  } catch (e) {
+    console.error("[billing/checkout] paystack unreachable:", e);
+    return NextResponse.json({ error: "Payment provider unreachable — please try again." }, { status: 502 });
+  }
   if (!init?.status || !init?.data?.authorization_url) {
     console.error("[billing/checkout] paystack init failed:", init?.message);
     return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
