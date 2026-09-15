@@ -19,6 +19,10 @@ export interface OrgBilling {
   billing_status?: string | null;
   current_period_end?: string | null;
   created_at?: string | null;
+  // Onboarding sign-off date, set by staff (Stella) when they approve onboarding
+  // and activate the account. The 30-day trial clock counts from THIS, not the
+  // DB row's creation. Null = onboarding not yet approved (day-clock not started).
+  signup_date?: string | null;
 }
 
 // Free-trial offer: full dashboard access until the client hits this many REAL
@@ -40,6 +44,7 @@ export function isPaid(org: OrgBilling | null | undefined): boolean {
 export type AccessReason =
   | "paid"
   | "grandfathered"
+  | "pending_activation"
   | "trial_active"
   | "leads_exhausted"
   | "trial_expired";
@@ -48,6 +53,7 @@ export interface AccessState {
   locked: boolean;
   paid: boolean;
   tier: string | null;
+  onboarded: boolean; // signup_date set = staff has activated the account
   leadsUsed: number; // real leads only (test leads excluded upstream)
   leadLimit: number;
   trialEndsAt: string | null;
@@ -65,7 +71,8 @@ export function computeAccess(
 ): AccessState {
   const tier = org?.billing_tier ?? null;
   const paid = isPaid(org);
-  const base = { paid, tier, leadsUsed: realLeadCount, leadLimit: FREE_LEAD_LIMIT };
+  const onboarded = !!org?.signup_date;
+  const base = { paid, tier, onboarded, leadsUsed: realLeadCount, leadLimit: FREE_LEAD_LIMIT };
 
   if (tier == null) {
     return { ...base, locked: false, trialEndsAt: null, reason: "grandfathered" };
@@ -73,18 +80,21 @@ export function computeAccess(
   if (paid) {
     return { ...base, locked: false, trialEndsAt: null, reason: "paid" };
   }
-  // On the trial. Lock at whichever limit trips first.
-  const created = org?.created_at ? new Date(org.created_at) : new Date();
-  const trialEndsAt = new Date(created.getTime() + TRIAL_DAYS * 24 * 3600 * 1000);
+  // On the trial. The 30-day clock runs from the staff-set signup_date; until an
+  // account is activated it has no day-clock (only the lead limit can lock it).
+  const signup = org?.signup_date ? new Date(org.signup_date) : null;
+  const trialEndsAt = signup ? new Date(signup.getTime() + TRIAL_DAYS * 24 * 3600 * 1000) : null;
   const leadsExhausted = realLeadCount >= FREE_LEAD_LIMIT;
-  const trialExpired = Date.now() >= trialEndsAt.getTime();
+  const trialExpired = trialEndsAt ? Date.now() >= trialEndsAt.getTime() : false;
   const locked = leadsExhausted || trialExpired;
-  return {
-    ...base,
-    locked,
-    trialEndsAt: trialEndsAt.toISOString(),
-    reason: locked ? (leadsExhausted ? "leads_exhausted" : "trial_expired") : "trial_active",
-  };
+  const reason: AccessReason = locked
+    ? leadsExhausted
+      ? "leads_exhausted"
+      : "trial_expired"
+    : onboarded
+      ? "trial_active"
+      : "pending_activation";
+  return { ...base, locked, trialEndsAt: trialEndsAt ? trialEndsAt.toISOString() : null, reason };
 }
 
 // Initialise a Paystack checkout for a one-off subscription payment.

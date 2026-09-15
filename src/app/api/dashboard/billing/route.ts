@@ -52,6 +52,8 @@ export async function GET(request: Request) {
     // Trial / lock state
     locked: access.locked,
     reason: access.reason,
+    onboarded: access.onboarded,
+    signupDate: b.signup_date ?? null,
     leadsUsed: access.leadsUsed,
     leadLimit: access.leadLimit,
     leadsRemaining: Math.max(0, access.leadLimit - access.leadsUsed),
