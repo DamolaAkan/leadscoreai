@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
-import { isPaid, TIERS, paystackConfigured, OrgBilling } from "@/lib/paystack";
+import { isPaid, computeAccess, TIERS, paystackConfigured, OrgBilling } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,27 @@ export async function GET(request: Request) {
     .single();
 
   const b = (org || {}) as OrgBilling;
+  const orgEmail = (org as { email?: string | null })?.email ?? null;
+
+  // Real leads = all responses EXCEPT test leads (a lead whose email matches the
+  // org's own account email — i.e. the client testing their own scorecard).
+  const { count: totalLeads } = await supabase
+    .from("quiz_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", user.organizationId);
+  let testLeads = 0;
+  if (orgEmail) {
+    const { count } = await supabase
+      .from("quiz_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", user.organizationId)
+      .ilike("contact_email", orgEmail); // no wildcards = case-insensitive exact
+    testLeads = count ?? 0;
+  }
+  const realLeadCount = Math.max(0, (totalLeads ?? 0) - testLeads);
+
+  const access = computeAccess(b, realLeadCount);
+
   return NextResponse.json({
     tier: b.billing_tier ?? null,
     status: b.billing_status ?? null,
@@ -28,5 +49,12 @@ export async function GET(request: Request) {
     paid: isPaid(b),
     prices: { core: TIERS.core.naira, pro: TIERS.pro.naira },
     configured: paystackConfigured(),
+    // Trial / lock state
+    locked: access.locked,
+    reason: access.reason,
+    leadsUsed: access.leadsUsed,
+    leadLimit: access.leadLimit,
+    leadsRemaining: Math.max(0, access.leadLimit - access.leadsUsed),
+    trialEndsAt: access.trialEndsAt,
   });
 }
