@@ -114,7 +114,9 @@ export async function initTransaction(opts: {
       currency: "NGN",
       callback_url: opts.callbackUrl,
       metadata: { orgId: opts.orgId, tier: opts.tier, purpose: "leadscoreai_subscription" },
-      channels: ["card", "bank", "ussd", "bank_transfer", "qr"],
+      // Bank transfer first — it's the default channel and the one Nigerians pay
+      // with most; card/USSD/QR remain available for those who prefer them.
+      channels: ["bank_transfer", "bank", "ussd", "card", "qr"],
     }),
   });
   return res.json();
