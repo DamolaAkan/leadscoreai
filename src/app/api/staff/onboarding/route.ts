@@ -98,7 +98,10 @@ export async function POST(request: Request) {
     <div style="font-size:14px;opacity:.9;margin-top:4px;">Onboarding complete — here's how to start getting scored leads today.</div>
   </div>
   <div style="padding:22px 4px;font-size:15px;line-height:1.6;">
-    <p style="margin:0 0 18px;">Hi ${org.name}, welcome aboard. Your scorecard is ready and your dashboard is open. Three quick steps to get going:</p>
+    <p style="margin:0 0 14px;">Hi ${org.name}, welcome aboard. Your scorecard is ready and your dashboard is open. Three quick steps to get going:</p>
+    <p style="margin:0 0 18px;">
+      <a href="https://www.loom.com/share/eddf84b7b873474cb1067c06959acec5" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600;">▶ Watch the 2-minute walkthrough</a>
+    </p>
 
     ${step("1", "Share your scorecard link", `Put this link in your WhatsApp status, Instagram bio, ads and website. Every person who fills it becomes a scored lead in your dashboard.<br><a href="${scorecardUrl}" style="color:#6d28d9;font-weight:600;">${scorecardUrl}</a>`)}
 

@@ -10,8 +10,10 @@ import UsersTab from "@/components/dashboard/UsersTab";
 import SettingsTab from "@/components/dashboard/SettingsTab";
 import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab";
 import DemoTab from "@/components/dashboard/DemoTab";
+import StartHereTab from "@/components/dashboard/StartHereTab";
 
 export type DashboardTab =
+  | "start"
   | "responses"
   | "analytics"
   | "insights"
@@ -147,7 +149,7 @@ export default function DashboardPage() {
   const orgSlug = params["org-slug"] as string;
   const { user, loading, logout, getAuthHeaders, isAdmin, isSuperAdmin } =
     useAuth(orgSlug);
-  const [activeTab, setActiveTab] = useState<DashboardTab>("responses");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("start");
   const [access, setAccess] = useState<AccessInfo | null>(null);
 
   useEffect(() => {
@@ -214,6 +216,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
         <div>
+          {activeTab === "start" && <StartHereTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />}
           {activeTab === "responses" && (
             <ResponsesTab
               user={user}

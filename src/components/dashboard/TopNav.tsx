@@ -14,6 +14,7 @@ interface TopNavProps {
 }
 
 const tabs: { key: DashboardTab; label: string; minRole: string }[] = [
+  { key: "start", label: "Start Here", minRole: "staff" },
   { key: "responses", label: "Responses", minRole: "staff" },
   { key: "analytics", label: "Analytics", minRole: "staff" },
   { key: "insights", label: "Predictive Insights", minRole: "staff" },
