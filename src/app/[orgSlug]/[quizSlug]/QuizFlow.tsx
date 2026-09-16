@@ -14,9 +14,13 @@ import {
 } from "@/lib/types";
 import {
   generateInsights,
+  generateSolarInsights,
   TIER_NAMES,
+  SOLAR_TIER_NAMES,
   TIER_COLORS,
   NEXT_STEPS,
+  SOLAR_NEXT_STEP,
+  SOLAR_WHY_US,
 } from "@/lib/insights";
 
 const SUPPORTED_COUNTRIES: Country[] = [
@@ -778,10 +782,12 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
           {/* RESULTS PAGE */}
           {step === "results" && qualification && quiz.result_mode !== "assessment" && (() => {
+            const isSolar =
+              ((org as { industry?: string }).industry || "") === "solar_energy";
             const tierColor = TIER_COLORS[qualification];
-            const tierName = TIER_NAMES[qualification];
-            const nextStep = NEXT_STEPS[qualification];
-            const insights = generateInsights(
+            const tierName = (isSolar ? SOLAR_TIER_NAMES : TIER_NAMES)[qualification];
+            const nextStep = isSolar ? SOLAR_NEXT_STEP : NEXT_STEPS[qualification];
+            const insights = (isSolar ? generateSolarInsights : generateInsights)(
               answers,
               questions.map((q) => ({ maxPoints: q.max_points })),
               qualification
@@ -838,6 +844,28 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     ))}
                   </div>
                 </div>
+
+                {/* Why us — pitch the client's own offering (solar) */}
+                {isSolar && (
+                  <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                    <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                      Why {org.name}
+                    </h3>
+                    <p className="text-sm mt-1 mb-5" style={{ color: "#64748b" }}>
+                      What you get when you go solar with us
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {SOLAR_WHY_US.map((w, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                          <span className="text-lg leading-none mt-0.5">{w.icon}</span>
+                          <span className="text-sm leading-relaxed" style={{ color: "#475569" }}>
+                            {w.text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* What happens next */}
                 <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">

@@ -222,6 +222,77 @@ export const TIER_COLORS: Record<Qualification, string> = {
   NOT_QUALIFIED: "#ef4444",
 };
 
+// ── Solar scorecard content ──────────────────────────────────────────────
+// Mapped to the Solar Savings Check questions (1 power spend, 2 grid hours,
+// 3 property, 4 generator use, 5 how soon, 6 goal, 7 budget, 8 roof/land,
+// 9 upfront ability, 10 2-year-payback readiness). Higher points = stronger
+// solar case, so insights fire on the meaningful answers.
+export function generateSolarInsights(
+  answers: AnswerRecord[],
+  questions: QuestionMeta[],
+  qualification: Qualification
+): Insight[] {
+  const pool: (Insight & { priority: number })[] = [];
+  const byOrder = new Map<number, AnswerRecord>();
+  answers.forEach((a) => byOrder.set(a.questionOrder, a));
+  const maxForQ = (order: number) => questions[order - 1]?.maxPoints ?? 10;
+  const ptsFor = (order: number) => byOrder.get(order)?.points ?? 0;
+  const isLow = (order: number) => ptsFor(order) <= maxForQ(order) * 0.4;
+  const isHigh = (order: number) => ptsFor(order) >= maxForQ(order) * 0.8;
+
+  if (isHigh(1))
+    pool.push({ priority: 10, icon: "⚡", title: "You're spending heavily on power", body: "Between NEPA bills and fuel, your monthly power cost is high — which means solar pays for itself faster. This is where your savings are biggest." });
+  if (isHigh(2))
+    pool.push({ priority: 9, icon: "🔌", title: "Your grid supply is unreliable", body: "With limited NEPA hours a day, you're leaning on generators. Solar gives you steady power without the noise, fumes or fuel runs." });
+  if (isHigh(4))
+    pool.push({ priority: 8, icon: "⛽", title: "Generators are draining your pocket", body: "Running a generator daily is one of the most expensive ways to power a home or business. Solar cuts that cost dramatically over time." });
+  if (isHigh(5))
+    pool.push({ priority: 9, icon: "🚀", title: "You're ready to move", body: "You want solar soon — the best next step is a quick sizing and a quote so you can start saving without delay." });
+  if (isLow(7) || isLow(9))
+    pool.push({ priority: 8, icon: "💳", title: "Financing can get you started", body: "You don't need the full amount upfront. Ask about flexible payment options that spread the cost while you start saving from month one." });
+  if (isHigh(10))
+    pool.push({ priority: 7, icon: "✅", title: "The payback makes sense to you", body: "You'd move ahead once the numbers add up — a tailored savings estimate will show you exactly how quickly solar pays for itself." });
+  if (isHigh(8))
+    pool.push({ priority: 5, icon: "🏠", title: "Your property is solar-ready", body: "You have the roof space or land for panels — that makes installation straightforward and your system can be sized to match your usage." });
+  if (isHigh(3))
+    pool.push({ priority: 4, icon: "🔑", title: "You own your space", body: "Owning your home or premises makes solar a smart long-term investment — the value stays with you." });
+
+  if (qualification === "HOT_LEAD")
+    pool.push({ priority: 6, icon: "🌟", title: "You're an excellent fit for solar", body: "Your answers show strong need, readiness and ability — you're exactly who benefits most from switching. Let's get you a plan." });
+  else if (qualification === "WARM_LEAD")
+    pool.push({ priority: 6, icon: "📈", title: "Solar makes real sense for you", body: "You've got a solid case for solar with a few things to line up. A quick conversation will map out the right system and payment plan." });
+  else if (qualification === "COLD_LEAD")
+    pool.push({ priority: 6, icon: "🔎", title: "Worth exploring", body: "There's potential here — a short chat will help you see the savings and the options before you decide." });
+  else
+    pool.push({ priority: 6, icon: "🌱", title: "Let's find the right fit", body: "Solar may still help you — our team can walk you through options suited to your situation." });
+
+  pool.sort((a, b) => b.priority - a.priority);
+  return pool.slice(0, 3).map(({ icon, title, body }) => ({ icon, title, body }));
+}
+
+export const SOLAR_TIER_NAMES: Record<Qualification, string> = {
+  HOT_LEAD: "Excellent Fit — You're Ready for Solar",
+  WARM_LEAD: "Strong Fit — Solar Makes Sense for You",
+  COLD_LEAD: "Good Potential — A Few Things to Sort",
+  NOT_QUALIFIED: "Worth Exploring — Let's Find Your Fit",
+};
+
+// One next-step for solar regardless of tier: every lead is told they'll be
+// contacted with a custom savings plan.
+export const SOLAR_NEXT_STEP = {
+  heading: "What happens next",
+  body: "A member of the team will reach out shortly to walk through your custom solar plan and savings estimate — no pressure, just clarity.",
+  cta: "Get my solar savings plan",
+};
+
+// Value props for the "Why {company}" pitch block on the solar result page.
+export const SOLAR_WHY_US: { icon: string; text: string }[] = [
+  { icon: "🔆", text: "Quality panels and inverters, sized to your usage" },
+  { icon: "🛠️", text: "Professional installation, done in days" },
+  { icon: "🛡️", text: "Warranty and after-sales support" },
+  { icon: "💳", text: "Flexible financing options available" },
+];
+
 export const NEXT_STEPS: Record<Qualification, { heading: string; body: string; cta: string }> = {
   HOT_LEAD: {
     heading: "What Happens Next",
