@@ -81,16 +81,6 @@ export async function POST(request: Request) {
       const origin = new URL(request.url).origin;
       const scorecardUrl = `${origin}/${org.slug}/savings-check`;
       const loginUrl = `${origin}/dashboard/${org.slug}/login`;
-      const resetUrl = `${origin}/reset-password`;
-      const { data: mem } = await supabase
-        .from("org_members")
-        .select("username")
-        .eq("organization_id", org.id)
-        .eq("is_active", true)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      const loginUser = mem?.username || null;
       const trialEnds = new Date(signupDate.getTime() + TRIAL_DAYS * 24 * 3600 * 1000);
       const trialEndsStr = trialEnds.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
       const step = (n: string, title: string, body: string) => `
@@ -112,7 +102,7 @@ export async function POST(request: Request) {
 
     ${step("1", "Share your scorecard link", `Put this link in your WhatsApp status, Instagram bio, ads and website. Every person who fills it becomes a scored lead in your dashboard.<br><a href="${scorecardUrl}" style="color:#6d28d9;font-weight:600;">${scorecardUrl}</a>`)}
 
-    ${step("2", "Log in to your dashboard", `Open <a href="${loginUrl}" style="color:#6d28d9;font-weight:600;">your dashboard</a>${loginUser ? ` and sign in with username <b>${loginUser}</b>` : ""} using the password our team shared with you. You can change it any time <a href="${resetUrl}" style="color:#6d28d9;">here</a>.`)}
+    ${step("2", "Log in to your dashboard", `Open <a href="${loginUrl}" style="color:#6d28d9;font-weight:600;">your dashboard</a>, enter your email (<b>${org.email}</b>), and we'll email you a 6-digit login code. No password to remember.`)}
 
     ${step("3", "Call your hottest leads first", `In the <b>Responses</b> tab you'll see every lead with their name, phone, email and a <b>0–100 score</b>. The higher the score, the more ready and able they are to buy — so call those first instead of chasing everyone.`)}
 
