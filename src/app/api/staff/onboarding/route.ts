@@ -81,20 +81,48 @@ export async function POST(request: Request) {
       const origin = new URL(request.url).origin;
       const scorecardUrl = `${origin}/${org.slug}/savings-check`;
       const loginUrl = `${origin}/dashboard/${org.slug}/login`;
+      const resetUrl = `${origin}/reset-password`;
+      const { data: mem } = await supabase
+        .from("org_members")
+        .select("username")
+        .eq("organization_id", org.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const loginUser = mem?.username || null;
       const trialEnds = new Date(signupDate.getTime() + TRIAL_DAYS * 24 * 3600 * 1000);
       const trialEndsStr = trialEnds.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+      const step = (n: string, title: string, body: string) => `
+    <div style="display:flex;gap:12px;margin:0 0 18px;">
+      <div style="flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#f3effe;color:#6d28d9;font-weight:700;text-align:center;line-height:26px;font-size:14px;">${n}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;margin-bottom:3px;">${title}</div>
+        <div style="color:#475467;">${body}</div>
+      </div>
+    </div>`;
       const html = `
-<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2533;">
-  <div style="background:linear-gradient(135deg,#7C3AED,#6d28d9);border-radius:14px;padding:22px 24px;color:#fff;">
-    <div style="font-size:20px;font-weight:700;">🎉 Your ${org.name} account is activated</div>
+<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1f2533;">
+  <div style="background:#6d28d9;border-radius:14px;padding:22px 24px;color:#fff;">
+    <div style="font-size:20px;font-weight:700;">🎉 Your ${org.name} account is live</div>
+    <div style="font-size:14px;opacity:.9;margin-top:4px;">Onboarding complete — here's how to start getting scored leads today.</div>
   </div>
-  <div style="padding:22px 4px;font-size:15px;line-height:1.65;">
-    <p style="margin:0 0 14px;">Hi ${org.name},</p>
-    <p style="margin:0 0 14px;">Welcome aboard — onboarding is complete and your LeadScoreAI account is now live.</p>
-    <p style="margin:0 0 8px;"><b>Your scorecard is live:</b><br><a href="${scorecardUrl}" style="color:#7C3AED;">${scorecardUrl}</a></p>
-    <p style="margin:0 0 8px;"><b>Your dashboard:</b><br><a href="${loginUrl}" style="color:#7C3AED;">${loginUrl}</a></p>
-    <p style="margin:14px 0;">Your first <b>${FREE_LEAD_LIMIT} leads</b> are scored free (or <b>${TRIAL_DAYS} days</b>, until <b>${trialEndsStr}</b>) — after that it's ₦${TIERS.core.naira.toLocaleString()}/month to keep it running. Cancel anytime.</p>
-    <p style="margin:14px 0 0;color:#667085;">— The LeadScoreAI team</p>
+  <div style="padding:22px 4px;font-size:15px;line-height:1.6;">
+    <p style="margin:0 0 18px;">Hi ${org.name}, welcome aboard. Your scorecard is ready and your dashboard is open. Three quick steps to get going:</p>
+
+    ${step("1", "Share your scorecard link", `Put this link in your WhatsApp status, Instagram bio, ads and website. Every person who fills it becomes a scored lead in your dashboard.<br><a href="${scorecardUrl}" style="color:#6d28d9;font-weight:600;">${scorecardUrl}</a>`)}
+
+    ${step("2", "Log in to your dashboard", `Open <a href="${loginUrl}" style="color:#6d28d9;font-weight:600;">your dashboard</a>${loginUser ? ` and sign in with username <b>${loginUser}</b>` : ""} using the password our team shared with you. You can change it any time <a href="${resetUrl}" style="color:#6d28d9;">here</a>.`)}
+
+    ${step("3", "Call your hottest leads first", `In the <b>Responses</b> tab you'll see every lead with their name, phone, email and a <b>0–100 score</b>. The higher the score, the more ready and able they are to buy — so call those first instead of chasing everyone.`)}
+
+    <div style="background:#f7f5ff;border:1px solid #e6e0fb;border-radius:12px;padding:14px 16px;margin:6px 0 18px;">
+      <div style="font-weight:700;margin-bottom:4px;">Your free trial</div>
+      <div style="color:#475467;">Your first <b>${FREE_LEAD_LIMIT} leads</b> are scored free (or <b>${TRIAL_DAYS} days</b>, until <b>${trialEndsStr}</b>) — whichever comes first. After that it's ₦${TIERS.core.naira.toLocaleString()}/month to keep it running, payable by bank transfer, card or USSD. Cancel anytime.</div>
+    </div>
+
+    <p style="margin:0 0 6px;">Need a hand getting set up? Just reply to this email — we're happy to help.</p>
+    <p style="margin:14px 0 0;color:#667085;">— The ${org.name} team, powered by LeadScoreAI</p>
   </div>
 </div>`;
       const res = await sendSequenceEmail({
