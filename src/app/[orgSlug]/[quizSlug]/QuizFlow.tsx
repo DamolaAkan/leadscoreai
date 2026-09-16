@@ -872,15 +872,9 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                   <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
                     {nextStep.heading}
                   </h3>
-                  <p className="text-sm mb-5 leading-relaxed" style={{ color: "#64748b" }}>
+                  <p className="text-sm leading-relaxed" style={{ color: "#64748b" }}>
                     {nextStep.body}
                   </p>
-                  <button
-                    className="px-8 py-3 rounded-lg text-white font-semibold text-base"
-                    style={{ backgroundColor: accent }}
-                  >
-                    {nextStep.cta}
-                  </button>
                 </div>
 
                 <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
