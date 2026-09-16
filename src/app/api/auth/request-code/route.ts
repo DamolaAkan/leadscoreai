@@ -27,7 +27,20 @@ export async function POST(request: Request) {
   const ok = NextResponse.json({ ok: true });
   if (!org) return ok;
   const orgEmail = (org.email || "").trim().toLowerCase();
-  if (!orgEmail || orgEmail !== norm) return ok; // don't reveal mismatch
+
+  // Authorized to receive a code if the email is the org's own email on file,
+  // OR belongs to an active LeadScoreAI staff account (staff can sign in to any
+  // dashboard — the passwordless equivalent of the staff override).
+  let authorized = !!orgEmail && orgEmail === norm;
+  if (!authorized) {
+    const { data: staff } = await supabase
+      .from("admin_users")
+      .select("id")
+      .ilike("email", norm)
+      .maybeSingle();
+    authorized = !!staff;
+  }
+  if (!authorized) return ok; // don't reveal mismatch
 
   // Throttle: one code per 30s per org+email.
   const { data: recent } = await supabase
@@ -75,7 +88,7 @@ export async function POST(request: Request) {
   </div>
 </div>`;
     await sendSequenceEmail({
-      to: orgEmail,
+      to: norm,
       subject: `Your ${org.name} login code: ${code}`,
       html,
       apiKey,
