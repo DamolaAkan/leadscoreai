@@ -796,26 +796,29 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
             return (
               <div className="space-y-6">
-                {/* Score header */}
-                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: "#94a3b8" }}>
+                {/* Score header — brand-coloured hero */}
+                <div
+                  className="rounded-2xl p-8 text-center text-white shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
                     Your result
                   </p>
-                  <div className="text-5xl font-extrabold leading-none" style={{ color: tierColor }}>
+                  <div className="text-6xl font-extrabold leading-none text-white">
                     {percentage}%
                   </div>
-                  <p className="text-sm mt-2" style={{ color: "#94a3b8" }}>
+                  <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.85)" }}>
                     {score} / {quiz.max_score}
                   </p>
                   <div className="mt-5">
                     <span
-                      className="inline-block px-4 py-1.5 rounded-md text-sm font-semibold"
-                      style={{ backgroundColor: tierColor + "1a", color: tierColor }}
+                      className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-white"
+                      style={{ color: tierColor }}
                     >
                       {tierName}
                     </span>
                   </div>
-                  <h2 className="text-xl font-bold mt-5" style={{ color: "#1e293b" }}>
+                  <h2 className="text-xl font-bold mt-5 text-white">
                     {firstName}, your result is in
                   </h2>
                 </div>
@@ -830,8 +833,13 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                   </p>
                   <div className="space-y-3">
                     {insights.map((insight, i) => (
-                      <div key={i} className="flex gap-3 rounded-md p-4" style={{ backgroundColor: "#f8fafc" }}>
-                        <span className="text-lg leading-none mt-0.5">{insight.icon}</span>
+                      <div key={i} className="flex gap-3 rounded-xl p-4" style={{ backgroundColor: accent + "0d" }}>
+                        <span
+                          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg"
+                          style={{ backgroundColor: accent + "1f" }}
+                        >
+                          {insight.icon}
+                        </span>
                         <div>
                           <h4 className="font-semibold text-sm" style={{ color: "#1e293b" }}>
                             {insight.title}
@@ -847,8 +855,11 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
                 {/* Why us — pitch the client's own offering (solar) */}
                 {isSolar && (
-                  <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                    <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                  <div
+                    className="rounded-xl p-8"
+                    style={{ backgroundColor: accent + "0d", border: `1px solid ${accent}2e` }}
+                  >
+                    <h3 className="text-base font-semibold" style={{ color: accent }}>
                       Why {org.name}
                     </h3>
                     <p className="text-sm mt-1 mb-5" style={{ color: "#64748b" }}>
@@ -856,8 +867,13 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {SOLAR_WHY_US.map((w, i) => (
-                        <div key={i} className="flex gap-3 items-start">
-                          <span className="text-lg leading-none mt-0.5">{w.icon}</span>
+                        <div key={i} className="flex gap-3 items-center">
+                          <span
+                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-base"
+                            style={{ backgroundColor: accent + "1f" }}
+                          >
+                            {w.icon}
+                          </span>
                           <span className="text-sm leading-relaxed" style={{ color: "#475569" }}>
                             {w.text}
                           </span>
@@ -869,7 +885,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
                 {/* What happens next */}
                 <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                  <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+                  <h3 className="text-base font-semibold mb-1" style={{ color: accent }}>
                     {nextStep.heading}
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: "#64748b" }}>
