@@ -96,3 +96,78 @@ export function clientSignals(request: Request): { clientIp?: string; userAgent?
   const eventSourceUrl = request.headers.get("referer") || undefined;
   return { clientIp, userAgent, eventSourceUrl };
 }
+
+// ── Any standard event (quiz builder funnel: Lead / InitiateCheckout / Purchase) ──
+
+export interface MetaEventInput {
+  eventName: "Lead" | "InitiateCheckout" | "Purchase" | "CompleteRegistration";
+  eventId: string; // same id the browser pixel uses, so Meta counts it once
+  email?: string | null;
+  externalId?: string | null; // our account id: ties sign-up → checkout → purchase together
+  value?: number;
+  currency?: string;
+  contentName?: string;
+  eventSourceUrl?: string;
+  clientIp?: string;
+  userAgent?: string;
+  fbp?: string | null; // _fbp cookie
+  fbc?: string | null; // _fbc cookie (set when they arrive from an ad click)
+}
+
+export async function sendMetaEvent(input: MetaEventInput): Promise<void> {
+  const token = process.env.META_CAPI_TOKEN;
+  if (!token || !input.eventId) return; // not configured yet: safe no-op
+
+  const user_data: Record<string, unknown> = {};
+  const em = normEmail(input.email || "");
+  if (em) user_data.em = [sha256(em)];
+  if (input.externalId) user_data.external_id = [sha256(input.externalId)];
+  if (input.clientIp) user_data.client_ip_address = input.clientIp;
+  if (input.userAgent) user_data.client_user_agent = input.userAgent;
+  if (input.fbp) user_data.fbp = input.fbp;
+  if (input.fbc) user_data.fbc = input.fbc;
+
+  const custom_data: Record<string, unknown> = { content_name: input.contentName || "quiz_builder" };
+  if (typeof input.value === "number") {
+    custom_data.value = input.value;
+    custom_data.currency = input.currency || "NGN";
+  }
+
+  const body: Record<string, unknown> = {
+    data: [
+      {
+        event_name: input.eventName,
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: input.eventId,
+        action_source: "website",
+        ...(input.eventSourceUrl ? { event_source_url: input.eventSourceUrl } : {}),
+        user_data,
+        custom_data,
+      },
+    ],
+  };
+  if (process.env.META_CAPI_TEST_CODE) body.test_event_code = process.env.META_CAPI_TEST_CODE;
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.error(`[meta-capi] ${input.eventName} non-OK:`, res.status, t.slice(0, 300));
+    }
+  } catch (e) {
+    console.error(`[meta-capi] ${input.eventName} error:`, e);
+  }
+}
+
+// Meta's browser cookies (_fbp always, _fbc after an ad click) lift match quality.
+export function metaCookies(request: Request): { fbp: string | null; fbc: string | null } {
+  const cookie = request.headers.get("cookie") || "";
+  const get = (name: string) => {
+    const m = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+    return m ? decodeURIComponent(m[1]) : null;
+  };
+  return { fbp: get("_fbp"), fbc: get("_fbc") };
+}

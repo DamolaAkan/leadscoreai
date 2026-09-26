@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { EMAIL_RE, escapeLike, uniqueOrgSlug } from "@/lib/builder-server";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { attributeVisitor, describeFirstTouch, sanitizeFirstTouch, track } from "@/lib/track";
+import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
 
@@ -101,12 +102,37 @@ export async function POST(request: Request) {
   if (sessErr) return NextResponse.json({ error: "Could not start session" }, { status: 500 });
 
   // Activity log: new account (with where they came from) or a returning sign-in.
+  const { fbp, fbc } = metaCookies(request);
   await track(isNewAccount ? "signed_up" : "signed_in", {
     orgId: org.id,
     visitorId,
-    props: { email: norm, via: loginOnly ? "login" : "builder", ...(isNewAccount && ft ? { first_touch: ft } : {}) },
+    props: {
+      email: norm,
+      via: loginOnly ? "login" : "builder",
+      ...(isNewAccount ? { fbp, fbc } : {}),
+      ...(isNewAccount && ft ? { first_touch: ft } : {}),
+    },
     request,
   });
+
+  // Meta (Siteflipmarket dataset): a new self-serve account is the ad "Lead".
+  // The browser pixel fires the same event id, so Meta counts it once.
+  const metaEventId = isNewAccount ? `signup_${org.id}` : null;
+  if (metaEventId) {
+    const sig = clientSignals(request);
+    await sendMetaEvent({
+      eventName: "Lead",
+      eventId: metaEventId,
+      email: norm,
+      externalId: org.id,
+      contentName: "quiz_builder_signup",
+      eventSourceUrl: sig.eventSourceUrl,
+      clientIp: sig.clientIp,
+      userAgent: sig.userAgent,
+      fbp,
+      fbc,
+    });
+  }
   await attributeVisitor(visitorId, org.id);
 
   // New self-serve account: welcome the owner, tell the team.
@@ -123,5 +149,5 @@ export async function POST(request: Request) {
     ]);
   }
 
-  return NextResponse.json({ session_id: sessionId, orgSlug: org.slug, orgName: org.name });
+  return NextResponse.json({ session_id: sessionId, orgSlug: org.slug, orgName: org.name, isNew: isNewAccount, metaEventId });
 }

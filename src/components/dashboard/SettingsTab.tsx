@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { checkoutStartedPixel } from "@/components/MetaPixel";
 import { AuthUser } from "@/lib/dashboard-types";
 
 interface QuizInfo {
@@ -88,7 +89,8 @@ export default function SettingsTab({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.authorization_url) {
-        window.location.href = data.authorization_url; // → Paystack checkout
+        checkoutStartedPixel(data);
+        setTimeout(() => (window.location.href = data.authorization_url), 300); // → Paystack checkout
       } else {
         setSubMsg(data.error || "Could not start checkout.");
         setSubBusy(null);

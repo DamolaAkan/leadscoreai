@@ -4,6 +4,7 @@ import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
 import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
+import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
 
@@ -68,9 +69,11 @@ export async function POST(request: Request) {
   const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success${publishQuizId ? "&tab=builder" : ""}`;
 
   let init;
+  let amountNaira: number = TIERS[tier].naira;
   try {
     const firstQuizAt = org.self_serve ? await firstBuilderQuizAt(org.id) : null;
     const offer = goLiveOffer(org as OrgBilling, firstQuizAt);
+    amountNaira = TIERS[tier].naira - offer.discount;
     init = await initTransaction({
       email,
       tier,
@@ -87,6 +90,33 @@ export async function POST(request: Request) {
     console.error("[billing/checkout] paystack init failed:", init?.message);
     return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
   }
-  await track("checkout_started", { orgId: org.id, quizId: publishQuizId, props: { tier }, request });
-  return NextResponse.json({ authorization_url: init.data.authorization_url });
+  const reference: string = init.data.reference || "";
+  const { fbp, fbc } = metaCookies(request);
+  await track("checkout_started", {
+    orgId: org.id,
+    quizId: publishQuizId,
+    props: { tier, amount_naira: amountNaira, reference, fbp, fbc },
+    request,
+  });
+
+  // Meta (Siteflipmarket dataset): InitiateCheckout for self-serve owners, with
+  // the same event id the browser pixel fires so Meta counts it once.
+  const metaEventId = reference ? `checkout_${reference}` : "";
+  if (org.self_serve && metaEventId) {
+    const sig = clientSignals(request);
+    await sendMetaEvent({
+      eventName: "InitiateCheckout",
+      eventId: metaEventId,
+      email,
+      externalId: org.id,
+      value: amountNaira,
+      currency: "NGN",
+      eventSourceUrl: sig.eventSourceUrl,
+      clientIp: sig.clientIp,
+      userAgent: sig.userAgent,
+      fbp,
+      fbc,
+    });
+  }
+  return NextResponse.json({ authorization_url: init.data.authorization_url, reference, amountNaira, metaEventId });
 }

@@ -12,6 +12,7 @@ import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab"
 import DemoTab from "@/components/dashboard/DemoTab";
 import StartHereTab from "@/components/dashboard/StartHereTab";
 import BuilderStudio from "@/components/builder/BuilderStudio";
+import MetaPixel, { checkoutStartedPixel, purchaseReturnPixel } from "@/components/MetaPixel";
 
 export type DashboardTab =
   | "start"
@@ -49,7 +50,8 @@ async function startCheckout(tier: string, getAuthHeaders: () => Record<string, 
     });
     const d = await res.json().catch(() => ({}));
     if (res.ok && d.authorization_url) {
-      window.location.href = d.authorization_url; // → Paystack
+      checkoutStartedPixel(d);
+      setTimeout(() => (window.location.href = d.authorization_url), 300); // → Paystack (after the pixel sends)
       return "";
     }
     return d.error || "Could not start checkout.";
@@ -222,6 +224,11 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("start");
   const [access, setAccess] = useState<AccessInfo | null>(null);
 
+  // Back from Paystack: record the ad Purchase (deduped with the server event).
+  useEffect(() => {
+    if (user?.selfServe) purchaseReturnPixel();
+  }, [user?.selfServe]);
+
   // Opening tab: self-serve accounts start on Responses; `?tab=builder` (from
   // the standalone studio) deep-links straight into a tab.
   useEffect(() => {
@@ -288,6 +295,8 @@ export default function DashboardPage() {
       className={onBuilder ? "h-[100dvh] flex flex-col overflow-hidden" : "min-h-screen"}
       style={{ backgroundColor: "#f8fafc", fontFamily: "var(--font-inter)" }}
     >
+      {/* Meta pixel (Siteflipmarket) for self-serve owners only: ad conversions */}
+      {user.selfServe && <MetaPixel />}
       {access && !access.paid && <OfferBanner info={access} getAuthHeaders={getAuthHeaders} />}
       <TopNav
         user={user}

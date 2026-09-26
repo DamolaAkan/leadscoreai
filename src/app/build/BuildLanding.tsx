@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
 import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/lib/track-client";
+import MetaPixel, { trackLead } from "@/components/MetaPixel";
 import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
 
 const CTA = "Find my serious buyers";
@@ -184,6 +185,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
 
   return (
     <div className="min-h-screen bg-[#FAFAFB] text-[#0B0B12] overflow-x-hidden">
+      <MetaPixel />
       {/* Nav */}
       <div className="sticky top-0 z-40 px-3 pt-3">
         <nav className="max-w-5xl mx-auto flex items-center gap-2 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.18)] pl-3 pr-1.5 py-1.5">
@@ -690,6 +692,8 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid code");
       localStorage.setItem("lsai-session", data.session_id);
+      // New account = the ad "Lead" on the Siteflipmarket dataset (same id as the server event).
+      if (data.isNew && data.metaEventId) trackLead({ email, externalId: data.metaEventId });
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Try again.");

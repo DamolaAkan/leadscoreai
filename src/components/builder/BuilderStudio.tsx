@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Confetti from "./Confetti";
 import { trackClient } from "@/lib/track-client";
+import { checkoutStartedPixel } from "@/components/MetaPixel";
 
 interface Org {
   id: string;
@@ -449,7 +450,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         body: JSON.stringify({ tier: "builder", quizId: current.id }),
       });
       if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+        checkoutStartedPixel(data);
+        setTimeout(() => (window.location.href = data.authorization_url), 300); // let the pixel send
         return;
       }
       throw new Error("Could not start checkout.");
@@ -473,7 +475,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         body: JSON.stringify({ tier: "builder" }),
       });
       if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+        checkoutStartedPixel(data);
+        setTimeout(() => (window.location.href = data.authorization_url), 300); // let the pixel send
         return;
       }
       throw new Error("Could not start checkout.");

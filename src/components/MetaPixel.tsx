@@ -49,6 +49,44 @@ export function trackLead(data: LeadUserData, pixelId: string = META_PIXEL_ID): 
   w.fbq("track", "Lead", {}, data.externalId ? { eventID: data.externalId } : undefined);
 }
 
+// Any standard event with a dedup id shared with the server (Conversions API).
+export function trackPixelEvent(event: string, params: Record<string, unknown> = {}, eventId?: string): void {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { fbq?: (...args: unknown[]) => void };
+  if (typeof w.fbq !== "function") return;
+  w.fbq("track", event, params, eventId ? { eventID: eventId } : undefined);
+}
+
+// Quiz builder checkout: record InitiateCheckout now and remember the payment,
+// so Purchase can be recorded (same id as the server) when Paystack sends them back.
+const PENDING_KEY = "lsai-pending-purchase";
+
+export function checkoutStartedPixel(d: { reference?: string; amountNaira?: number; metaEventId?: string }): void {
+  if (!d.reference) return;
+  trackPixelEvent("InitiateCheckout", { value: d.amountNaira, currency: "NGN" }, d.metaEventId);
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: d.reference, amountNaira: d.amountNaira, at: Date.now() }));
+  } catch {
+    /* ignore */
+  }
+}
+
+// Back from Paystack (?reference=…): record the Purchase once.
+export function purchaseReturnPixel(): void {
+  try {
+    const ref = new URLSearchParams(window.location.search).get("reference");
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!ref || !raw) return;
+    const p = JSON.parse(raw) as { reference: string; amountNaira?: number };
+    if (p.reference !== ref) return;
+    localStorage.removeItem(PENDING_KEY);
+    // Give the pixel script a moment to load on this page before firing.
+    setTimeout(() => trackPixelEvent("Purchase", { value: p.amountNaira, currency: "NGN" }, `purchase_${ref}`), 1500);
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function MetaPixel({ pixelId = META_PIXEL_ID }: { pixelId?: string }) {
   return (
     <>
@@ -64,16 +102,8 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 fbq('init', '${pixelId}');
 fbq('track', 'PageView');`}
       </Script>
-      <noscript>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          height="1"
-          width="1"
-          style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-          alt=""
-        />
-      </noscript>
+      {/* No <noscript> image: React renders it for normal visitors too, which
+          sent a second PageView on every visit. */}
     </>
   );
 }

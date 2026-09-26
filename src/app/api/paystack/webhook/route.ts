@@ -4,6 +4,7 @@ import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/l
 import { NAIRA_PER_EDIT } from "@/lib/credits";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { track } from "@/lib/track";
+import { sendMetaEvent } from "@/lib/meta-capi";
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
@@ -127,6 +128,31 @@ export async function POST(request: Request) {
           orgId,
           props: { tier, amount_naira: Math.round(amountNaira), discount_naira: discount, self_serve: !!org?.self_serve },
         });
+
+        // Meta (Siteflipmarket dataset): Purchase for self-serve owners (ad conversions).
+        // Browser cookies come from their sign-up / checkout events for better matching.
+        if (org?.self_serve && d.reference) {
+          const { data: evs } = await supabase
+            .from("builder_events")
+            .select("props")
+            .eq("organization_id", orgId)
+            .in("event", ["checkout_started", "signed_up"])
+            .order("created_at", { ascending: false })
+            .limit(5);
+          const withCookies = (evs || []).map((e) => e.props as { fbp?: string; fbc?: string }).find((p) => p?.fbp || p?.fbc);
+          await sendMetaEvent({
+            eventName: "Purchase",
+            eventId: `purchase_${d.reference}`,
+            email: org.email,
+            externalId: org.id,
+            value: Math.round(amountNaira),
+            currency: "NGN",
+            contentName: `quiz_builder_${tier}`,
+            eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.leadscoreai.com"}/dashboard/${org.slug}`,
+            fbp: withCookies?.fbp ?? null,
+            fbc: withCookies?.fbc ?? null,
+          });
+        }
 
         // "You're in" for self-serve owners, and a purchase alert for the team.
         if (org?.self_serve) {
