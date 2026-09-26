@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { computeWtpIndex } from "@/lib/wtp";
+import { track } from "@/lib/track";
 import { decrypt } from "@/lib/encryption";
 import { sendSequenceEmail } from "@/lib/email";
 
@@ -56,6 +57,23 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[scorecard/complete] update error:", error.message);
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+    }
+
+    // Activity log: leads captured by self-serve (builder) accounts.
+    {
+      const { data: o } = await supabase
+        .from("organizations")
+        .select("self_serve")
+        .eq("id", existing.organization_id)
+        .maybeSingle();
+      if (o?.self_serve) {
+        await track("lead_captured", {
+          orgId: existing.organization_id,
+          quizId: existing.quiz_id,
+          props: { qualification: body.qualification ?? null, outcome: body.result_outcome ?? null },
+          request,
+        });
+      }
     }
 
     // Deterministic WTP index (Stage 1). Best-effort: never blocks completion.

@@ -4,7 +4,8 @@ import { createServiceClient } from "@/lib/supabase";
 import { getClaude, isClaudeConfigured } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
-import { addUsage, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
+import { addUsage, costUsd, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
+import { track } from "@/lib/track";
 import {
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
   const creditOrg = await loadOrgForCredits(user.organizationId);
   let credits: CreditStatus | null = creditOrg ? await getCreditStatus(creditOrg) : null;
   if (credits && credits.remaining <= 0) {
+    await track("out_of_credits", { orgId: user.organizationId, props: { paid: credits.paid }, request });
     return NextResponse.json(
       {
         error: credits.paid
@@ -227,10 +229,17 @@ export async function POST(request: Request) {
   // Tap-question turns and passed-on feature requests are free; other replies cost 1 edit.
   if (!turn?.quiz) {
     const charged = questions.length === 0 && !featureRequest;
+    await track(featureRequest ? "feature_request" : questions.length ? "tap_questions" : "chat_reply", {
+      orgId: user.organizationId,
+      quizId,
+      props: featureRequest ? { request: featureRequest } : { questions: questions.length },
+      request,
+    });
     return NextResponse.json({ reply, questions, quizId, credits: await settle(charged, quizId) });
   }
   if (!normalized) {
     console.error("[builder/chat] draft still invalid:", errorsForRetry);
+    await track("chat_error", { orgId: user.organizationId, quizId, props: { reason: "invalid_draft" }, request });
     return NextResponse.json({
       reply: "I had trouble putting that quiz together. Could you describe it a little differently?",
       quizId,
@@ -297,6 +306,17 @@ export async function POST(request: Request) {
       .update({ primary_color: normalized.suggested_color })
       .eq("id", user.organizationId);
   }
+
+  await track(forked ? "quiz_forked" : current ? "quiz_edited" : "quiz_built", {
+    orgId: user.organizationId,
+    quizId: savedId,
+    props: {
+      kind: normalized.builder_config.kind,
+      questions: normalized.questions.length,
+      cost_usd: Number(costUsd(usage).toFixed(4)),
+    },
+    request,
+  });
 
   return NextResponse.json({
     reply: forked

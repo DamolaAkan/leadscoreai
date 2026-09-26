@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
+import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/lib/track-client";
 import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
 
 const CTA = "Find my serious buyers";
@@ -141,6 +142,19 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       .catch(() => {});
   }, []);
 
+  // Activity log: every landing visit, with where it came from (ads / UTM).
+  useEffect(() => {
+    captureFirstTouch();
+    const q = new URLSearchParams(window.location.search);
+    trackClient("landing_view", {
+      page: page.slug || "home",
+      utm_source: q.get("utm_source") || "",
+      utm_campaign: q.get("utm_campaign") || "",
+      fbclid: !!q.get("fbclid"),
+      referrer: document.referrer && !document.referrer.startsWith(window.location.origin) ? document.referrer : "",
+    });
+  }, [page.slug]);
+
   // Phone: a sticky call-to-action once the hero button scrolls away.
   useEffect(() => {
     const onScroll = () => setShowBar(window.scrollY > 520);
@@ -158,8 +172,10 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     router.push("/build/studio");
   };
 
-  const start = (idea: string = page.starter) => {
+  const start = (idea: string = page.starter, where = "cta") => {
+    trackClient("cta_click", { where, signed_in: signedIn, page: page.slug || "home" });
     if (signedIn) return goToStudio(idea);
+    trackClient("signup_sheet_open", { where, page: page.slug || "home" });
     setStarter(idea);
     setSheet(true);
   };
@@ -192,14 +208,14 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <div className="ml-auto md:ml-0 flex items-center gap-1">
             {!signedIn && (
               <button
-                onClick={() => start("")}
+                onClick={() => start("", "nav_signin")}
                 className="hidden sm:block px-3.5 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
               >
                 Sign in
               </button>
             )}
             <button
-              onClick={() => start()}
+              onClick={() => start(undefined, "nav")}
               className="rounded-full bg-violet-600 hover:bg-violet-700 text-white text-[13px] sm:text-[14px] font-semibold px-3.5 sm:px-4 py-2.5 whitespace-nowrap"
             >
               {signedIn ? "Open my studio" : CTA}
@@ -228,7 +244,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <p className="mt-6 text-[17px] sm:text-[19px] leading-relaxed text-slate-600 max-w-xl">{page.sub}</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => start()}
+              onClick={() => start(undefined, "hero")}
               className="rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-7 py-4 shadow-[0_12px_30px_-10px_rgba(109,40,217,0.7)]"
             >
               {signedIn ? "Open my studio" : CTA}
@@ -321,7 +337,10 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           {INDUSTRY_PAGES.map((p) => (
             <button
               key={p.slug}
-              onClick={() => setIndustry(p.slug)}
+              onClick={() => {
+                setIndustry(p.slug);
+                trackClient("industry_tab", { industry: p.slug });
+              }}
               className={`shrink-0 rounded-full px-5 py-3 text-[15px] font-semibold transition ${
                 p.slug === industry ? "bg-[#0B0B12] text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"
               }`}
@@ -334,7 +353,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           {active.examples.map((ex) => (
             <button
               key={ex.text}
-              onClick={() => start(active.starter)}
+              onClick={() => start(active.starter, `industry_${active.slug}`)}
               className="group text-left flex items-center gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-violet-300 hover:shadow-lg transition"
             >
               <span className="w-14 h-14 shrink-0 rounded-2xl bg-violet-50 flex items-center justify-center text-3xl">{ex.emoji}</span>
@@ -373,7 +392,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               ))}
             </ol>
             <button
-              onClick={() => start()}
+              onClick={() => start(undefined, "how_it_works")}
               className="mt-10 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-7 py-4"
             >
               {signedIn ? "Open my studio" : CTA} ↗
@@ -483,7 +502,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 ))}
               </ul>
               <button
-                onClick={() => start()}
+                onClick={() => start(undefined, "pricing")}
                 className="mt-8 w-full rounded-full py-4 font-semibold text-[16px] bg-violet-600 hover:bg-violet-700 text-white"
               >
                 {signedIn ? "Open my studio" : CTA}
@@ -533,7 +552,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         </h2>
         <p className="mt-5 text-[18px] text-slate-600">Build it in one chat. Share it on WhatsApp today.</p>
         <button
-          onClick={() => start()}
+          onClick={() => start(undefined, "final_cta")}
           className="mt-8 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-8 py-4 shadow-[0_12px_30px_-10px_rgba(109,40,217,0.7)]"
         >
           {signedIn ? "Open my studio" : CTA}
@@ -594,7 +613,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         }`}
       >
         <button
-          onClick={() => start()}
+          onClick={() => start(undefined, "sticky_bar")}
           className="w-full rounded-full bg-violet-600 text-white font-semibold text-[16px] py-4 shadow-[0_16px_40px_-12px_rgba(109,40,217,0.8)]"
         >
           {signedIn ? "Open my studio" : CTA}
@@ -646,7 +665,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
       const res = await fetch("/api/builder/request-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, visitorId: getVisitorId() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not send a code.");
@@ -666,7 +685,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
       const res = await fetch("/api/builder/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, businessName }),
+        body: JSON.stringify({ email, code, businessName, visitorId: getVisitorId(), firstTouch: getFirstTouch() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid code");

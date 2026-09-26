@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendSequenceEmail } from "@/lib/email";
 import { EMAIL_RE, getResendKey } from "@/lib/builder-server";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 // The account (org) is only created once the code is verified, so unverified
 // emails never create rows in organizations.
 export async function POST(request: Request) {
-  const { email, purpose } = await request.json().catch(() => ({}));
+  const { email, purpose, visitorId } = await request.json().catch(() => ({}));
   const forLogin = purpose === "login";
   const norm = String(email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(norm) || norm.length > 200) {
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = createServiceClient();
+  await track("code_requested", { visitorId, props: { email: norm, purpose: purpose === "login" ? "login" : "signup" }, request });
 
   // One code per 30s per email.
   const { data: recent } = await supabase

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "./login.css";
+import { getVisitorId, trackClient } from "@/lib/track-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function LoginPage() {
   useEffect(() => {
     const sid = localStorage.getItem("lsai-session");
     if (!sid) {
+      trackClient("login_view");
       setChecking(false);
       return;
     }
@@ -72,7 +74,7 @@ export default function LoginPage() {
       const res = await fetch("/api/builder/request-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, purpose: "login" }),
+        body: JSON.stringify({ email: trimmedEmail, purpose: "login", visitorId: getVisitorId() }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || "Could not send a code.");
@@ -93,7 +95,7 @@ export default function LoginPage() {
       const res = await fetch("/api/builder/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), code, loginOnly: true }),
+        body: JSON.stringify({ email: email.trim(), code, loginOnly: true, visitorId: getVisitorId() }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {

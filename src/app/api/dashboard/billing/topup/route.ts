@@ -9,6 +9,7 @@ import {
   getCreditStatus,
   loadOrgForCredits,
 } from "@/lib/credits";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -76,5 +77,6 @@ export async function POST(request: Request) {
     console.error("[billing/topup] paystack init failed:", init?.message);
     return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
   }
+  await track("topup_checkout_started", { orgId: org.id, props: { amount_naira: amountNaira }, request });
   return NextResponse.json({ authorization_url: init.data.authorization_url });
 }

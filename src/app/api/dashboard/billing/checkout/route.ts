@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
 import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -86,5 +87,6 @@ export async function POST(request: Request) {
     console.error("[billing/checkout] paystack init failed:", init?.message);
     return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
   }
+  await track("checkout_started", { orgId: org.id, quizId: publishQuizId, props: { tier }, request });
   return NextResponse.json({ authorization_url: init.data.authorization_url });
 }

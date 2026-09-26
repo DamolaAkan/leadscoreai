@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Confetti from "./Confetti";
+import { trackClient } from "@/lib/track-client";
 
 interface Org {
   id: string;
@@ -252,6 +253,27 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     return () => mq.removeEventListener("change", sync);
   }, []);
 
+  // Activity log for the studio (who opens it, previews, sees the paywall…).
+  const orgLoaded = !!org;
+  useEffect(() => {
+    if (orgLoaded) trackClient("studio_open", { embedded });
+  }, [orgLoaded, embedded]);
+  const previewedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!quizId || !(isDesktop ? deskTab === "preview" : tab === "preview")) return;
+    if (previewedRef.current.has(quizId)) return;
+    previewedRef.current.add(quizId);
+    trackClient("preview_opened", { first_quiz: quizzes.length === 1 }, quizId);
+  }, [quizId, isDesktop, deskTab, tab, quizzes.length]);
+  useEffect(() => {
+    if (paywall) trackClient("paywall_shown", {}, quizId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paywall]);
+  useEffect(() => {
+    if (creditsOpen && credits) trackClient("credits_opened", { remaining: credits.remaining, paid: credits.paid });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creditsOpen]);
+
   // Once per account, only for their very first quiz.
   const previewOpen = !!quizId && (isDesktop ? deskTab === "preview" : tab === "preview");
   useEffect(() => {
@@ -368,6 +390,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       }
     }
     if (ok) {
+      trackClient(what === "link" ? "link_copied" : "embed_copied", {}, current?.id);
       setShareMsg("");
       setCopied(what);
       setTimeout(() => setCopied(""), 1800);
@@ -417,6 +440,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   // Pay on Paystack; the quiz goes live automatically once payment succeeds.
   const goLive = async () => {
     if (!current) return;
+    trackClient("go_live_clicked", {}, current.id);
     setPaying(true);
     setError("");
     try {
@@ -466,6 +490,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       setCreditsMsg(`The minimum top-up is ₦${TOPUP_MIN_NAIRA.toLocaleString()}.`);
       return;
     }
+    trackClient("topup_clicked", { amount_naira: topupNaira });
     setToppingUp(true);
     setCreditsMsg("");
     try {
@@ -789,6 +814,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             <>
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
+              onClick={() => trackClient("share_whatsapp", {}, current?.id)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 w-full py-4 rounded-xl bg-[#25D366] text-[#07361E] text-[16px] font-bold active:scale-[0.99] transition shadow-[0_8px_24px_-8px_rgba(37,211,102,0.6)]"
@@ -955,6 +981,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           {current?.is_active && (
             <a
               href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
+              onClick={() => trackClient("share_whatsapp", {}, current?.id)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Share on WhatsApp"

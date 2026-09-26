@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
 import { NAIRA_PER_EDIT } from "@/lib/credits";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
+import { track } from "@/lib/track";
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       if (error && error.code !== "23505") console.error("[paystack] top-up insert error:", error.message);
       else if (!error) {
         console.log(`[paystack] +${credits} AI edits for org ${orgId}`);
+        await track("topup_paid", { orgId, props: { amount_naira: Math.round(amountNaira), credits } });
         const { data: o } = await supabase.from("organizations").select("name, email").eq("id", orgId).maybeSingle();
         await sendTeamAlert(`⚡ Top-up: ${o?.name ?? orgId} bought ${credits} AI edits`, [
           ["Business", o?.name ?? orgId],
@@ -120,6 +122,11 @@ export async function POST(request: Request) {
             .not("builder_config", "is", null);
           if (pubErr) console.error("[paystack] auto-publish error:", pubErr.message);
         }
+
+        await track("paid", {
+          orgId,
+          props: { tier, amount_naira: Math.round(amountNaira), discount_naira: discount, self_serve: !!org?.self_serve },
+        });
 
         // "You're in" for self-serve owners, and a purchase alert for the team.
         if (org?.self_serve) {

@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
 import { canPublish, goLiveOffer, OrgBilling, TIERS } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
       .single();
     if (!canPublish(org as OrgBilling)) {
       const firstQuizAt = await firstBuilderQuizAt(user.organizationId);
+      await track("publish_blocked", { orgId: user.organizationId, quizId, request });
       return NextResponse.json(
         {
           error: "payment_required",
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
     .update({ is_active: !!publish, updated_at: new Date().toISOString() })
     .eq("id", quizId);
   if (error) return NextResponse.json({ error: "Could not update the quiz." }, { status: 500 });
+  await track(publish ? "quiz_published" : "quiz_unpublished", { orgId: user.organizationId, quizId, request });
 
   return NextResponse.json({ ok: true, is_active: !!publish, path: `/${user.orgSlug}/${quiz.slug}` });
 }
