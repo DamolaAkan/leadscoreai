@@ -45,8 +45,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "study-abroad",
     eyebrow: "For study-abroad & education consultants",
-    headline: "Tired of time-wasting enquiries",
-    highlight: "in your study-abroad agency?",
+    headline: "Tired of time\u2011wasting enquiries",
+    highlight: "in your study\u2011abroad agency?",
     sub: "Give students a 2-minute eligibility check. They see where they stand; you get every enquiry scored Hot, Warm or Cold with their grades, English test, funding and start date. Share it on WhatsApp or embed it on your website.",
     examples: [
       { emoji: "🇬🇧", text: "Are you eligible to study in the UK?" },
@@ -123,7 +123,7 @@ const PAGES: IndustryPage[] = [
   {
     slug: "solar",
     eyebrow: "For solar installers",
-    headline: "Tired of time-wasting enquiries",
+    headline: "Tired of time\u2011wasting enquiries",
     highlight: "in your solar business?",
     sub: "A 2-minute check that tells you which homes and businesses can actually afford a system before you send anyone out. Every lead scored Hot, Warm or Cold with their budget and power needs.",
     examples: [
