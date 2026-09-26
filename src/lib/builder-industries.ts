@@ -71,8 +71,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "skincare",
     eyebrow: "For skincare & beauty brands",
-    headline: "Recommend the right products",
-    highlight: "to every customer.",
+    headline: "Match every customer",
+    highlight: "to the right skincare routine.",
     sub: "A fun skin quiz that matches each customer to the right routine, then sends them to you on WhatsApp ready to buy. You see every result and who's ready to spend.",
     examples: [
       { emoji: "✨", text: "Which skincare routine fits your skin?" },
