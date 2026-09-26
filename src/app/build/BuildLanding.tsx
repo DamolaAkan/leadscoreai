@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
-import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual } from "./landing-visuals";
+import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
 
 const CTA = "Build my free interactive quiz";
 
@@ -12,7 +12,7 @@ const OUTCOMES = [
     icon: "💬",
     title: "Describe it in plain words.",
     body: "No forms, no templates, no design skills. Say what you sell and who you sell to. The builder asks a few tap-to-answer questions, then drafts the whole quiz while you watch. Want a change? Just ask.",
-    caption: "Powered by Claude · conversational AI",
+    caption: "Tap to answer · edit by chatting",
     visual: <ChatVisual />,
   },
   {
@@ -32,7 +32,7 @@ const OUTCOMES = [
   {
     icon: "🔥",
     title: "See who's ready to buy.",
-    body: "Every lead lands in your dashboard scored Hot, Warm or Cold, with their answers and contact details. Call the ready ones first and stop chasing people who were only browsing.",
+    body: "Every lead lands in your dashboard with a willingness-to-pay score, a Hot, Warm or Cold rating, their answers and contact details. Call the ready ones first and stop chasing people who were only browsing.",
     caption: "Your dashboard · CSV export",
     visual: <LeadsVisual />,
   },
@@ -60,7 +60,17 @@ const MORE_INDUSTRIES = [
   "Agencies",
 ];
 
+const WTP_SIGNALS = [
+  { icon: "💰", title: "Budget", body: "What they can spend" },
+  { icon: "⏱️", title: "Timing", body: "How soon they'll buy" },
+  { icon: "🤝", title: "Commitment", body: "How serious they are, and who decides" },
+];
+
 const FAQS = [
+  {
+    q: "What is a willingness-to-pay score?",
+    a: "Every quiz includes a few questions about budget, timing and commitment, asked in your brand's voice. From those answers, each lead gets a score from 0 to 100 showing how able and ready they are to pay, right next to their quiz result. The builder suggests these questions for you, and you can change them in the chat.",
+  },
   {
     q: "Do I need a website?",
     a: "No. Every quiz gets its own link you can share on WhatsApp, Instagram or anywhere else. If you do have a website, you can embed the quiz on it too.",
@@ -98,6 +108,7 @@ const PLAN = {
     "2,000 leads a month",
     "10 live quizzes",
     "150 AI edits a month",
+    "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
     "WhatsApp sharing and website embed",
     "CSV export of your leads",
@@ -194,9 +205,13 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       {/* Hero */}
       <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 grid lg:grid-cols-[1.25fr_1fr] gap-12 lg:gap-8 items-center">
         <div>
-          <p className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">{page.eyebrow}</p>
+          {page.eyebrow && (
+            <p className="mb-4 text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">
+              {page.eyebrow}
+            </p>
+          )}
           <h1
-            className="mt-4 font-extrabold tracking-[-0.035em] leading-[1.02]"
+            className="font-extrabold tracking-[-0.035em] leading-[1.02]"
             style={{ fontSize: "clamp(40px, 7vw, 76px)" }}
           >
             {page.headline}{" "}
@@ -223,6 +238,41 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         </div>
         <PhoneQuiz demo={page.demo} />
       </header>
+
+      {/* Willingness to pay: the LeadScoreAI difference */}
+      <section className="bg-[#0B0B12] text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-300">The LeadScoreAI difference</p>
+            <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+              Not just a quiz.{" "}
+              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent">
+                A quiz that finds your buyer.
+              </span>
+            </h2>
+            <p className="mt-5 text-[17px] sm:text-[18px] leading-relaxed text-slate-300">
+              Anyone can make a quiz. LeadScoreAI builds <b className="text-white">willingness-to-pay</b> questions into
+              every one, asked in your brand&apos;s voice so they feel natural, even in fun personality quizzes. Every lead
+              then gets a willingness-to-pay score from 0 to 100, so you know who can actually buy before you reply.
+            </p>
+            <div className="mt-8 grid sm:grid-cols-3 gap-3">
+              {WTP_SIGNALS.map((w) => (
+                <div key={w.title} className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
+                  <div className="text-2xl">{w.icon}</div>
+                  <div className="mt-2 font-bold">{w.title}</div>
+                  <div className="text-[14px] text-slate-400">{w.body}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Built into Qualify and Match quizzes · suggested for you in the chat
+            </p>
+          </div>
+          <div className="w-full max-w-md mx-auto">
+            <WtpVisual />
+          </div>
+        </div>
+      </section>
 
       {/* Outcomes */}
       <section id="how" className="scroll-mt-24 bg-white border-y border-slate-200/70">

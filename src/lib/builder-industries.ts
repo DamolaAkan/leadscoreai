@@ -17,10 +17,10 @@ export interface IndustryPage {
 
 export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
-  eyebrow: "Quiz builder for businesses that sell on WhatsApp",
+  eyebrow: "",
   headline: "One chat. A quiz that finds your buyers.",
   highlight: "Skincare, travel, study abroad.",
-  sub: "Describe your business in plain words. We build the questions, the results page and a WhatsApp link, so every customer tells you what they need before you reply.",
+  sub: "Describe your business in plain words. We build the questions, the results page and a WhatsApp link, so every customer tells you what they need, and whether they're ready to pay, before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },
     { emoji: "✨", text: "Which skincare routine fits your skin?" },

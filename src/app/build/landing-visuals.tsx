@@ -151,12 +151,76 @@ export function LeadsVisual() {
               <div className="text-[14px] font-semibold text-slate-900">{r.name}</div>
               <div className="text-[12px] text-slate-500 truncate">{r.note}</div>
             </div>
-            <span className="text-[13px] font-bold text-slate-700">{r.pct}%</span>
+            <span className="text-right leading-none">
+              <span className="block text-[14px] font-bold text-slate-800">{r.pct}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">WTP</span>
+            </span>
             <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ color: r.color, backgroundColor: r.bg }}>
               {r.tag}
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function WtpVisual() {
+  const factors = [
+    { label: "Monthly spend", pct: 90 },
+    { label: "Buying timeline", pct: 80 },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="rounded-3xl bg-gradient-to-b from-[#2A1356] to-[#150A2E] p-5 sm:p-6 text-white shadow-xl">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300/15 ring-1 ring-amber-300/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-200">
+          💰 Willingness-to-pay question
+        </span>
+        <p className="mt-4 text-[18px] font-bold leading-snug">How much do you usually spend on skincare in a month?</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {[
+            ["💎", "Over ₦50,000"],
+            ["✨", "₦20,000 to ₦50,000"],
+            ["🌱", "Under ₦20,000"],
+            ["🤷", "It varies"],
+          ].map(([e, t], i) => (
+            <div
+              key={t}
+              className={`rounded-xl px-3 py-3 text-center border text-[12px] font-semibold ${
+                i === 0 ? "bg-violet-500/25 border-violet-300" : "bg-white/5 border-white/10"
+              }`}
+            >
+              <div className="text-xl leading-none">{e}</div>
+              <div className="mt-1.5">{t}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-200 text-[#0B0B12]">
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">A</span>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">Adaeze O.</div>
+            <div className="text-[12px] text-slate-500 truncate">Match: Hydration Reset routine</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[26px] font-extrabold leading-none text-emerald-600">86</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">WTP / 100</div>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2.5">
+          {factors.map((f) => (
+            <div key={f.label}>
+              <div className="flex justify-between text-[12px] text-slate-500">
+                <span>{f.label}</span>
+                <span>{f.pct}%</span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${f.pct}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

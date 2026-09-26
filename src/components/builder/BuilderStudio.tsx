@@ -56,7 +56,7 @@ const STARTERS = [
 const WELCOME: ChatMessage = {
   role: "assistant",
   content:
-    "Hi! Tell me about your business: what you sell, who your customers are, and what the quiz should do (find out who's ready to buy, or recommend the right product). I'll draft the whole quiz for you.",
+    "Hi! Tell me about your business: what you sell, who your customers are, and what the quiz should do (find out who's ready to buy, or recommend the right product). I'll draft the whole quiz for you, including a few willingness-to-pay questions so every lead gets a score showing who's ready to buy.",
 };
 
 const chatKey = (quizId: string | null) => `lsai-builder-chat-${quizId || "new"}`;
