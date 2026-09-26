@@ -372,7 +372,8 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       </div>
     );
 
-  // Builder preview: owners run their quiz again and again while editing.
+  // Builder preview: owners restart from the preview bar while editing. The
+  // results page itself matches what customers see (no retake button).
   const restart = () => {
     setStep("start");
     setCurrentQ(0);
@@ -403,17 +404,6 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
     </div>
   ) : null;
 
-  const takeAgain = preview ? (
-    <div className="text-center">
-      <button
-        onClick={restart}
-        className="px-6 py-3 rounded-lg text-sm font-semibold border-2"
-        style={{ borderColor: accent, color: accent }}
-      >
-        ↺ Take the quiz again
-      </button>
-    </div>
-  ) : null;
 
   // ── START — dark hero ──
   if (step === "start") {
@@ -884,7 +874,6 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     {cta && <div className="mt-6">{cta}</div>}
                   </div>
                   {shareFriend && <div className="text-center">{shareFriend}</div>}
-                  {takeAgain}
                   <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
                     {org.name} will be in touch at {contactEmail || "the details you shared"}.
                   </p>
@@ -941,7 +930,6 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   </div>
                 )}
                 {shareFriend && <div className="text-center">{shareFriend}</div>}
-                {takeAgain}
                 <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
                   {org.name} will be in touch at {contactEmail || "the details you shared"}.
                 </p>

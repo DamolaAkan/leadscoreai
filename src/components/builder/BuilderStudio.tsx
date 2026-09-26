@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Confetti from "./Confetti";
 
 interface Org {
   id: string;
@@ -147,6 +148,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const [topupAmount, setTopupAmount] = useState(String(TOPUP_MIN_NAIRA));
   const [toppingUp, setToppingUp] = useState(false);
   const [creditsMsg, setCreditsMsg] = useState("");
+  // First-quiz celebration: confetti the first time the owner opens its preview.
+  const [celebrate, setCelebrate] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cameWithStarter = useRef(false);
   const starterRef = useRef<string | null>(null);
@@ -239,6 +243,30 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     const timers = [4000, 12000].map((ms) => setTimeout(() => refresh().catch(() => {}), ms));
     return () => timers.forEach(clearTimeout);
   }, [session, refresh]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  // Once per account, only for their very first quiz.
+  const previewOpen = !!quizId && (isDesktop ? deskTab === "preview" : tab === "preview");
+  useEffect(() => {
+    if (!org || !previewOpen || quizzes.length !== 1 || quizzes[0].id !== quizId) return;
+    const key = `lsai-first-quiz-celebrated-${org.id}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, new Date().toISOString());
+    } catch {
+      return; // storage blocked: skip rather than celebrate on every visit
+    }
+    setCelebrate(true);
+    const t = setTimeout(() => setCelebrate(false), 5000);
+    return () => clearTimeout(t);
+  }, [org, previewOpen, quizzes, quizId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1042,6 +1070,21 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             </button>
           ))}
         </nav>
+      )}
+
+      {/* First quiz: confetti + a little note over the preview */}
+      {celebrate && (
+        <>
+          <Confetti />
+          <div className="fixed inset-x-0 top-20 z-[61] flex justify-center px-4 pointer-events-none">
+            <div className="animate-[lsaiPop_0.45s_cubic-bezier(.2,1.4,.4,1)] rounded-2xl bg-[#1C2333]/95 border border-violet-500/50 shadow-2xl px-5 py-4 text-center max-w-sm backdrop-blur">
+              <p className="text-[22px] leading-none">🎉</p>
+              <p className="mt-2 text-[16px] font-bold text-[#F5F9FC]">Your first quiz is ready!</p>
+              <p className="mt-1 text-[13.5px] text-[#C2C8CC]">Take it like your customer would, then go live and share it.</p>
+            </div>
+          </div>
+          <style>{`@keyframes lsaiPop{from{opacity:0;transform:translateY(-8px) scale(.92)}to{opacity:1;transform:none}}`}</style>
+        </>
       )}
 
       {/* AI edits: balance, how it works, Go Pro / top up */}
