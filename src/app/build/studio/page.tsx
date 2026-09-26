@@ -86,6 +86,8 @@ export default function BuilderStudioPage() {
   const [color, setColor] = useState("#7C3AED");
   const [publishing, setPublishing] = useState(false);
   const [tab, setTab] = useState<Tab>("chat");
+  const [deskTab, setDeskTab] = useState<"preview" | "share">("preview");
+  const [shareMsg, setShareMsg] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [freshDraft, setFreshDraft] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -214,13 +216,34 @@ export default function BuilderStudioPage() {
 <script>window.addEventListener("message",function(e){if(e.origin!=="${origin}")return;var d=e.data;if(d&&d.type==="lsai-quiz-height"&&d.quiz==="${current.id}"){var f=document.getElementById("lsai-quiz-${current.id}");if(f)f.style.height=d.height+"px";}});</script>`
     : "";
 
+  // Clipboard API first; older phones and in-app browsers need the textarea trick.
   const copy = async (what: "link" | "embed") => {
+    const text = what === "link" ? publicUrl : embedCode;
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(what === "link" ? publicUrl : embedCode);
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        ta.remove();
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setShareMsg("");
       setCopied(what);
       setTimeout(() => setCopied(""), 1800);
-    } catch {
-      setError("Couldn't copy. Press and hold to copy instead.");
+    } else {
+      setShareMsg("Couldn't copy automatically. Press and hold the link below to copy it.");
     }
   };
 
@@ -298,15 +321,21 @@ export default function BuilderStudioPage() {
                   {m.content}
                 </div>
                 {isLast && m.role === "assistant" && freshDraft && current && (
-                  <div className="flex gap-2 mt-2 lg:hidden">
+                  <div className="flex gap-2 mt-2">
                     <button
-                      onClick={() => setTab("preview")}
+                      onClick={() => {
+                        setTab("preview");
+                        setDeskTab("preview");
+                      }}
                       className="px-3.5 py-2 rounded-full bg-[#2B3245] text-[#F5F9FC] text-xs font-semibold"
                     >
                       ▶ Try your quiz
                     </button>
                     <button
-                      onClick={() => setTab("share")}
+                      onClick={() => {
+                        setTab("share");
+                        setDeskTab("share");
+                      }}
                       className="px-3.5 py-2 rounded-full bg-[#25D366]/15 text-[#4ADE80] text-xs font-semibold"
                     >
                       Publish & share
@@ -466,7 +495,8 @@ export default function BuilderStudioPage() {
                 </a>
               </div>
 
-              <div className="rounded-xl bg-[#1C2333] border border-[#2B3245] px-3 py-2.5 text-[12.5px] text-[#9DA2A6] break-all">
+              {shareMsg && <p className="text-[12.5px] text-amber-300">{shareMsg}</p>}
+              <div className="rounded-xl bg-[#1C2333] border border-[#2B3245] px-3 py-2.5 text-[12.5px] text-[#9DA2A6] break-all select-all">
                 {publicUrl}
               </div>
 
@@ -595,16 +625,47 @@ export default function BuilderStudioPage() {
         </div>
       )}
 
-      {/* Desktop: three columns */}
+      {/* Desktop: quizzes | Chat | Preview / Share (same highlighted tabs as the phone) */}
       <div className="hidden lg:grid flex-1 min-h-0 grid-cols-[240px_minmax(0,1fr)_minmax(0,1.05fr)]">
         <aside className="border-r border-[#2B3245] p-3 overflow-y-auto">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9DA2A6] px-1 mb-2">Your quizzes</p>
           {quizList}
         </aside>
-        <section className="min-h-0 border-r border-[#2B3245]">{chatPanel}</section>
-        <section className="min-h-0 grid grid-rows-[minmax(0,1fr)_auto]">
-          <div className="min-h-0 bg-[#1C2333]">{previewPanel}</div>
-          <div className="max-h-[45vh] overflow-y-auto border-t border-[#2B3245]">{sharePanel}</div>
+        <section className="min-h-0 border-r border-[#2B3245] flex flex-col">
+          <div className="shrink-0 h-14 flex items-center px-3 border-b border-[#2B3245]">
+            <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-[15px] font-semibold bg-violet-500/15 text-violet-200 ring-1 ring-violet-500/40">
+              <span className="text-base">💬</span> Chat
+            </span>
+          </div>
+          <div className="flex-1 min-h-0">{chatPanel}</div>
+        </section>
+        <section className="min-h-0 flex flex-col">
+          <div className="shrink-0 h-14 flex items-center gap-2 px-3 border-b border-[#2B3245]">
+            {(
+              [
+                ["preview", "Preview", "▶"],
+                ["share", "Share", "↗"],
+              ] as ["preview" | "share", string, string][]
+            ).map(([key, label, icon]) => (
+              <button
+                key={key}
+                onClick={() => setDeskTab(key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[15px] font-semibold transition ${
+                  deskTab === key
+                    ? "bg-violet-500/15 text-violet-200 ring-1 ring-violet-500/40"
+                    : "text-[#9DA2A6] hover:text-[#F5F9FC] hover:bg-[#1C2333]"
+                }`}
+              >
+                <span className="text-base">{icon}</span> {label}
+                {key === "share" && current?.is_active && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 text-[10px] font-bold">
+                    LIVE
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 min-h-0 bg-[#1C2333]">{deskTab === "preview" ? previewPanel : sharePanel}</div>
         </section>
       </div>
 

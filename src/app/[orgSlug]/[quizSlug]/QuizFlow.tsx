@@ -372,12 +372,46 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       </div>
     );
 
+  // Builder preview: owners run their quiz again and again while editing.
+  const restart = () => {
+    setStep("start");
+    setCurrentQ(0);
+    setAnswers([]);
+    setSelectedOption(null);
+    setResponseId(null);
+    setScore(0);
+    setPercentage(0);
+    setQualification(null);
+    setMatchOutcome(null);
+  };
+
   const previewBanner = preview ? (
     <div
-      className="w-full text-center text-xs font-semibold py-2 px-3"
+      className="w-full flex items-center justify-center gap-3 text-xs font-semibold py-2 px-3"
       style={{ backgroundColor: "#fef3c7", color: "#92400e" }}
     >
-      Preview · answers here are not saved and nobody is notified
+      <span>Preview · answers here are not saved and nobody is notified</span>
+      {step !== "start" && (
+        <button
+          onClick={restart}
+          className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold"
+          style={{ backgroundColor: "#92400e", color: "#fef3c7" }}
+        >
+          ↺ Restart
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  const takeAgain = preview ? (
+    <div className="text-center">
+      <button
+        onClick={restart}
+        className="px-6 py-3 rounded-lg text-sm font-semibold border-2"
+        style={{ borderColor: accent, color: accent }}
+      >
+        ↺ Take the quiz again
+      </button>
     </div>
   ) : null;
 
@@ -728,6 +762,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     {cta && <div className="mt-6">{cta}</div>}
                   </div>
                   {shareFriend && <div className="text-center">{shareFriend}</div>}
+                  {takeAgain}
                   <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
                     {org.name} will be in touch at {contactEmail || "the details you shared"}.
                   </p>
@@ -765,6 +800,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   {cta && <div className="mt-6">{cta}</div>}
                 </div>
                 {shareFriend && <div className="text-center">{shareFriend}</div>}
+                {takeAgain}
                 <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
                   {org.name} will be in touch at {contactEmail || "the details you shared"}.
                 </p>
