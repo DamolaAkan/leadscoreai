@@ -644,6 +644,13 @@ export default function BuilderStudioPage() {
           <span className="text-[#9DA2A6]">→</span>
         </a>
       </div>
+
+      <p className="text-center text-[12.5px] text-[#9DA2A6] pb-2">
+        Need something custom?{" "}
+        <a href="mailto:stella@leadscoreai.com" className="text-violet-300 hover:text-violet-200">
+          stella@leadscoreai.com
+        </a>
+      </p>
     </div>
   );
 
