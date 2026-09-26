@@ -196,9 +196,9 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             )}
             <button
               onClick={() => start()}
-              className="rounded-full bg-violet-600 hover:bg-violet-700 text-white text-[14px] font-semibold px-4 py-2.5"
+              className="rounded-full bg-violet-600 hover:bg-violet-700 text-white text-[13px] sm:text-[14px] font-semibold px-3.5 sm:px-4 py-2.5 whitespace-nowrap"
             >
-              {signedIn ? "Open my studio" : "Start free"}
+              {signedIn ? "Open my studio" : CTA}
             </button>
           </div>
         </nav>
@@ -482,7 +482,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 onClick={() => start()}
                 className="mt-8 w-full rounded-full py-4 font-semibold text-[16px] bg-violet-600 hover:bg-violet-700 text-white"
               >
-                {signedIn ? "Open my studio" : "Build my quiz free"}
+                {signedIn ? "Open my studio" : CTA}
               </button>
               <p className="mt-3 text-center text-[13px] text-slate-500">
                 No card needed to start · Bank transfer, card or USSD · Cancel anytime
@@ -692,7 +692,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
         {step === "email" ? (
           <form onSubmit={sendCode} className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold">Build your free quiz</h2>
+              <h2 className="text-2xl font-bold">Find your serious buyers</h2>
               <p className="text-[15px] text-slate-500 mt-1">We&apos;ll email you a 6-digit code. No password needed.</p>
             </div>
             <div>

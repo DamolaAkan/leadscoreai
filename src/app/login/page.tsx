@@ -246,7 +246,7 @@ export default function LoginPage() {
             <div className="divider">NEW TO LEADSCOREAI</div>
             <p className="newhere">
               No account yet?{" "}
-              <Link href="/">Build your free quiz</Link>
+              <Link href="/">Find my serious buyers</Link>
             </p>
 
             <div className="card-foot">
