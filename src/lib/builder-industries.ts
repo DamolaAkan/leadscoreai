@@ -19,7 +19,7 @@ export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
   eyebrow: "",
   headline: "One chat. A quiz that finds your buyers.",
-  highlight: "Skincare, travel, study abroad.",
+  highlight: "Solar, real estate, hair, clinics.",
   sub: "Describe your business in plain words. We build the questions, the results page and a WhatsApp link, so every customer tells you what they need, and whether they're ready to pay, before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },
@@ -28,7 +28,7 @@ export const DEFAULT_PAGE: IndustryPage = {
     { emoji: "☀️", text: "Can your home afford solar?" },
   ],
   starter: "",
-  namePlaceholder: "Glow Skincare Lagos",
+  namePlaceholder: "SunPower Solutions Abuja",
   demo: {
     brand: "Glow Skincare",
     question: "How does your skin feel by midday?",
@@ -41,7 +41,7 @@ export const DEFAULT_PAGE: IndustryPage = {
   },
 };
 
-export const INDUSTRY_PAGES: IndustryPage[] = [
+const PAGES: IndustryPage[] = [
   {
     slug: "study-abroad",
     eyebrow: "For study-abroad & education consultants",
@@ -172,7 +172,63 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
       ],
     },
   },
+  {
+    slug: "hair",
+    eyebrow: "For hair & wig vendors",
+    headline: "Match every customer",
+    highlight: "to the perfect hair.",
+    sub: "A fun quiz that matches each customer to the right length, texture and style, then sends them to your WhatsApp ready to order. You see their budget and how soon they need it.",
+    examples: [
+      { emoji: "💁🏾‍♀️", text: "Which hair length suits your face?" },
+      { emoji: "🌀", text: "Bone straight, curly or body wave?" },
+      { emoji: "👑", text: "Find your perfect wig for December" },
+      { emoji: "💸", text: "Which bundle fits your budget?" },
+    ],
+    starter:
+      "I sell hair extensions and wigs. I want a fun quiz that matches each customer to the right length, texture and style, and shows me who has the budget to order this week.",
+    namePlaceholder: "Luxe Hair Lagos",
+    demo: {
+      brand: "Luxe Hair",
+      question: "What look are you going for?",
+      options: [
+        { emoji: "💁🏾‍♀️", text: "Sleek bone straight" },
+        { emoji: "🌀", text: "Bouncy curls" },
+        { emoji: "🌊", text: "Soft body wave" },
+        { emoji: "👑", text: "Full glam wig" },
+      ],
+    },
+  },
+  {
+    slug: "clinics",
+    eyebrow: "For clinics & health practices",
+    headline: "Help patients find the right check-up",
+    highlight: "and book it with you.",
+    sub: "A short health quiz that points each person to the right screening or consultation, with a clear note that it's a guide, not a diagnosis. You see who is ready to book and how soon.",
+    examples: [
+      { emoji: "🩺", text: "Are you due for a full health check?" },
+      { emoji: "👁️", text: "Is it time for an eye test?" },
+      { emoji: "🦷", text: "Which dental treatment suits your smile?" },
+      { emoji: "❤️", text: "Know your heart health risk" },
+    ],
+    starter:
+      "I run a private clinic. I want a quiz that helps people see which health check or consultation fits them, and shows me who is ready to book and how soon.",
+    namePlaceholder: "CarePoint Clinic Ikeja",
+    demo: {
+      brand: "CarePoint Clinic",
+      question: "When did you last have a full health check?",
+      options: [
+        { emoji: "📅", text: "Within the last year" },
+        { emoji: "🗓️", text: "1 to 3 years ago" },
+        { emoji: "⏳", text: "Over 3 years ago" },
+        { emoji: "🤔", text: "Never or not sure" },
+      ],
+    },
+  },
 ];
+
+// Display order: the widest spread of industries first.
+const ORDER = ["solar", "real-estate", "hair", "clinics", "study-abroad", "skincare", "travel"];
+export const INDUSTRY_PAGES: IndustryPage[] = ORDER.map((slug) => PAGES.find((p) => p.slug === slug)!).filter(Boolean);
 
 export function getIndustryPage(slug: string): IndustryPage | undefined {
   return INDUSTRY_PAGES.find((p) => p.slug === slug);

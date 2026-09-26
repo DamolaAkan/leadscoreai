@@ -52,7 +52,6 @@ const STEPS = [
 
 const MORE_INDUSTRIES = [
   "Lending & finance",
-  "Clinics & wellness",
   "Coaching",
   "Fitness",
   "Fashion",
@@ -81,7 +80,7 @@ const FAQS = [
   },
   {
     q: "What kinds of quizzes can I make?",
-    a: "Two kinds. Qualify quizzes score each person so you know who is ready to buy (Hot, Warm or Cold). Match quizzes recommend the right product, package or programme for each person, like a skin-type or travel-style quiz.",
+    a: "Two kinds. Qualify quizzes score each person so you know who is ready to buy (Hot, Warm or Cold), like a solar affordability check or a study-abroad eligibility check. Match quizzes recommend the right product, package or service for each person, like a hair-style quiz or a health check-up finder.",
   },
   {
     q: "Can I change my quiz after it's live?",
@@ -131,7 +130,10 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     const sid = localStorage.getItem("lsai-session");
     if (!sid) return;
     fetch("/api/builder/state", { headers: { Authorization: `Bearer ${sid}` } })
-      .then((r) => setSignedIn(r.ok))
+      .then((r) => {
+        setSignedIn(r.ok);
+        if (r.status === 401) localStorage.removeItem("lsai-session"); // expired or deleted session
+      })
       .catch(() => {});
   }, []);
 
@@ -236,7 +238,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           </div>
           <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · No card needed · Works on your phone</p>
         </div>
-        <PhoneQuiz demo={page.demo} />
+        <PhoneQuiz demos={page.slug ? [page.demo] : INDUSTRY_PAGES.map((p) => p.demo)} />
       </header>
 
       {/* Willingness to pay: the LeadScoreAI difference */}
@@ -606,6 +608,8 @@ function industryLabel(p: IndustryPage): string {
     travel: "Travel",
     solar: "Solar",
     "real-estate": "Real estate",
+    hair: "Hair & wigs",
+    clinics: "Clinics & health",
   };
   return labels[p.slug] || p.slug;
 }

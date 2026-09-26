@@ -1,8 +1,20 @@
+"use client";
+
 // Product mockups for the builder landing page, drawn in HTML so they stay
-// crisp on phones and always match the real product.
+// crisp on phones and always match the real product. Examples deliberately
+// span different industries.
+import { useEffect, useState } from "react";
 import type { IndustryPage } from "@/lib/builder-industries";
 
-export function PhoneQuiz({ demo }: { demo: IndustryPage["demo"] }) {
+// Hero phone: one industry's sample quiz, or a rotation through several.
+export function PhoneQuiz({ demos }: { demos: IndustryPage["demo"][] }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (demos.length < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % demos.length), 3500);
+    return () => clearInterval(t);
+  }, [demos.length]);
+  const demo = demos[idx % demos.length];
   return (
     <div className="relative mx-auto w-[280px] sm:w-[300px]">
       <div className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-violet-400/30 via-fuchsia-300/20 to-amber-200/30 blur-2xl" />
@@ -11,7 +23,7 @@ export function PhoneQuiz({ demo }: { demo: IndustryPage["demo"] }) {
           <div className="flex justify-center pt-2.5">
             <span className="h-5 w-24 rounded-full bg-black/80" />
           </div>
-          <div className="px-5 pt-4 pb-6">
+          <div key={idx} className="px-5 pt-4 pb-6 animate-[fadeIn_0.5s_ease]">
             <div className="flex items-center justify-between text-[11px] text-violet-200/80">
               <span className="font-semibold">{demo.brand}</span>
               <span>Question 2 of 6</span>
@@ -37,6 +49,19 @@ export function PhoneQuiz({ demo }: { demo: IndustryPage["demo"] }) {
           </div>
         </div>
       </div>
+      {demos.length > 1 && (
+        <div className="relative mt-5 flex justify-center gap-1.5">
+          {demos.map((d, i) => (
+            <button
+              key={d.brand}
+              onClick={() => setIdx(i)}
+              aria-label={d.brand}
+              className={`h-1.5 rounded-full transition-all ${i === idx % demos.length ? "w-6 bg-violet-600" : "w-1.5 bg-slate-300"}`}
+            />
+          ))}
+        </div>
+      )}
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
     </div>
   );
 }
@@ -45,16 +70,16 @@ export function ChatVisual() {
   return (
     <div className="rounded-3xl bg-[#0E1525] p-5 sm:p-6 text-[14px] text-[#F5F9FC] shadow-xl space-y-3">
       <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-violet-600 px-4 py-3">
-        I sell skincare in Lagos. I want a quiz that recommends the right routine and tells me who is ready to buy.
+        I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.
       </div>
       <div className="max-w-[90%] rounded-2xl rounded-bl-md bg-[#1C2333] border border-[#2B3245] px-4 py-3">
         Love it. Two quick choices before I build:
-        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">What style fits your brand?</p>
+        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">Buyers, renters or both?</p>
         <div className="mt-2 flex flex-wrap gap-2">
           <span className="rounded-full bg-violet-500/20 ring-1 ring-violet-400 px-3 py-1.5 text-[12.5px] text-violet-100">
-            Fun and playful
+            Buyers only
           </span>
-          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">Warm and professional</span>
+          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">Both</span>
         </div>
         <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">Pictures on the answers?</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -83,17 +108,17 @@ export function ShareVisual() {
         <div className="rounded-xl overflow-hidden bg-white">
           <div className="h-28 bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white">
             <div className="text-center px-4">
-              <div className="text-[11px] uppercase tracking-widest opacity-80">Glow Skincare</div>
-              <div className="mt-1 text-[17px] font-extrabold leading-tight">Which routine fits your skin?</div>
+              <div className="text-[11px] uppercase tracking-widest opacity-80">Luxe Hair Lagos</div>
+              <div className="mt-1 text-[17px] font-extrabold leading-tight">Find your perfect hair for December 👑</div>
             </div>
           </div>
           <div className="px-3 py-2">
-            <div className="text-[13px] font-semibold text-[#111B21]">Which routine fits your skin? | Glow Skincare</div>
-            <div className="text-[12px] text-[#667781]">Answer 6 quick questions and get your routine.</div>
+            <div className="text-[13px] font-semibold text-[#111B21]">Find your perfect hair | Luxe Hair Lagos</div>
+            <div className="text-[12px] text-[#667781]">Answer 6 quick questions and get your perfect look.</div>
           </div>
         </div>
         <p className="px-1.5 pt-2 text-[14px] text-[#111B21]">
-          Hey! Take our 2-minute skin quiz and find the routine made for you 💜
+          Hey babe! Take our 2-minute hair quiz and find the look made for you 💜
         </p>
         <p className="px-1.5 text-right text-[11px] text-[#667781]">09:41 ✓✓</p>
       </div>
@@ -112,17 +137,17 @@ export function ResultVisual() {
     <div className="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-xl">
       <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 p-5 text-white">
         <div className="text-[11px] font-bold uppercase tracking-widest opacity-80">Your match</div>
-        <div className="mt-1 text-[22px] font-extrabold leading-tight">The Hydration Reset routine 💧</div>
-        <p className="mt-2 text-[13px] opacity-90">Built for skin that feels tight by midday and needs moisture that lasts.</p>
+        <div className="mt-1 text-[22px] font-extrabold leading-tight">Full health screening 🩺</div>
+        <p className="mt-2 text-[13px] opacity-90">A good next step for someone who hasn&apos;t had a check-up in over 3 years.</p>
       </div>
       <p className="mt-5 text-[12px] font-bold uppercase tracking-wider text-slate-400">Why this fits you</p>
       <ul className="mt-2 space-y-2 text-[14px] text-slate-700">
-        <li className="flex gap-2"><span className="text-emerald-500">✓</span> Your skin feels dry by midday</li>
-        <li className="flex gap-2"><span className="text-emerald-500">✓</span> You want fewer steps, not more</li>
-        <li className="flex gap-2"><span className="text-amber-500">!</span> Harmattan makes it worse, so start now</li>
+        <li className="flex gap-2"><span className="text-emerald-500">✓</span> Your last full check was over 3 years ago</li>
+        <li className="flex gap-2"><span className="text-emerald-500">✓</span> Blood pressure runs in your family</li>
+        <li className="flex gap-2"><span className="text-amber-500">!</span> This is a guide, not a diagnosis</li>
       </ul>
       <div className="mt-5 rounded-xl bg-violet-600 py-3 text-center text-[14px] font-bold text-white">
-        Order my routine on WhatsApp →
+        Book my screening on WhatsApp →
       </div>
     </div>
   );
@@ -130,15 +155,15 @@ export function ResultVisual() {
 
 export function LeadsVisual() {
   const rows = [
-    { name: "Adaeze O.", note: "Budget ready · this week", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 92 },
-    { name: "Kwame A.", note: "Comparing options", tag: "Warm", color: "#b7791f", bg: "rgba(217,148,9,0.14)", pct: 71 },
-    { name: "Tolu B.", note: "Just browsing", tag: "Cold", color: "#1e40af", bg: "rgba(37,99,235,0.12)", pct: 44 },
-    { name: "Fatima S.", note: "Budget ready · this month", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 86 },
+    { name: "Adaeze O.", note: "UK Masters · funds ready · Jan intake", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 92 },
+    { name: "Kwame A.", note: "Canada · IELTS booked · comparing agents", tag: "Warm", color: "#b7791f", bg: "rgba(217,148,9,0.14)", pct: 71 },
+    { name: "Tolu B.", note: "Just exploring · no funding yet", tag: "Cold", color: "#1e40af", bg: "rgba(37,99,235,0.12)", pct: 44 },
+    { name: "Fatima S.", note: "UK Nursing · sponsor ready · Sept intake", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 86 },
   ];
   return (
     <div className="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-xl">
       <div className="flex items-center justify-between px-1 pb-3">
-        <span className="text-[14px] font-bold text-slate-900">New leads</span>
+        <span className="text-[14px] font-bold text-slate-900">New leads · BrightPath Education</span>
         <span className="text-[12px] text-slate-400">Today</span>
       </div>
       <div className="divide-y divide-slate-100">
@@ -167,8 +192,8 @@ export function LeadsVisual() {
 
 export function WtpVisual() {
   const factors = [
-    { label: "Monthly spend", pct: 90 },
-    { label: "Buying timeline", pct: 80 },
+    { label: "Monthly fuel spend", pct: 90 },
+    { label: "Install timeline", pct: 80 },
   ];
   return (
     <div className="space-y-4">
@@ -176,13 +201,13 @@ export function WtpVisual() {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300/15 ring-1 ring-amber-300/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-200">
           💰 Willingness-to-pay question
         </span>
-        <p className="mt-4 text-[18px] font-bold leading-snug">How much do you usually spend on skincare in a month?</p>
+        <p className="mt-4 text-[18px] font-bold leading-snug">How much do you spend on fuel for your generator each month?</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           {[
-            ["💎", "Over ₦50,000"],
-            ["✨", "₦20,000 to ₦50,000"],
-            ["🌱", "Under ₦20,000"],
-            ["🤷", "It varies"],
+            ["⛽", "Over ₦150,000"],
+            ["🔋", "₦50,000 to ₦150,000"],
+            ["💡", "Under ₦50,000"],
+            ["🤷", "Not sure"],
           ].map(([e, t], i) => (
             <div
               key={t}
@@ -200,8 +225,8 @@ export function WtpVisual() {
         <div className="flex items-center gap-3">
           <span className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">A</span>
           <div className="min-w-0 flex-1">
-            <div className="font-semibold">Adaeze O.</div>
-            <div className="text-[12px] text-slate-500 truncate">Match: Hydration Reset routine</div>
+            <div className="font-semibold">Chidi E.</div>
+            <div className="text-[12px] text-slate-500 truncate">SunPower Solutions · 5kVA hybrid system</div>
           </div>
           <div className="text-right">
             <div className="text-[26px] font-extrabold leading-none text-emerald-600">86</div>
