@@ -3,6 +3,10 @@
     {
       "path": "/api/invoices/process-recurring",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/builder-emails",
+      "schedule": "0 7 * * *"
     }
   ]
 }

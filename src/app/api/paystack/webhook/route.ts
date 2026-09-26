@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
 import { NAIRA_PER_EDIT } from "@/lib/credits";
+import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
+
+const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +61,18 @@ export async function POST(request: Request) {
       });
       // 23505 = this reference was already credited (Paystack retried the webhook).
       if (error && error.code !== "23505") console.error("[paystack] top-up insert error:", error.message);
-      else if (!error) console.log(`[paystack] +${credits} AI edits for org ${orgId}`);
+      else if (!error) {
+        console.log(`[paystack] +${credits} AI edits for org ${orgId}`);
+        const { data: o } = await supabase.from("organizations").select("name, email").eq("id", orgId).maybeSingle();
+        await sendTeamAlert(`⚡ Top-up: ${o?.name ?? orgId} bought ${credits} AI edits`, [
+          ["Business", o?.name ?? orgId],
+          ["Email", o?.email ?? ""],
+          ["Paid", naira(amountNaira)],
+          ["AI edits", String(credits)],
+          ["Reference", String(d.reference ?? "")],
+          ["When", lagosNow()],
+        ]);
+      }
     }
 
     // Guard: only our subscription charges, and the amount must cover the tier.
@@ -73,7 +87,7 @@ export async function POST(request: Request) {
         const supabase = createServiceClient();
         const { data: org } = await supabase
           .from("organizations")
-          .select("current_period_end, paystack_ref")
+          .select("id, name, slug, email, self_serve, current_period_end, paystack_ref")
           .eq("id", orgId)
           .single();
         // Paystack retries webhooks: never extend the period twice for one payment.
@@ -106,6 +120,31 @@ export async function POST(request: Request) {
             .not("builder_config", "is", null);
           if (pubErr) console.error("[paystack] auto-publish error:", pubErr.message);
         }
+
+        // "You're in" for self-serve owners, and a purchase alert for the team.
+        if (org?.self_serve) {
+          await sendOwnerEmailOnce(
+            "pro_welcome",
+            { id: org.id, name: org.name, slug: org.slug, email: org.email },
+            {
+              hasQuiz: true,
+              offerEndsAt: null,
+              periodEnd: end.toISOString(),
+              amountPaid: amountNaira,
+              quizLive: typeof meta.publish_quiz_id === "string" && !!meta.publish_quiz_id,
+            },
+            String(d.reference ?? end.toISOString())
+          );
+        }
+        await sendTeamAlert(`💰 New payment: ${org?.name ?? orgId} is on ${TIERS[tier].label}`, [
+          ["Business", org?.name ?? orgId],
+          ["Email", org?.email ?? ""],
+          ["Plan", `${TIERS[tier].label}${org?.self_serve ? " (self-serve)" : ""}`],
+          ["Paid", naira(amountNaira) + (discount ? ` (${naira(discount)} go-live discount)` : "")],
+          ["Paid until", end.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })],
+          ["Reference", String(d.reference ?? "")],
+          ["When", lagosNow()],
+        ]);
       } catch (e) {
         console.error("[paystack] update error:", e);
       }

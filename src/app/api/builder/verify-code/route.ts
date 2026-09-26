@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { generateDashboardSessionId } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { EMAIL_RE, escapeLike, uniqueOrgSlug } from "@/lib/builder-server";
+import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,9 @@ export async function POST(request: Request) {
     );
   }
 
+  let isNewAccount = false;
   if (!org) {
+    isNewAccount = true;
     const name = String(businessName || "").trim().slice(0, 80) || norm.split("@")[0];
     const slug = await uniqueOrgSlug(name);
     const { data: created, error } = await supabase
@@ -93,6 +96,19 @@ export async function POST(request: Request) {
     expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
   if (sessErr) return NextResponse.json({ error: "Could not start session" }, { status: 500 });
+
+  // New self-serve account: welcome the owner, tell the team.
+  if (isNewAccount) {
+    await Promise.all([
+      sendOwnerEmailOnce("welcome", { id: org.id, name: org.name, slug: org.slug, email: norm }, { hasQuiz: false, offerEndsAt: null }),
+      sendTeamAlert(`🆕 New self-serve sign-up: ${org.name}`, [
+        ["Business", org.name],
+        ["Email", norm],
+        ["Signed up", lagosNow()],
+        ["Dashboard slug", org.slug],
+      ]),
+    ]);
+  }
 
   return NextResponse.json({ session_id: sessionId, orgSlug: org.slug, orgName: org.name });
 }
