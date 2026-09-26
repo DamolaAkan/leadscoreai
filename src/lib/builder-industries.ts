@@ -45,7 +45,7 @@ const PAGES: IndustryPage[] = [
   {
     slug: "study-abroad",
     eyebrow: "For study-abroad & education consultants",
-    headline: "Know which students are ready",
+    headline: "Find serious students",
     highlight: "before you call them.",
     sub: "Give students a 2-minute eligibility check. They see where they stand; you get every enquiry scored Hot, Warm or Cold with their grades, English test, funding and start date. Share it on WhatsApp or embed it on your website.",
     examples: [
@@ -97,8 +97,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "travel",
     eyebrow: "For travel consultants & agencies",
-    headline: "Match every traveller",
-    highlight: "to the right package.",
+    headline: "Find serious travellers",
+    highlight: "before you quote.",
     sub: "Let people discover their ideal trip in 2 minutes. They get a personal recommendation; you get their budget, dates and who's ready to book, straight to your dashboard.",
     examples: [
       { emoji: "🌍", text: "Which holiday package suits you?" },
@@ -123,8 +123,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "solar",
     eyebrow: "For solar installers",
-    headline: "Stop visiting homes",
-    highlight: "that can't afford solar.",
+    headline: "Find serious solar buyers",
+    highlight: "before you visit.",
     sub: "A 2-minute check that tells you which homes and businesses can actually afford a system before you send anyone out. Every lead scored Hot, Warm or Cold with their budget and power needs.",
     examples: [
       { emoji: "☀️", text: "Can your home afford solar?" },
@@ -201,8 +201,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "clinics",
     eyebrow: "For clinics & health practices",
-    headline: "Help patients find the right check-up",
-    highlight: "and book it with you.",
+    headline: "Find serious patients",
+    highlight: "before they call.",
     sub: "A short health quiz that points each person to the right screening or consultation, with a clear note that it's a guide, not a diagnosis. You see who is ready to book and how soon.",
     examples: [
       { emoji: "🩺", text: "Are you due for a full health check?" },
