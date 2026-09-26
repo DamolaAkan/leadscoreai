@@ -4,6 +4,7 @@ import { Organization, Quiz, QuizQuestion } from "@/lib/types";
 import { notFound } from "next/navigation";
 import QuizFlow from "./QuizFlow";
 import MetaPixel from "@/components/MetaPixel";
+import { canPublish, type OrgBilling } from "@/lib/paystack";
 
 // Always fetch fresh org/quiz config so branding + questions reflect immediately.
 export const dynamic = "force-dynamic";
@@ -57,6 +58,8 @@ export default async function QuizPage({ params, searchParams }: PageProps) {
     .single<Organization>();
 
   if (!org) notFound();
+  // Self-serve quizzes are only live on a paid plan (free to build, pay to publish).
+  if (!canPublish(org as unknown as OrgBilling)) notFound();
 
   // Fetch quiz by slug and org
   const { data: quiz } = await supabase

@@ -19,9 +19,15 @@ export function plansFor(selfServe: boolean): Tier[] {
   return selfServe ? ["builder"] : ["core", "pro"];
 }
 
-// Early-subscribe offer: self-serve accounts that pay during their 7-day trial
-// get this much off their first payment.
-export const EARLY_DISCOUNT_NAIRA = 10000;
+// Self-serve builder model: FREE TO BUILD, PAY TO PUBLISH. Building and
+// previewing quizzes is free; putting one live needs the Pro plan. Accounts
+// created before this switch keep the 7-day free trial they signed up under.
+export const PAY_TO_PUBLISH_FROM = "2026-09-26T18:00:00Z";
+
+// Go-live offer: ₦10,000 off the FIRST payment (₦43,750 instead of ₦53,750),
+// for 48 hours after the owner builds their first quiz.
+export const GO_LIVE_DISCOUNT_NAIRA = 10000;
+export const GO_LIVE_OFFER_HOURS = 48;
 
 export interface EarlyOffer {
   eligible: boolean;
@@ -29,12 +35,30 @@ export interface EarlyOffer {
   endsAt: string | null;
 }
 
-export function earlyOffer(org: OrgBilling | null | undefined): EarlyOffer {
+export function goLiveOffer(org: OrgBilling | null | undefined, firstQuizAt: string | null): EarlyOffer {
   const none = { eligible: false, discount: 0, endsAt: null };
-  if (!org?.self_serve || org.last_paid_at || !org.signup_date) return none;
-  const endsAt = new Date(new Date(org.signup_date).getTime() + SELF_SERVE_TRIAL_DAYS * 24 * 3600 * 1000);
+  if (!org?.self_serve || org.last_paid_at || !firstQuizAt) return none;
+  const endsAt = new Date(new Date(firstQuizAt).getTime() + GO_LIVE_OFFER_HOURS * 3600 * 1000);
   if (Date.now() >= endsAt.getTime()) return none;
-  return { eligible: true, discount: EARLY_DISCOUNT_NAIRA, endsAt: endsAt.toISOString() };
+  return { eligible: true, discount: GO_LIVE_DISCOUNT_NAIRA, endsAt: endsAt.toISOString() };
+}
+
+// Signed up before pay-to-publish: still on the old 7-day free trial.
+export function isLegacyTrial(org: OrgBilling | null | undefined): boolean {
+  return !!org?.self_serve && !!org.signup_date && new Date(org.signup_date) < new Date(PAY_TO_PUBLISH_FROM);
+}
+
+function legacyTrialActive(org: OrgBilling | null | undefined): boolean {
+  if (!isLegacyTrial(org) || !org?.signup_date) return false;
+  const ends = new Date(org.signup_date).getTime() + SELF_SERVE_TRIAL_DAYS * 24 * 3600 * 1000;
+  return Date.now() < ends;
+}
+
+// May this org's quizzes be live? Done-for-you clients: always (their own
+// lock handles billing). Self-serve: only on a paid plan, or during a legacy trial.
+export function canPublish(org: OrgBilling | null | undefined): boolean {
+  if (!org?.self_serve) return true;
+  return isPaid(org) || legacyTrialActive(org);
 }
 
 export function paystackConfigured(): boolean {
@@ -82,7 +106,8 @@ export type AccessReason =
   | "pending_activation"
   | "trial_active"
   | "leads_exhausted"
-  | "trial_expired";
+  | "trial_expired"
+  | "build_free"; // self-serve, unpaid: builds free, can't publish yet
 
 export interface AccessState {
   locked: boolean;
@@ -115,6 +140,15 @@ export function computeAccess(
   if (paid) {
     return { ...base, locked: false, trialEndsAt: null, reason: "paid" };
   }
+  // Self-serve builder accounts are never locked out: building is free, and
+  // going live is what needs payment (see canPublish).
+  if (org?.self_serve) {
+    if (legacyTrialActive(org)) {
+      const ends = new Date(new Date(org.signup_date!).getTime() + SELF_SERVE_TRIAL_DAYS * 24 * 3600 * 1000);
+      return { ...base, locked: false, trialEndsAt: ends.toISOString(), reason: "trial_active" };
+    }
+    return { ...base, locked: false, trialEndsAt: null, reason: "build_free" };
+  }
   // On the trial. The 30-day clock runs from the staff-set signup_date; until an
   // account is activated it has no day-clock (only the lead limit can lock it).
   const signup = org?.signup_date ? new Date(org.signup_date) : null;
@@ -138,7 +172,8 @@ export async function initTransaction(opts: {
   tier: Tier;
   orgId: string;
   callbackUrl: string;
-  discountNaira?: number; // early-subscribe offer, first payment only
+  discountNaira?: number; // go-live offer, first payment only
+  publishQuizId?: string | null; // quiz to put live once this payment succeeds
 }) {
   const discount = opts.discountNaira || 0;
   const secret = process.env.PAYSTACK_SECRET_KEY!;
@@ -150,7 +185,13 @@ export async function initTransaction(opts: {
       amount: (TIERS[opts.tier].naira - discount) * 100, // kobo
       currency: "NGN",
       callback_url: opts.callbackUrl,
-      metadata: { orgId: opts.orgId, tier: opts.tier, purpose: "leadscoreai_subscription", discount_naira: discount },
+      metadata: {
+        orgId: opts.orgId,
+        tier: opts.tier,
+        purpose: "leadscoreai_subscription",
+        discount_naira: discount,
+        publish_quiz_id: opts.publishQuizId || null,
+      },
       // Bank transfer first — it's the default channel and the one Nigerians pay
       // with most; card/USSD/QR remain available for those who prefer them.
       channels: ["bank_transfer", "bank", "ussd", "card", "qr"],

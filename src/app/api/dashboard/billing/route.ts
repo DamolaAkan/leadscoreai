@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
-import { isPaid, computeAccess, TIERS, paystackConfigured, OrgBilling, plansFor, trialDaysFor, earlyOffer } from "@/lib/paystack";
+import {
+  isPaid,
+  computeAccess,
+  TIERS,
+  paystackConfigured,
+  OrgBilling,
+  plansFor,
+  trialDaysFor,
+  goLiveOffer,
+  canPublish,
+} from "@/lib/paystack";
+import { firstBuilderQuizAt } from "@/lib/go-live";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +52,7 @@ export async function GET(request: Request) {
   const realLeadCount = Math.max(0, (totalLeads ?? 0) - testLeads);
 
   const access = computeAccess(b, realLeadCount);
+  const firstQuizAt = b.self_serve ? await firstBuilderQuizAt(user.organizationId) : null;
 
   return NextResponse.json({
     tier: b.billing_tier ?? null,
@@ -51,8 +63,10 @@ export async function GET(request: Request) {
     // The plans this org can buy (self-serve: Starter/Business; done-for-you: Core/Pro).
     plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, naira: TIERS[t].naira })),
     trialDays: trialDaysFor(b),
-    // Pay during the self-serve trial → money off the first payment.
-    offer: earlyOffer(b),
+    // Self-serve go-live offer: ₦10,000 off the first payment, 48h after the first quiz.
+    offer: goLiveOffer(b, firstQuizAt),
+    // Self-serve: free to build, pay to publish.
+    canPublish: canPublish(b),
     configured: paystackConfigured(),
     // Trial / lock state
     locked: access.locked,

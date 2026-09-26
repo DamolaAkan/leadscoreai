@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
 import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
 
-const CTA = "Build my free interactive quiz";
+const CTA = "Find my serious buyers";
 
 const OUTCOMES = [
   {
@@ -87,8 +87,8 @@ const FAQS = [
     a: "Yes, just ask in the chat. If your quiz already has answers, we save the changes as a new version so no lead is lost.",
   },
   {
-    q: "What happens when the free trial ends?",
-    a: "Your quiz keeps collecting answers. To keep seeing your leads, subscribe to Pro for ₦53,750 a month. Subscribe during your trial week and your first month is ₦43,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
+    q: "Do I need to pay to try it?",
+    a: "No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ₦53,750 a month on Pro. Go live within 48 hours of building your first quiz and your first month is ₦43,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
   },
   {
     q: "What if I need something the builder can't do?",
@@ -236,7 +236,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               See how it works
             </a>
           </div>
-          <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · No card needed · Works on your phone</p>
+          <p className="mt-4 text-[13px] text-slate-500">Free to build · Pay only when you go live · Works on your phone</p>
         </div>
         <PhoneQuiz demos={page.slug ? [page.demo] : INDUSTRY_PAGES.map((p) => p.demo)} />
       </header>
@@ -454,7 +454,8 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               One plan. Everything included.
             </h2>
             <p className="mt-4 text-[17px] text-slate-600">
-              Start free for 7 days. Subscribe during your trial and save ₦{PLAN.earlyDiscount.toLocaleString()}.
+              Build and preview free. Pay only when you publish, and save ₦{PLAN.earlyDiscount.toLocaleString()} when
+              you go live within 48 hours.
             </p>
           </div>
           <div className="mt-14 max-w-lg mx-auto rounded-[2rem] bg-slate-50 p-3 sm:p-4">
@@ -466,7 +467,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 <span className="text-slate-500">/month</span>
               </p>
               <div className="mt-4 rounded-2xl bg-violet-50 border border-violet-200 px-4 py-3 text-[15px] text-violet-900">
-                🎁 Subscribe during your free trial and your first month is{" "}
+                🎁 Go live within 48 hours of building your first quiz and your first month is{" "}
                 <b>₦{(PLAN.price - PLAN.earlyDiscount).toLocaleString()}</b>. Save ₦{PLAN.earlyDiscount.toLocaleString()}.
               </div>
               <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px]">
@@ -481,7 +482,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 onClick={() => start()}
                 className="mt-8 w-full rounded-full py-4 font-semibold text-[16px] bg-violet-600 hover:bg-violet-700 text-white"
               >
-                {signedIn ? "Open my studio" : "Start my 7-day free trial"}
+                {signedIn ? "Open my studio" : "Build my quiz free"}
               </button>
               <p className="mt-3 text-center text-[13px] text-slate-500">
                 No card needed to start · Bank transfer, card or USSD · Cancel anytime
@@ -533,7 +534,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         >
           {signedIn ? "Open my studio" : CTA}
         </button>
-        <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · Save ₦10,000 when you subscribe in your trial</p>
+        <p className="mt-4 text-[13px] text-slate-500">Free to build · ₦10,000 off when you go live within 48 hours</p>
       </section>
 
       {/* Footer */}

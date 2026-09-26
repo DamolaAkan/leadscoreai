@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
+import { canPublish, goLiveOffer, OrgBilling, TIERS } from "@/lib/paystack";
+import { firstBuilderQuizAt } from "@/lib/go-live";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,24 @@ export async function POST(request: Request) {
       .select("id", { count: "exact", head: true })
       .eq("quiz_id", quizId);
     if (!count) return NextResponse.json({ error: "This quiz has no questions yet." }, { status: 400 });
+
+    // Free to build, pay to publish: self-serve accounts need the Pro plan to go live.
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("self_serve, signup_date, billing_tier, billing_status, current_period_end, last_paid_at")
+      .eq("id", user.organizationId)
+      .single();
+    if (!canPublish(org as OrgBilling)) {
+      const firstQuizAt = await firstBuilderQuizAt(user.organizationId);
+      return NextResponse.json(
+        {
+          error: "payment_required",
+          price: TIERS.builder.naira,
+          offer: goLiveOffer(org as OrgBilling, firstQuizAt),
+        },
+        { status: 402 }
+      );
+    }
   }
 
   const { error } = await supabase

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
-import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, earlyOffer, OrgBilling } from "@/lib/paystack";
+import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling } from "@/lib/paystack";
+import { firstBuilderQuizAt } from "@/lib/go-live";
 
 export const dynamic = "force-dynamic";
 
@@ -49,13 +50,34 @@ export async function POST(request: Request) {
     );
   }
 
+  // Optional: the builder quiz to put live as soon as this payment succeeds.
+  let publishQuizId: string | null = null;
+  if (typeof body.quizId === "string") {
+    const { data: q } = await supabase
+      .from("quizzes")
+      .select("id")
+      .eq("id", body.quizId)
+      .eq("organization_id", org.id)
+      .not("builder_config", "is", null)
+      .maybeSingle();
+    publishQuizId = q?.id ?? null;
+  }
+
   const origin = new URL(request.url).origin;
-  const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success`;
+  const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success${publishQuizId ? "&tab=builder" : ""}`;
 
   let init;
   try {
-    const offer = earlyOffer(org as OrgBilling);
-    init = await initTransaction({ email, tier, orgId: org.id, callbackUrl, discountNaira: offer.discount });
+    const firstQuizAt = org.self_serve ? await firstBuilderQuizAt(org.id) : null;
+    const offer = goLiveOffer(org as OrgBilling, firstQuizAt);
+    init = await initTransaction({
+      email,
+      tier,
+      orgId: org.id,
+      callbackUrl,
+      discountNaira: offer.discount,
+      publishQuizId,
+    });
   } catch (e) {
     console.error("[billing/checkout] paystack unreachable:", e);
     return NextResponse.json({ error: "Payment provider unreachable — please try again." }, { status: 502 });

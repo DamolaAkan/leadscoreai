@@ -58,26 +58,25 @@ async function startCheckout(tier: string, getAuthHeaders: () => Record<string, 
   }
 }
 
-// Self-serve trial: "subscribe now, save ₦10,000" strip above the dashboard.
+// Self-serve go-live offer: "₦10,000 off your first month" strip above the dashboard,
+// for 48 hours after the owner builds their first quiz.
 function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeaders: () => Record<string, string> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const plan = info.plans?.[0];
   if (!plan || !info.offer?.eligible || !info.offer.endsAt) return null;
   const msLeft = new Date(info.offer.endsAt).getTime() - Date.now();
-  const daysLeft = Math.max(1, Math.ceil(msLeft / 86400000));
+  const hoursLeft = Math.max(1, Math.ceil(msLeft / 3600000));
   const price = plan.naira - info.offer.discount;
   return (
     <div className="shrink-0 bg-gradient-to-r from-violet-700 via-violet-600 to-fuchsia-600 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
         <span className="text-lg leading-none">🎁</span>
         <p className="flex-1 min-w-0 text-[13px] sm:text-sm leading-snug">
-          <b>
-            {daysLeft} day{daysLeft === 1 ? "" : "s"} left of your free trial.
-          </b>{" "}
-          Subscribe now and save ₦{info.offer.discount.toLocaleString()}: your first month is{" "}
+          <b>Go live today: ₦{info.offer.discount.toLocaleString()} off your first month.</b> Pay{" "}
           <b>₦{price.toLocaleString()}</b>
-          <span className="hidden sm:inline"> instead of ₦{plan.naira.toLocaleString()}</span>.
+          <span className="hidden sm:inline"> instead of ₦{plan.naira.toLocaleString()}</span>. Offer ends in{" "}
+          {hoursLeft}h.
           {err && <span className="block text-amber-200">{err}</span>}
         </p>
         <button
@@ -93,7 +92,7 @@ function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeader
           disabled={busy || info.configured === false}
           className="shrink-0 rounded-full bg-white text-violet-700 text-[13px] sm:text-sm font-bold px-4 py-2 disabled:opacity-60"
         >
-          {busy ? "Starting…" : "Subscribe"}
+          {busy ? "Starting…" : "Go live"}
         </button>
       </div>
     </div>
@@ -166,7 +165,7 @@ function LockScreen({
 
         {discount > 0 && (
           <p className="mb-4 text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
-            🎁 You&apos;re still in your trial week: ₦{discount.toLocaleString()} off your first month.
+            🎁 Launch offer: ₦{discount.toLocaleString()} off your first month.
           </p>
         )}
         <div className={`grid grid-cols-1 ${plans.length > 1 ? "sm:grid-cols-2" : ""} gap-3 text-left`}>

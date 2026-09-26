@@ -46,6 +46,17 @@ function toApiMessage(m: ChatMessage): { role: "user" | "assistant"; content: st
 
 type Tab = "chat" | "preview" | "share";
 
+interface GoLiveInfo {
+  canPublish: boolean;
+  price: number;
+  offer: { eligible: boolean; discount: number; endsAt: string | null };
+}
+
+function hoursLeft(endsAt: string | null): number {
+  if (!endsAt) return 0;
+  return Math.max(1, Math.ceil((new Date(endsAt).getTime() - Date.now()) / 3600000));
+}
+
 const STARTERS = [
   { emoji: "🎓", text: "I run a study-abroad agency in Lagos. I want a quiz that tells students if they're eligible to study in the UK." },
   { emoji: "✨", text: "I sell skincare online. I want a quiz that recommends the right routine for each customer's skin." },
@@ -111,6 +122,10 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [freshDraft, setFreshDraft] = useState(false);
+  // Free to build, pay to publish: billing state + the go-live sheet.
+  const [billing, setBilling] = useState<GoLiveInfo | null>(null);
+  const [paywall, setPaywall] = useState(false);
+  const [paying, setPaying] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cameWithStarter = useRef(false);
   const starterRef = useRef<string | null>(null);
@@ -138,6 +153,16 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     setOrg(data.org);
     setColor(data.org?.primary_color || "#7C3AED");
     setQuizzes(data.quizzes.filter((q: QuizSummary) => q.builder));
+    // Go-live price + offer (best-effort; the publish route enforces it anyway).
+    api("/api/dashboard/billing")
+      .then((b) =>
+        setBilling({
+          canPublish: b.canPublish !== false,
+          price: b.plans?.[0]?.naira ?? 53750,
+          offer: b.offer ?? { eligible: false, discount: 0, endsAt: null },
+        })
+      )
+      .catch(() => {});
     return data;
   }, [api]);
 
@@ -304,15 +329,45 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     setPublishing(true);
     setError("");
     try {
-      await api("/api/builder/publish", {
+      const res = await fetch("/api/builder/publish", {
         method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session}` },
         body: JSON.stringify({ quizId: current.id, publish: !current.is_active }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        // Not on a paid plan yet: show the go-live sheet instead of an error.
+        setBilling({ canPublish: false, price: data.price ?? 53750, offer: data.offer ?? { eligible: false, discount: 0, endsAt: null } });
+        setPaywall(true);
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "Could not update the quiz.");
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update the quiz.");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // Pay on Paystack; the quiz goes live automatically once payment succeeds.
+  const goLive = async () => {
+    if (!current) return;
+    setPaying(true);
+    setError("");
+    try {
+      const data = await api("/api/dashboard/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ tier: "builder", quizId: current.id }),
+      });
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+        return;
+      }
+      throw new Error("Could not start checkout.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start checkout.");
+      setPaying(false);
     }
   };
 
@@ -568,9 +623,11 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             >
               {publishing ? "Saving…" : current.is_active ? "Unpublish" : "Publish my quiz"}
             </button>
-            {!current.is_active && (
+            {!current.is_active && billing && !billing.canPublish && (
               <p className="mt-2 text-[11.5px] text-[#9DA2A6] text-center">
-                Free for your first 10 leads or 30 days
+                {billing.offer.eligible
+                  ? `Go live for ₦${(billing.price - billing.offer.discount).toLocaleString()} your first month · offer ends in ${hoursLeft(billing.offer.endsAt)}h`
+                  : `Building is free · ₦${billing.price.toLocaleString()}/month to go live`}
               </p>
             )}
           </div>
@@ -843,6 +900,72 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             </button>
           ))}
         </nav>
+      )}
+
+      {/* Go-live sheet: free to build, pay to publish */}
+      {paywall && billing && current && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => !paying && setPaywall(false)}
+        >
+          <div
+            className="w-full sm:max-w-md bg-[#1C2333] border border-[#2B3245] rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#2B3245] sm:hidden" />
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-violet-300">Go live</p>
+            <h3 className="mt-1.5 text-[21px] font-bold leading-snug text-[#F5F9FC]">
+              Your quiz is ready. Put it in front of real customers.
+            </h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#9DA2A6]">
+              Publish it, share it on WhatsApp, put it on your website, and see every serious buyer scored Hot,
+              Warm or Cold.
+            </p>
+
+            <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
+              {billing.offer.eligible ? (
+                <>
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-[28px] font-extrabold text-[#F5F9FC]">
+                      ₦{(billing.price - billing.offer.discount).toLocaleString()}
+                    </span>
+                    <s className="text-[15px] text-[#9DA2A6]">₦{billing.price.toLocaleString()}</s>
+                  </div>
+                  <p className="text-[13px] text-[#C2C8CC]">
+                    for your first month, then ₦{billing.price.toLocaleString()}/month
+                  </p>
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 text-amber-300 text-[12px] font-semibold px-3 py-1">
+                    🎁 ₦{billing.offer.discount.toLocaleString()} off · ends in {hoursLeft(billing.offer.endsAt)}h
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="text-[28px] font-extrabold text-[#F5F9FC]">₦{billing.price.toLocaleString()}</span>
+                  <span className="text-[14px] text-[#9DA2A6]"> /month</span>
+                </>
+              )}
+              <p className="mt-3 text-[12px] text-[#9DA2A6]">
+                Pay by bank transfer, card or USSD. Cancel anytime.
+              </p>
+            </div>
+
+            {error && <p className="mt-3 text-[13px] text-red-400">{error}</p>}
+            <button
+              onClick={goLive}
+              disabled={paying}
+              className="mt-5 w-full py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[16px] font-bold disabled:opacity-60 active:scale-[0.99] transition"
+            >
+              {paying ? "Opening secure checkout…" : "Go live now →"}
+            </button>
+            <button
+              onClick={() => setPaywall(false)}
+              disabled={paying}
+              className="mt-2 w-full py-2.5 text-[13px] text-[#9DA2A6]"
+            >
+              Keep editing for free
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { verifyWebhookSignature, TIERS, Tier, EARLY_DISCOUNT_NAIRA } from "@/lib/paystack";
+import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +23,18 @@ export async function POST(request: Request) {
 
   if (event?.event === "charge.success") {
     const d = event.data || {};
-    const meta = (d.metadata || {}) as { orgId?: string; tier?: string; purpose?: string; discount_naira?: number };
+    const meta = (d.metadata || {}) as {
+      orgId?: string;
+      tier?: string;
+      purpose?: string;
+      discount_naira?: number;
+      publish_quiz_id?: string | null;
+    };
     const orgId = meta.orgId;
     const tier = meta.tier as Tier;
     const amountNaira = (Number(d.amount) || 0) / 100;
     // Metadata is set server-side at checkout; cap the discount at the offer anyway.
-    const discount = Math.min(Math.max(Number(meta.discount_naira) || 0, 0), EARLY_DISCOUNT_NAIRA);
+    const discount = Math.min(Math.max(Number(meta.discount_naira) || 0, 0), GO_LIVE_DISCOUNT_NAIRA);
 
     // Guard: only our subscription charges, and the amount must cover the tier.
     if (
@@ -60,6 +66,17 @@ export async function POST(request: Request) {
           })
           .eq("id", orgId);
         console.log(`[paystack] ${tier} active for org ${orgId} until ${end.toISOString()}`);
+
+        // Paid from the builder's "Go live" button: put that quiz live now.
+        if (typeof meta.publish_quiz_id === "string" && meta.publish_quiz_id) {
+          const { error: pubErr } = await supabase
+            .from("quizzes")
+            .update({ is_active: true, updated_at: new Date().toISOString() })
+            .eq("id", meta.publish_quiz_id)
+            .eq("organization_id", orgId)
+            .not("builder_config", "is", null);
+          if (pubErr) console.error("[paystack] auto-publish error:", pubErr.message);
+        }
       } catch (e) {
         console.error("[paystack] update error:", e);
       }

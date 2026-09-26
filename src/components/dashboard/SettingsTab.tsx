@@ -48,6 +48,7 @@ export default function SettingsTab({
     paid: boolean; prices: { core: number; pro: number }; configured: boolean;
     plans?: { tier: string; label: string; naira: number }[];
     offer?: { eligible: boolean; discount: number };
+    reason?: string;
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState("");
@@ -327,7 +328,9 @@ export default function SettingsTab({
               <div className="text-lg font-bold text-gray-900">
                 {billing?.paid
                   ? billing.plans?.find((p) => p.tier === billing.tier)?.label || planLabel(billing.tier)
-                  : "Free trial"}
+                  : billing?.reason === "build_free"
+                    ? "Free (building)"
+                    : "Free trial"}
               </div>
             </div>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${billing?.paid ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>

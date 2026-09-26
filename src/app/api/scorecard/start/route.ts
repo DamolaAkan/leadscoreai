@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { canPublish, type OrgBilling } from "@/lib/paystack";
 
 // Creates a scorecard response (service role). Public endpoint; rate limited
 // per IP so nobody can flood the leads table.
@@ -27,6 +28,16 @@ export async function POST(request: Request) {
       .eq("is_active", true)
       .single();
     if (!quiz) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    // Self-serve quizzes only take answers while the account can publish.
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("self_serve, signup_date, billing_tier, billing_status, current_period_end, last_paid_at")
+      .eq("id", organizationId)
+      .single();
+    if (!canPublish(org as OrgBilling)) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
