@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import PhoneInput, { type Country } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { trackLead } from "@/components/MetaPixel";
@@ -22,6 +22,7 @@ import {
   SOLAR_NEXT_STEP,
   SOLAR_WHY_US,
 } from "@/lib/insights";
+import { computeMatchOutcome, type BuilderOutcome } from "@/lib/builder";
 
 const SUPPORTED_COUNTRIES: Country[] = [
   "US", "GB", "CA", "NG", "AE", "SA", "QA", "ZA", "GH", "AU",
@@ -31,6 +32,10 @@ interface Props {
   org: Organization;
   quiz: Quiz;
   questions: QuizQuestion[];
+  // Builder preview: runs the whole quiz locally, nothing is saved.
+  preview?: boolean;
+  // Embedded in another website via iframe: reports its height to the parent.
+  embed?: boolean;
 }
 
 type Step = "start" | "questions" | "contact" | "results";
@@ -40,6 +45,7 @@ interface AnswerRecord {
   questionOrder: number;
   answerValue: string;
   points: number;
+  outcome?: string;
 }
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
@@ -61,7 +67,10 @@ function heroGradientFor(org: { slug: string; primary_color: string }): string {
   return `linear-gradient(135deg, ${s(0.16)} 0%, ${s(0.32)} 50%, ${s(0.55)} 100%)`;
 }
 
-export default function QuizFlow({ org, quiz, questions }: Props) {
+export default function QuizFlow({ org, quiz, questions, preview = false, embed = false }: Props) {
+  const builder = quiz.builder_config || null;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [matchOutcome, setMatchOutcome] = useState<BuilderOutcome | null>(null);
   const [step, setStep] = useState<Step>("start");
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
@@ -103,6 +112,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
   // Voice call trigger — 60 seconds after results page for HOT/WARM leads
   useEffect(() => {
     if (
+      preview ||
       step !== "results" ||
       !responseId ||
       !qualification ||
@@ -124,10 +134,32 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
     }, 60_000);
 
     return () => clearTimeout(timer);
-  }, [step, responseId, qualification, contactPhone, org.id]);
+  }, [preview, step, responseId, qualification, contactPhone, org.id]);
+
+  // Embedded on another site: tell the parent page how tall we are, so the
+  // iframe can grow with the quiz instead of showing a scrollbar.
+  useEffect(() => {
+    if (!embed || typeof window === "undefined" || window.parent === window) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const post = () =>
+      window.parent.postMessage(
+        { type: "lsai-quiz-height", quiz: quiz.id, height: Math.ceil(el.getBoundingClientRect().height) },
+        "*"
+      );
+    post();
+    const ro = new ResizeObserver(post);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [embed, quiz.id, step]);
 
   // Start quiz — create response row
   const handleStart = useCallback(async () => {
+    if (preview) {
+      setResponseId("preview");
+      setStep("questions");
+      return;
+    }
     setIsSubmitting(true);
     // Created server-side (service role) so the public key never touches the DB.
     const res = await fetch("/api/scorecard/start", {
@@ -146,7 +178,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
     setResponseId(data.id);
     setStep("questions");
     setIsSubmitting(false);
-  }, [quiz.id, org.id, sessionId]);
+  }, [preview, quiz.id, org.id, sessionId]);
 
   // Submit answer for current question
   const handleAnswer = useCallback(async () => {
@@ -158,23 +190,25 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
 
     setIsSubmitting(true);
 
-    // Save to response_answers server-side (service role).
-    const res = await fetch("/api/scorecard/answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        responseId,
-        questionId: question.id,
-        questionOrder: question.question_order,
-        answerValue: { selected: option.value, text: option.text },
-        pointsAwarded: option.points,
-      }),
-    });
+    // Save to response_answers server-side (service role). Preview saves nothing.
+    if (!preview) {
+      const res = await fetch("/api/scorecard/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          responseId,
+          questionId: question.id,
+          questionOrder: question.question_order,
+          answerValue: { selected: option.value, text: option.text },
+          pointsAwarded: option.points,
+        }),
+      });
 
-    if (!res.ok) {
-      console.error("Failed to save answer");
-      setIsSubmitting(false);
-      return;
+      if (!res.ok) {
+        console.error("Failed to save answer");
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const newAnswer: AnswerRecord = {
@@ -182,6 +216,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       questionOrder: question.question_order,
       answerValue: option.value,
       points: option.points,
+      outcome: option.outcome,
     };
 
     const updatedAnswers = [...answers, newAnswer];
@@ -195,7 +230,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
     }
 
     setIsSubmitting(false);
-  }, [selectedOption, responseId, questions, currentQ, answers]);
+  }, [preview, selectedOption, responseId, questions, currentQ, answers]);
 
   // Go back one question (removes the last saved answer so it can be re-picked).
   const handleBack = useCallback(async () => {
@@ -220,8 +255,20 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       setIsSubmitting(true);
 
       const totalScore = answers.reduce((sum, a) => sum + a.points, 0);
-      const pct = Math.round((totalScore / quiz.max_score) * 100);
+      const pct = quiz.max_score > 0 ? Math.round((totalScore / quiz.max_score) * 100) : 0;
       const qual = getQualification(pct);
+      const outcome = builder ? computeMatchOutcome(builder, answers.map((a) => a.outcome)) : null;
+
+      // Builder preview: show the result without saving a lead or sending anything.
+      if (preview) {
+        setScore(totalScore);
+        setPercentage(pct);
+        setQualification(qual);
+        setMatchOutcome(outcome);
+        setStep("results");
+        setIsSubmitting(false);
+        return;
+      }
 
       // Finalize server-side (service role) so the public key never needs
       // UPDATE/SELECT on the leads table.
@@ -239,6 +286,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           max_score: quiz.max_score,
           percentage: pct,
           qualification: qual,
+          result_outcome: outcome?.title ?? null,
         }),
       });
 
@@ -251,6 +299,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       setScore(totalScore);
       setPercentage(pct);
       setQualification(qual);
+      setMatchOutcome(outcome);
       setStep("results");
       setIsSubmitting(false);
 
@@ -286,7 +335,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
         }),
       }).catch(() => {});
     },
-    [responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, contactCompany, contactWebsite, org.slug, org.id]
+    [preview, builder, responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, contactCompany, contactWebsite, org.slug, org.id]
   );
 
   const progress =
@@ -323,11 +372,22 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
       </div>
     );
 
+  const previewBanner = preview ? (
+    <div
+      className="w-full text-center text-xs font-semibold py-2 px-3"
+      style={{ backgroundColor: "#fef3c7", color: "#92400e" }}
+    >
+      Preview · answers here are not saved and nobody is notified
+    </div>
+  ) : null;
+
   // ── START — dark hero ──
   if (step === "start") {
     return (
+      <div ref={rootRef}>
+      {previewBanner}
       <div
-        className="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center"
+        className={`${embed ? "min-h-[560px]" : "min-h-screen"} flex flex-col items-center justify-center px-5 py-12 text-center`}
         style={{
           background: heroGradient,
           fontFamily: "var(--font-inter)",
@@ -375,18 +435,21 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           </p>
         </div>
       </div>
+      </div>
     );
   }
 
   // ── QUESTIONS / CONTACT / RESULTS — light layout ──
   return (
     <div
-      className="min-h-screen flex flex-col"
+      ref={rootRef}
+      className={`${embed ? "" : "min-h-screen"} flex flex-col`}
       style={{
         background: "linear-gradient(135deg, #f8f9fa 0%, #eef2f5 100%)",
         fontFamily: "var(--font-inter)",
       }}
     >
+      {previewBanner}
       {/* Header */}
       <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
         <div className="max-w-2xl mx-auto px-5 py-4">
@@ -605,8 +668,112 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
             </div>
           )}
 
+          {/* BUILDER RESULT — quizzes made in the chat builder (Qualify or Match) */}
+          {step === "results" && qualification && builder && (() => {
+            const firstName = contactName.split(" ")[0] || "there";
+            const band = builder.results[qualification];
+            // Viral loop: people who finish a quiz pass it on to friends on WhatsApp.
+            const shareUrl =
+              typeof window !== "undefined" ? `${window.location.origin}/${org.slug}/${quiz.slug}` : "";
+            const shareFriend = !preview && shareUrl ? (
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Try this quick quiz: ${shareUrl}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm border-2"
+                style={{ borderColor: "#25D366", color: "#128C7E" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
+                  <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.2.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.7-.1 1.2Z" />
+                </svg>
+                Share with a friend
+              </a>
+            ) : null;
+            const cta = quiz.cta_url ? (
+              <a
+                href={quiz.cta_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-8 py-3 rounded-lg text-white font-semibold text-base"
+                style={{ backgroundColor: accent }}
+              >
+                {builder.cta_text || "Get in touch"}
+              </a>
+            ) : null;
+
+            if (builder.kind === "match" && matchOutcome) {
+              return (
+                <div className="space-y-6">
+                  <div
+                    className="rounded-2xl p-8 text-center text-white shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]"
+                    style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
+                      {firstName}, your result
+                    </p>
+                    <h2 className="font-extrabold text-white" style={{ fontSize: "clamp(26px, 5vw, 36px)", lineHeight: 1.2 }}>
+                      {matchOutcome.title}
+                    </h2>
+                    <p className="text-base mt-4 max-w-md mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.92)" }}>
+                      {matchOutcome.description}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                    <h3 className="text-base font-semibold mb-2" style={{ color: accent }}>
+                      Our recommendation for you
+                    </h3>
+                    <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#475569" }}>
+                      {matchOutcome.recommendation}
+                    </p>
+                    {cta && <div className="mt-6">{cta}</div>}
+                  </div>
+                  {shareFriend && <div className="text-center">{shareFriend}</div>}
+                  <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
+                    {org.name} will be in touch at {contactEmail || "the details you shared"}.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-6">
+                <div
+                  className="rounded-2xl p-8 text-center text-white shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    Your result
+                  </p>
+                  <div className="text-6xl font-extrabold leading-none text-white">{percentage}%</div>
+                  <div className="mt-5">
+                    <span
+                      className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-white"
+                      style={{ color: TIER_COLORS[qualification] }}
+                    >
+                      {band.label}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-5" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    {firstName}, here&apos;s what your answers say
+                  </p>
+                  <h2 className="text-xl font-bold mt-1 text-white">{band.headline}</h2>
+                </div>
+                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                  <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#475569" }}>
+                    {band.body}
+                  </p>
+                  {cta && <div className="mt-6">{cta}</div>}
+                </div>
+                {shareFriend && <div className="text-center">{shareFriend}</div>}
+                <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
+                  {org.name} will be in touch at {contactEmail || "the details you shared"}.
+                </p>
+              </div>
+            );
+          })()}
+
           {/* ASSESSMENT RESULT — diagnosis mode (e.g. Loan Doctor) */}
-          {step === "results" && qualification && quiz.result_mode === "assessment" && (() => {
+          {step === "results" && qualification && !builder && quiz.result_mode === "assessment" && (() => {
             const health =
               percentage >= 80
                 ? { label: "Healthy", color: "#16a34a", heading: "your loan book is in good shape.", body: "Strong screening and follow-up. The next level is using AI to pre-score every applicant for repayment and benchmark your book against other MFBs." }
@@ -781,7 +948,7 @@ export default function QuizFlow({ org, quiz, questions }: Props) {
           })()}
 
           {/* RESULTS PAGE */}
-          {step === "results" && qualification && quiz.result_mode !== "assessment" && (() => {
+          {step === "results" && qualification && !builder && quiz.result_mode !== "assessment" && (() => {
             const isSolar =
               ((org as { industry?: string }).industry || "") === "solar_energy";
             const tierColor = TIER_COLORS[qualification];

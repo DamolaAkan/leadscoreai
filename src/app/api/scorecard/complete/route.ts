@@ -46,6 +46,9 @@ export async function POST(request: Request) {
         max_score: body.max_score ?? null,
         percentage: body.percentage ?? null,
         qualification: body.qualification ?? null,
+        // Match quizzes (builder): which outcome this lead got.
+        result_outcome:
+          typeof body.result_outcome === "string" ? body.result_outcome.slice(0, 120) : null,
         completed_at: new Date().toISOString(),
       })
       .eq("id", responseId);

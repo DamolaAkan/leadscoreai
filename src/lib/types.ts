@@ -12,6 +12,8 @@ export interface QuizOption {
   text: string;
   value: string;
   points: number;
+  // Match quizzes (builder): the outcome key this answer points to.
+  outcome?: string;
 }
 
 export interface Quiz {
@@ -27,6 +29,9 @@ export interface Quiz {
   result_mode?: "lead" | "assessment";
   cta_url?: string | null;
   collect_company?: boolean;
+  // Set only on quizzes made in the chat builder; null keeps the original
+  // result pages (solar, loandoctor, drivenow, …) untouched.
+  builder_config?: import("./builder").BuilderConfig | null;
 }
 
 export interface QuizQuestion {
