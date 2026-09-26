@@ -30,6 +30,8 @@ export interface AuthUser {
   username: string;
   fullName: string;
   role: MemberRole;
+  // Self-serve (quiz builder) accounts get the simplified dashboard with a Builder tab.
+  selfServe: boolean;
 }
 
 export interface ResponseFilters {

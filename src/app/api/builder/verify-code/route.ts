@@ -63,6 +63,7 @@ export async function POST(request: Request) {
         billing_tier: "trial", // trial lock applies (10 real leads or 30 days)
         signup_date: new Date().toISOString(),
         signup_source: "builder",
+        self_serve: true,
       })
       .select("id, name, slug")
       .single();

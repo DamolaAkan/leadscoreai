@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const [{ data: org }, { data: quizzes }] = await Promise.all([
     supabase
       .from("organizations")
-      .select("id, name, slug, email, primary_color, logo_url")
+      .select("id, name, slug, email, primary_color, logo_url, self_serve")
       .eq("id", user.organizationId)
       .single(),
     supabase

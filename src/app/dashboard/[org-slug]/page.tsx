@@ -11,6 +11,7 @@ import SettingsTab from "@/components/dashboard/SettingsTab";
 import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab";
 import DemoTab from "@/components/dashboard/DemoTab";
 import StartHereTab from "@/components/dashboard/StartHereTab";
+import BuilderStudio from "@/components/builder/BuilderStudio";
 
 export type DashboardTab =
   | "start"
@@ -19,7 +20,10 @@ export type DashboardTab =
   | "insights"
   | "demo"
   | "users"
-  | "settings";
+  | "settings"
+  | "builder";
+
+const SELF_SERVE_TABS: DashboardTab[] = ["responses", "analytics", "builder", "users", "settings"];
 
 interface AccessInfo {
   locked: boolean;
@@ -152,6 +156,18 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("start");
   const [access, setAccess] = useState<AccessInfo | null>(null);
 
+  // Opening tab: self-serve accounts start on Responses; `?tab=builder` (from
+  // the standalone studio) deep-links straight into a tab.
+  useEffect(() => {
+    if (!user) return;
+    const requested = new URLSearchParams(window.location.search).get("tab") as DashboardTab | null;
+    if (user.selfServe) {
+      setActiveTab(requested && SELF_SERVE_TABS.includes(requested) ? requested : "responses");
+    } else if (requested && requested !== "builder") {
+      setActiveTab(requested);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push(`/dashboard/${orgSlug}/login`);
@@ -199,9 +215,11 @@ export default function DashboardPage() {
     );
   }
 
+  const onBuilder = activeTab === "builder" && user.selfServe;
+
   return (
     <div
-      className="min-h-screen"
+      className={onBuilder ? "h-[100dvh] flex flex-col overflow-hidden" : "min-h-screen"}
       style={{ backgroundColor: "#f8fafc", fontFamily: "var(--font-inter)" }}
     >
       <TopNav
@@ -214,7 +232,16 @@ export default function DashboardPage() {
         isSuperAdmin={isSuperAdmin}
       />
 
-      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      {onBuilder && (
+        // Full-bleed studio; on phones it stops above the floating tab bar.
+        <main className="flex-1 min-h-0 bg-[#0E1525] pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0">
+          <BuilderStudio embedded />
+        </main>
+      )}
+
+      <main
+        className={`${onBuilder ? "hidden" : ""} max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8`}
+      >
         <div>
           {activeTab === "start" && <StartHereTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />}
           {activeTab === "responses" && (
