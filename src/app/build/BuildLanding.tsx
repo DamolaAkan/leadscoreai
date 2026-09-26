@@ -79,46 +79,31 @@ const FAQS = [
   },
   {
     q: "What happens when the free trial ends?",
-    a: "Your quiz keeps collecting answers. To keep seeing your leads, pick Starter or Business. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
+    a: "Your quiz keeps collecting answers. To keep seeing your leads, subscribe to Pro for ₦53,750 a month. Subscribe during your trial week and your first month is ₦43,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
   },
   {
     q: "What if I need something the builder can't do?",
-    a: "Ask anyway. The builder will tell you straight away and pass your request to our team. For custom work, email stella@leadscoreai.com.",
+    a: "Ask anyway. The builder will tell you straight away and pass your request to our team. For anything else, talk to support.",
   },
 ];
 
-const PLANS = [
-  {
-    name: "Free trial",
-    blurb: "Try it on your real customers.",
-    price: "₦0",
-    per: "",
-    highlight: "7 days or 10 leads",
-    note: "whichever comes first",
-    features: ["1 live quiz", "20 AI edits", "WhatsApp sharing and website embed", "No card needed"],
-    popular: false,
-  },
-  {
-    name: "Starter",
-    blurb: "For businesses getting leads every week.",
-    price: "₦30,750",
-    per: "/month",
-    highlight: "500 leads a month",
-    note: "3 live quizzes",
-    features: ["60 AI edits a month", "Leads scored Hot, Warm or Cold", "CSV export", "WhatsApp sharing and website embed"],
-    popular: false,
-  },
-  {
-    name: "Business",
-    blurb: "For teams running quizzes across products.",
-    price: "₦50,750",
-    per: "/month",
-    highlight: "2,000 leads a month",
-    note: "10 live quizzes",
-    features: ["150 AI edits a month", "No “Powered by LeadScoreAI” on your quizzes", "Everything in Starter"],
-    popular: true,
-  },
-];
+const SUPPORT_URL = "mailto:stella@leadscoreai.com";
+
+const PLAN = {
+  name: "Pro",
+  blurb: "Everything you need to find your buyers.",
+  price: 53750,
+  earlyDiscount: 10000,
+  features: [
+    "2,000 leads a month",
+    "10 live quizzes",
+    "150 AI edits a month",
+    "Every lead scored Hot, Warm or Cold",
+    "WhatsApp sharing and website embed",
+    "CSV export of your leads",
+    "No “Powered by LeadScoreAI” on your quizzes",
+  ],
+};
 
 // Shared by /build and every /build/<industry> page; only the hero copy and
 // the starting industry tab differ.
@@ -169,7 +154,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       {/* Nav */}
       <div className="sticky top-0 z-40 px-3 pt-3">
         <nav className="max-w-5xl mx-auto flex items-center gap-2 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.18)] pl-3 pr-1.5 py-1.5">
-          <a href="/build" className="flex items-center gap-2 shrink-0">
+          <a href="/" className="flex items-center gap-2 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
             <span className="font-bold tracking-tight">LeadScoreAI</span>
@@ -180,6 +165,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               ["Industries", "#industries"],
               ["Pricing", "#pricing"],
               ["FAQ", "#faq"],
+              ["Log in", "/login"],
             ].map(([label, href]) => (
               <a key={href} href={href} className="px-3.5 py-2 rounded-full hover:bg-slate-100 hover:text-slate-900">
                 {label}
@@ -413,52 +399,47 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Pricing</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
-              Start free. Pay when it&apos;s working.
+              One plan. Everything included.
             </h2>
-            <p className="mt-4 text-[17px] text-slate-600">Pay by bank transfer, card or USSD. Cancel anytime.</p>
+            <p className="mt-4 text-[17px] text-slate-600">
+              Start free for 7 days. Subscribe during your trial and save ₦{PLAN.earlyDiscount.toLocaleString()}.
+            </p>
           </div>
-          <div className="mt-14 grid md:grid-cols-3 gap-4 rounded-[2rem] bg-slate-50 p-3 sm:p-4">
-            {PLANS.map((p) => (
-              <div
-                key={p.name}
-                className={`rounded-3xl p-7 flex flex-col ${
-                  p.popular ? "bg-white shadow-[0_20px_50px_-20px_rgba(76,29,149,0.35)] ring-1 ring-violet-200" : ""
-                }`}
-              >
-                {p.popular && (
-                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-violet-600 mb-2">Most popular</p>
-                )}
-                <p className="text-[20px] font-bold">{p.name}</p>
-                <p className="text-[14px] text-slate-500">{p.blurb}</p>
-                <p className="mt-6">
-                  <span className="text-[44px] font-extrabold tracking-[-0.03em]">{p.price}</span>
-                  <span className="text-slate-500">{p.per}</span>
-                </p>
-                <p className="mt-3 text-[18px] font-semibold text-violet-600">{p.highlight}</p>
-                <p className="text-[14px] text-slate-500">{p.note}</p>
-                <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px] flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex gap-2.5">
-                      <span className="text-violet-600">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => start()}
-                  className={`mt-8 rounded-full py-3.5 font-semibold text-[15px] ${
-                    p.popular ? "bg-violet-600 hover:bg-violet-700 text-white" : "bg-[#0B0B12] hover:bg-black text-white"
-                  }`}
-                >
-                  {p.name === "Free trial" ? "Start free" : `Start free, then ${p.name}`}
-                </button>
+          <div className="mt-14 max-w-lg mx-auto rounded-[2rem] bg-slate-50 p-3 sm:p-4">
+            <div className="rounded-3xl bg-white p-7 sm:p-9 shadow-[0_20px_50px_-20px_rgba(76,29,149,0.35)] ring-1 ring-violet-200">
+              <p className="text-[22px] font-bold">{PLAN.name}</p>
+              <p className="text-[15px] text-slate-500">{PLAN.blurb}</p>
+              <p className="mt-6">
+                <span className="text-[48px] font-extrabold tracking-[-0.03em]">₦{PLAN.price.toLocaleString()}</span>
+                <span className="text-slate-500">/month</span>
+              </p>
+              <div className="mt-4 rounded-2xl bg-violet-50 border border-violet-200 px-4 py-3 text-[15px] text-violet-900">
+                🎁 Subscribe during your free trial and your first month is{" "}
+                <b>₦{(PLAN.price - PLAN.earlyDiscount).toLocaleString()}</b>. Save ₦{PLAN.earlyDiscount.toLocaleString()}.
               </div>
-            ))}
+              <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px]">
+                {PLAN.features.map((f) => (
+                  <li key={f} className="flex gap-2.5">
+                    <span className="text-violet-600">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => start()}
+                className="mt-8 w-full rounded-full py-4 font-semibold text-[16px] bg-violet-600 hover:bg-violet-700 text-white"
+              >
+                {signedIn ? "Open my studio" : "Start my 7-day free trial"}
+              </button>
+              <p className="mt-3 text-center text-[13px] text-slate-500">
+                No card needed to start · Bank transfer, card or USSD · Cancel anytime
+              </p>
+            </div>
           </div>
           <p className="mt-6 text-center text-[15px] text-slate-500">
-            Need more than 2,000 leads a month or a custom build?{" "}
-            <a href="mailto:stella@leadscoreai.com" className="font-semibold text-slate-900 underline underline-offset-4">
-              Talk to Stella
+            Questions before you start?{" "}
+            <a href={SUPPORT_URL} className="font-semibold text-slate-900 underline underline-offset-4">
+              Talk to support
             </a>
           </p>
         </div>
@@ -500,7 +481,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         >
           {signedIn ? "Open my studio" : CTA}
         </button>
-        <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · No card needed</p>
+        <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · Save ₦10,000 when you subscribe in your trial</p>
       </section>
 
       {/* Footer */}
@@ -530,8 +511,13 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">Talk to us</p>
             <ul className="mt-3 space-y-2 text-[14px]">
               <li>
-                <a href="mailto:stella@leadscoreai.com" className="text-slate-600 hover:text-slate-900">
-                  stella@leadscoreai.com
+                <a href={SUPPORT_URL} className="text-slate-600 hover:text-slate-900">
+                  Talk to support
+                </a>
+              </li>
+              <li>
+                <a href="/login" className="text-slate-600 hover:text-slate-900">
+                  Client login
                 </a>
               </li>
               <li>

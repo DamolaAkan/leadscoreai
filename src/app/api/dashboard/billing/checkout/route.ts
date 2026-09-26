@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
-import { initTransaction, paystackConfigured, TIERS, Tier, plansFor } from "@/lib/paystack";
+import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, earlyOffer, OrgBilling } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { data: org } = await supabase
     .from("organizations")
-    .select("id, slug, email")
+    .select("id, slug, email, self_serve, signup_date, last_paid_at")
     .eq("id", user.organizationId)
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
@@ -54,7 +54,8 @@ export async function POST(request: Request) {
 
   let init;
   try {
-    init = await initTransaction({ email, tier, orgId: org.id, callbackUrl });
+    const offer = earlyOffer(org as OrgBilling);
+    init = await initTransaction({ email, tier, orgId: org.id, callbackUrl, discountNaira: offer.discount });
   } catch (e) {
     console.error("[billing/checkout] paystack unreachable:", e);
     return NextResponse.json({ error: "Payment provider unreachable — please try again." }, { status: 502 });

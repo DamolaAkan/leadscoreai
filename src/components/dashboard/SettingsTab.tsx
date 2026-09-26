@@ -47,6 +47,7 @@ export default function SettingsTab({
     tier: string | null; status: string | null; currentPeriodEnd: string | null;
     paid: boolean; prices: { core: number; pro: number }; configured: boolean;
     plans?: { tier: string; label: string; naira: number }[];
+    offer?: { eligible: boolean; discount: number };
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState("");
@@ -324,7 +325,9 @@ export default function SettingsTab({
             <div>
               <div className="text-sm text-gray-500">Current plan</div>
               <div className="text-lg font-bold text-gray-900">
-                {billing?.paid ? planLabel(billing.tier) : "Free trial"}
+                {billing?.paid
+                  ? billing.plans?.find((p) => p.tier === billing.tier)?.label || planLabel(billing.tier)
+                  : "Free trial"}
               </div>
             </div>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${billing?.paid ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
@@ -383,7 +386,16 @@ export default function SettingsTab({
                   style={{ borderColor: accent }}
                 >
                   <div className="font-bold text-gray-900">{label}</div>
-                  <div className="text-sm text-gray-600">₦{price.toLocaleString()}/month</div>
+                  <div className="text-sm text-gray-600">
+                    {billing?.offer?.eligible ? (
+                      <>
+                        <s className="text-gray-400">₦{price.toLocaleString()}</s> ₦
+                        {(price - billing.offer.discount).toLocaleString()} first month, then ₦{price.toLocaleString()}/month
+                      </>
+                    ) : (
+                      <>₦{price.toLocaleString()}/month</>
+                    )}
+                  </div>
                   <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
                     {subBusy === t ? "Starting…" : isCurrent ? "Renew →" : "Subscribe →"}
                   </div>

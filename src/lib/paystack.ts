@@ -8,16 +8,33 @@ export const TIERS = {
   // Done-for-you clients (Stella builds the scorecard).
   core: { label: "Core", naira: 130000 },
   pro: { label: "Pro", naira: 250000 },
-  // Self-serve quiz builder plans.
-  starter: { label: "Starter", naira: 30750 },
-  business: { label: "Business", naira: 50750 },
+  // Self-serve quiz builder: one plan, sold as "Pro".
+  builder: { label: "Pro", naira: 53750 },
 } as const;
 export type Tier = keyof typeof TIERS;
 
-// Which plans an org can buy: self-serve builder accounts get Starter/Business,
+// Which plans an org can buy: self-serve builder accounts get the one Pro plan,
 // done-for-you clients keep Core/Pro.
 export function plansFor(selfServe: boolean): Tier[] {
-  return selfServe ? ["starter", "business"] : ["core", "pro"];
+  return selfServe ? ["builder"] : ["core", "pro"];
+}
+
+// Early-subscribe offer: self-serve accounts that pay during their 7-day trial
+// get this much off their first payment.
+export const EARLY_DISCOUNT_NAIRA = 10000;
+
+export interface EarlyOffer {
+  eligible: boolean;
+  discount: number;
+  endsAt: string | null;
+}
+
+export function earlyOffer(org: OrgBilling | null | undefined): EarlyOffer {
+  const none = { eligible: false, discount: 0, endsAt: null };
+  if (!org?.self_serve || org.last_paid_at || !org.signup_date) return none;
+  const endsAt = new Date(new Date(org.signup_date).getTime() + SELF_SERVE_TRIAL_DAYS * 24 * 3600 * 1000);
+  if (Date.now() >= endsAt.getTime()) return none;
+  return { eligible: true, discount: EARLY_DISCOUNT_NAIRA, endsAt: endsAt.toISOString() };
 }
 
 export function paystackConfigured(): boolean {
@@ -35,6 +52,7 @@ export interface OrgBilling {
   signup_date?: string | null;
   // Self-serve builder sign-ups get a shorter trial (SELF_SERVE_TRIAL_DAYS).
   self_serve?: boolean | null;
+  last_paid_at?: string | null;
 }
 
 // Free-trial offer: full dashboard access until the client hits this many REAL
@@ -120,17 +138,19 @@ export async function initTransaction(opts: {
   tier: Tier;
   orgId: string;
   callbackUrl: string;
+  discountNaira?: number; // early-subscribe offer, first payment only
 }) {
+  const discount = opts.discountNaira || 0;
   const secret = process.env.PAYSTACK_SECRET_KEY!;
   const res = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
     headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       email: opts.email,
-      amount: TIERS[opts.tier].naira * 100, // kobo
+      amount: (TIERS[opts.tier].naira - discount) * 100, // kobo
       currency: "NGN",
       callback_url: opts.callbackUrl,
-      metadata: { orgId: opts.orgId, tier: opts.tier, purpose: "leadscoreai_subscription" },
+      metadata: { orgId: opts.orgId, tier: opts.tier, purpose: "leadscoreai_subscription", discount_naira: discount },
       // Bank transfer first — it's the default channel and the one Nigerians pay
       // with most; card/USSD/QR remain available for those who prefer them.
       channels: ["bank_transfer", "bank", "ussd", "card", "qr"],

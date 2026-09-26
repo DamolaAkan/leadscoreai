@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { verifyWebhookSignature, TIERS, Tier } from "@/lib/paystack";
+import { verifyWebhookSignature, TIERS, Tier, EARLY_DISCOUNT_NAIRA } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -23,17 +23,19 @@ export async function POST(request: Request) {
 
   if (event?.event === "charge.success") {
     const d = event.data || {};
-    const meta = (d.metadata || {}) as { orgId?: string; tier?: string; purpose?: string };
+    const meta = (d.metadata || {}) as { orgId?: string; tier?: string; purpose?: string; discount_naira?: number };
     const orgId = meta.orgId;
     const tier = meta.tier as Tier;
     const amountNaira = (Number(d.amount) || 0) / 100;
+    // Metadata is set server-side at checkout; cap the discount at the offer anyway.
+    const discount = Math.min(Math.max(Number(meta.discount_naira) || 0, 0), EARLY_DISCOUNT_NAIRA);
 
     // Guard: only our subscription charges, and the amount must cover the tier.
     if (
       meta.purpose === "leadscoreai_subscription" &&
       orgId &&
       TIERS[tier] &&
-      amountNaira >= TIERS[tier].naira &&
+      amountNaira >= TIERS[tier].naira - discount &&
       d.status === "success"
     ) {
       try {

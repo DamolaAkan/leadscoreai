@@ -9,6 +9,8 @@ const nextConfig = {
         destination: "/solar",
         permanent: true,
       },
+      // The builder landing moved to the home page (industry pages stay at /build/<industry>).
+      { source: "/build", destination: "/", permanent: false },
     ];
   },
 };

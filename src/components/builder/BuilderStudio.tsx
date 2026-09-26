@@ -123,7 +123,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       });
       if (res.status === 401) {
         localStorage.removeItem("lsai-session");
-        router.replace("/build");
+        router.replace("/");
         throw new Error("Please sign in again.");
       }
       const data = await res.json().catch(() => ({}));
@@ -145,7 +145,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     setOrigin(window.location.origin);
     const sid = localStorage.getItem("lsai-session");
     if (!sid) {
-      router.replace("/build");
+      router.replace("/");
       return;
     }
     setSession(sid);
@@ -328,7 +328,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
 
   const signOut = () => {
     localStorage.removeItem("lsai-session");
-    router.replace("/build");
+    router.replace("/");
   };
 
   if (!org) {
@@ -664,7 +664,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       <p className="text-center text-[12.5px] text-[#9DA2A6] pb-2">
         Need something custom?{" "}
         <a href="mailto:stella@leadscoreai.com" className="text-violet-300 hover:text-violet-200">
-          stella@leadscoreai.com
+          Talk to support
         </a>
       </p>
     </div>

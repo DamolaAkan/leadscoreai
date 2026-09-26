@@ -35,6 +35,69 @@ interface AccessInfo {
   plans?: { tier: string; label: string; naira: number }[];
   trialDays?: number;
   configured?: boolean;
+  paid?: boolean;
+  offer?: { eligible: boolean; discount: number; endsAt: string | null };
+}
+
+// Paystack checkout for a plan; resolves with an error message if it couldn't start.
+async function startCheckout(tier: string, getAuthHeaders: () => Record<string, string>): Promise<string> {
+  try {
+    const res = await fetch("/api/dashboard/billing/checkout", {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ tier }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (res.ok && d.authorization_url) {
+      window.location.href = d.authorization_url; // → Paystack
+      return "";
+    }
+    return d.error || "Could not start checkout.";
+  } catch {
+    return "Could not start checkout.";
+  }
+}
+
+// Self-serve trial: "subscribe now, save ₦10,000" strip above the dashboard.
+function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeaders: () => Record<string, string> }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const plan = info.plans?.[0];
+  if (!plan || !info.offer?.eligible || !info.offer.endsAt) return null;
+  const msLeft = new Date(info.offer.endsAt).getTime() - Date.now();
+  const daysLeft = Math.max(1, Math.ceil(msLeft / 86400000));
+  const price = plan.naira - info.offer.discount;
+  return (
+    <div className="shrink-0 bg-gradient-to-r from-violet-700 via-violet-600 to-fuchsia-600 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
+        <span className="text-lg leading-none">🎁</span>
+        <p className="flex-1 min-w-0 text-[13px] sm:text-sm leading-snug">
+          <b>
+            {daysLeft} day{daysLeft === 1 ? "" : "s"} left of your free trial.
+          </b>{" "}
+          Subscribe now and save ₦{info.offer.discount.toLocaleString()}: your first month is{" "}
+          <b>₦{price.toLocaleString()}</b>
+          <span className="hidden sm:inline"> instead of ₦{plan.naira.toLocaleString()}</span>.
+          {err && <span className="block text-amber-200">{err}</span>}
+        </p>
+        <button
+          onClick={async () => {
+            setBusy(true);
+            setErr("");
+            const e = await startCheckout(plan.tier, getAuthHeaders);
+            if (e) {
+              setErr(e);
+              setBusy(false);
+            }
+          }}
+          disabled={busy || info.configured === false}
+          className="shrink-0 rounded-full bg-white text-violet-700 text-[13px] sm:text-sm font-bold px-4 py-2 disabled:opacity-60"
+        >
+          {busy ? "Starting…" : "Subscribe"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // Full-dashboard lock shown once the free trial is exhausted (10 real leads or
@@ -59,24 +122,13 @@ function LockScreen({
   const subscribe = async (tier: string) => {
     setBusy(tier);
     setErr("");
-    try {
-      const res = await fetch("/api/dashboard/billing/checkout", {
-        method: "POST",
-        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (res.ok && d.authorization_url) {
-        window.location.href = d.authorization_url; // → Paystack
-      } else {
-        setErr(d.error || "Could not start checkout.");
-        setBusy(null);
-      }
-    } catch {
-      setErr("Could not start checkout.");
+    const e = await startCheckout(tier, getAuthHeaders);
+    if (e) {
+      setErr(e);
       setBusy(null);
     }
   };
+  const discount = info.offer?.eligible ? info.offer.discount : 0;
 
   const limit = info.leadLimit ?? 10;
   const headline =
@@ -112,7 +164,12 @@ function LockScreen({
           Subscribe to unlock every lead waiting for you, plus analytics and predictive insights.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+        {discount > 0 && (
+          <p className="mb-4 text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
+            🎁 You&apos;re still in your trial week: ₦{discount.toLocaleString()} off your first month.
+          </p>
+        )}
+        <div className={`grid grid-cols-1 ${plans.length > 1 ? "sm:grid-cols-2" : ""} gap-3 text-left`}>
           {plans.map(({ tier: t, label, naira: price }) => (
             <button
               key={t}
@@ -122,7 +179,16 @@ function LockScreen({
               style={{ borderColor: accent }}
             >
               <div className="font-bold text-gray-900">{label}</div>
-              <div className="text-sm text-gray-600">₦{price.toLocaleString()}/month</div>
+              <div className="text-sm text-gray-600">
+                {discount > 0 ? (
+                  <>
+                    <s className="text-gray-400">₦{price.toLocaleString()}</s> ₦{(price - discount).toLocaleString()} first
+                    month, then ₦{price.toLocaleString()}/month
+                  </>
+                ) : (
+                  <>₦{price.toLocaleString()}/month</>
+                )}
+              </div>
               <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
                 {busy === t ? "Starting…" : "Subscribe →"}
               </div>
@@ -223,6 +289,7 @@ export default function DashboardPage() {
       className={onBuilder ? "h-[100dvh] flex flex-col overflow-hidden" : "min-h-screen"}
       style={{ backgroundColor: "#f8fafc", fontFamily: "var(--font-inter)" }}
     >
+      {access && !access.paid && <OfferBanner info={access} getAuthHeaders={getAuthHeaders} />}
       <TopNav
         user={user}
         activeTab={activeTab}

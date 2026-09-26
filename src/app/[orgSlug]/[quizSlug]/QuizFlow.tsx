@@ -1254,11 +1254,11 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   );
 }
 
-// Business-plan accounts (paid, in date) can drop the LeadScoreAI credit.
+// Paid self-serve Pro accounts (in date) drop the LeadScoreAI credit.
 function hideBranding(org: Organization): boolean {
   const o = org as Organization & { billing_tier?: string | null; billing_status?: string | null; current_period_end?: string | null };
   return (
-    o.billing_tier === "business" &&
+    o.billing_tier === "builder" &&
     o.billing_status === "active" &&
     !!o.current_period_end &&
     new Date(o.current_period_end).getTime() > Date.now()

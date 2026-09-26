@@ -116,7 +116,7 @@ export default function LoginPage() {
 
           <div className="left-mid">
             <h1>
-              Know who pays you <em>before you chase them.</em>
+              One chat. <em>A quiz that finds your buyers.</em>
             </h1>
 
             <div className="ledger" aria-hidden="true">
@@ -164,7 +164,7 @@ export default function LoginPage() {
           </div>
 
           <div className="left-foot">
-            &copy; 2026 LeadScoreAI &middot; Qualify before you chase
+            &copy; 2026 LeadScoreAI &middot; Interactive quizzes that find your buyers
           </div>
         </section>
 
@@ -245,14 +245,8 @@ export default function LoginPage() {
 
             <div className="divider">NEW TO LEADSCOREAI</div>
             <p className="newhere">
-              Want to see what it does first?{" "}
-              <a
-                href="https://leadscoreai.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Visit leadscoreai.com
-              </a>
+              No account yet?{" "}
+              <Link href="/">Build your free quiz</Link>
             </p>
 
             <div className="card-foot">
