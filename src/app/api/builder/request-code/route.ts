@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 // The account (org) is only created once the code is verified, so unverified
 // emails never create rows in organizations.
 export async function POST(request: Request) {
-  const { email } = await request.json().catch(() => ({}));
+  const { email, purpose } = await request.json().catch(() => ({}));
+  const forLogin = purpose === "login";
   const norm = String(email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(norm) || norm.length > 200) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   const html = `
 <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:460px;margin:0 auto;color:#1f2533;">
   <div style="font-size:15px;line-height:1.6;">
-    <p style="margin:0 0 12px;">Here's your code to start building your quiz on LeadScoreAI:</p>
+    <p style="margin:0 0 12px;">${forLogin ? "Here's your code to sign in to LeadScoreAI:" : "Here's your code to start building your quiz on LeadScoreAI:"}</p>
     <div style="font-size:34px;font-weight:700;letter-spacing:8px;color:#6d28d9;background:#f7f5ff;border:1px solid #e6e0fb;border-radius:12px;text-align:center;padding:16px 0;margin:0 0 12px;">${code}</div>
     <p style="margin:0 0 6px;color:#475467;">Enter it on the sign-in screen. It expires in 10 minutes.</p>
     <p style="margin:12px 0 0;color:#98a2b3;font-size:13px;">Didn't ask for this? You can ignore this email.</p>

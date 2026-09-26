@@ -3,29 +3,32 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import "./login.css";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [noAccount, setNoAccount] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // If already has a valid Supabase session, redirect immediately
+  // Already signed in on this device? Go straight to the dashboard.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push("/dashboard");
-      } else {
-        setChecking(false);
-      }
-    }).catch(() => {
+    const sid = localStorage.getItem("lsai-session");
+    if (!sid) {
       setChecking(false);
-    });
+      return;
+    }
+    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${sid}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me?.orgSlug) router.replace(`/dashboard/${me.orgSlug}`);
+        else setChecking(false);
+      })
+      .catch(() => setChecking(false));
   }, [router]);
 
   if (checking) {
@@ -54,42 +57,55 @@ export default function LoginPage() {
     );
   }
 
-  function togglePassword() {
-    setShowPassword((prev) => !prev);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  // Step 1: email a 6-digit code (same passcode flow as the quiz builder).
+  async function sendCode(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
+    setNoAccount(false);
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError("Enter a valid email address.");
       return;
     }
-    if (!password) {
-      setError("Enter your password.");
-      return;
-    }
-
     setLoading(true);
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
-
-    if (authError) {
+    try {
+      const res = await fetch("/api/builder/request-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, purpose: "login" }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Could not send a code.");
+      setStep("code");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+    } finally {
       setLoading(false);
-      if (authError.message === "Invalid login credentials") {
-        setError("Incorrect email or password.");
-      } else {
-        setError("Something went wrong. Try again.");
-      }
-      return;
     }
+  }
 
-    router.push("/dashboard");
+  // Step 2: verify the code and open that business's dashboard.
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/builder/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), code, loginOnly: true }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNoAccount(!!d.noAccount);
+        throw new Error(d.error || "Invalid code");
+      }
+      localStorage.setItem("lsai-session", d.session_id);
+      router.push(`/dashboard/${d.orgSlug}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -174,54 +190,80 @@ export default function LoginPage() {
             <span className="eyebrow">Client sign-in</span>
             <h2>Sign in</h2>
             <p className="lead">
-              Enter your details to reach your LeadScoreAI dashboard.
+              {step === "email" ? (
+                "Enter your email and we'll send you a 6-digit code. No password needed."
+              ) : (
+                <>
+                  We sent a 6-digit code to <b>{email.trim()}</b>. It expires in 10 minutes.
+                </>
+              )}
             </p>
 
-            <form onSubmit={handleSubmit}>
-              {error && <div className="login-error">{error}</div>}
-
-              <div className="field">
-                <label htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="field">
-                <div className="pw-head">
-                  <label htmlFor="pw">Password</label>
-                  <Link href="/reset-password">Forgot password?</Link>
-                </div>
-                <div className="pw-wrap">
+            {step === "email" ? (
+              <form onSubmit={sendCode}>
+                {error && <div className="login-error">{error}</div>}
+                <div className="field">
+                  <label htmlFor="email">Email</label>
                   <input
-                    id="pw"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Your password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoFocus
                   />
-                  <button
-                    type="button"
-                    onClick={togglePassword}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? "HIDE" : "SHOW"}
-                  </button>
                 </div>
-              </div>
-
-              <button className="submit" type="submit" disabled={loading}>
-                {loading ? "Signing in\u2026" : "Sign in to dashboard"}
-              </button>
-            </form>
+                <button className="submit" type="submit" disabled={loading}>
+                  {loading ? "Sending\u2026" : "Email me a code"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={verify}>
+                {error && (
+                  <div className="login-error">
+                    {error}
+                    {noAccount && (
+                      <>
+                        {" "}
+                        <Link href="/">Build your first quiz</Link>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div className="field">
+                  <label htmlFor="code">6-digit code</label>
+                  <input
+                    id="code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                    style={{ textAlign: "center", fontSize: 24, letterSpacing: "0.4em", fontWeight: 600 }}
+                    autoFocus
+                  />
+                </div>
+                <button className="submit" type="submit" disabled={loading || code.length !== 6}>
+                  {loading ? "Signing in\u2026" : "Sign in to dashboard"}
+                </button>
+                <p className="newhere" style={{ marginTop: 14 }}>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setStep("email");
+                      setCode("");
+                      setError("");
+                      setNoAccount(false);
+                    }}
+                  >
+                    Use a different email
+                  </a>
+                </p>
+              </form>
+            )}
 
             <div className="secure">
               <svg

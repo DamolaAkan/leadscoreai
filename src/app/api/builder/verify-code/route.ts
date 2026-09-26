@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // Quiz builder step 2: verify the code, then sign in to the business that owns
 // this email, or create a new one (on the free trial) if there isn't one.
 export async function POST(request: Request) {
-  const { email, code, businessName } = await request.json().catch(() => ({}));
+  const { email, code, businessName, loginOnly } = await request.json().catch(() => ({}));
   const norm = String(email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(norm) || !code) {
     return NextResponse.json({ error: "Enter the code we emailed you." }, { status: 400 });
@@ -48,6 +48,14 @@ export async function POST(request: Request) {
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
+
+  // /login signs existing accounts in; it never creates one.
+  if (!org && loginOnly) {
+    return NextResponse.json(
+      { error: "No LeadScoreAI account uses this email yet.", noAccount: true },
+      { status: 404 }
+    );
+  }
 
   if (!org) {
     const name = String(businessName || "").trim().slice(0, 80) || norm.split("@")[0];

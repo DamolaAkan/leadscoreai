@@ -170,7 +170,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <a href="/" className="flex items-center gap-2 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold tracking-tight">LeadScoreAI</span>
+            <span className="font-bold tracking-tight max-[359px]:hidden">LeadScoreAI</span>
           </a>
           <div className="hidden md:flex items-center gap-1 mx-auto text-[15px] text-slate-600">
             {[
@@ -205,7 +205,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       </div>
 
       {/* Hero */}
-      <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 grid lg:grid-cols-[1.25fr_1fr] gap-12 lg:gap-8 items-center">
+      <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 grid lg:grid-cols-[1.25fr_1fr] gap-12 lg:gap-8 items-center [&>*]:min-w-0">
         <div>
           {page.eyebrow && (
             <p className="mb-4 text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">
@@ -243,7 +243,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
 
       {/* Willingness to pay: the LeadScoreAI difference */}
       <section className="bg-[#0B0B12] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center [&>*]:min-w-0">
           <div>
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-300">The LeadScoreAI difference</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
@@ -257,7 +257,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               every one, asked in your brand&apos;s voice so they feel natural, even in fun personality quizzes. Every lead
               then gets a willingness-to-pay score from 0 to 100, so you know who can actually buy before you reply.
             </p>
-            <div className="mt-8 grid sm:grid-cols-3 gap-3">
+            <div className="mt-8 grid sm:grid-cols-3 gap-3 [&>*]:min-w-0">
               {WTP_SIGNALS.map((w) => (
                 <div key={w.title} className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
                   <div className="text-2xl">{w.icon}</div>
@@ -291,7 +291,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
 
           <div className="mt-16 sm:mt-24 space-y-20 sm:space-y-28">
             {OUTCOMES.map((o, i) => (
-              <div key={o.title} className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+              <div key={o.title} className="grid md:grid-cols-2 gap-10 md:gap-16 items-center [&>*]:min-w-0">
                 <div className={i % 2 ? "md:order-2" : ""}>
                   <span className="inline-flex w-12 h-12 items-center justify-center rounded-2xl bg-violet-50 text-2xl">{o.icon}</span>
                   <h3 className="mt-5 text-[26px] sm:text-[32px] font-bold tracking-[-0.02em] leading-tight">{o.title}</h3>
@@ -326,7 +326,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             </button>
           ))}
         </div>
-        <div className="mt-8 grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto">
+        <div className="mt-8 grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto [&>*]:min-w-0">
           {active.examples.map((ex) => (
             <button
               key={ex.text}
@@ -353,7 +353,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
 
       {/* How it works */}
       <section className="bg-white border-y border-slate-200/70">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-14">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-14 [&>*]:min-w-0">
           <div>
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">● How it works</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
@@ -376,7 +376,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             </button>
           </div>
           <div className="lg:pt-16">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 [&>*]:min-w-0">
               {INDUSTRY_PAGES.map((p) => (
                 <a
                   key={p.slug}
@@ -405,7 +405,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       </section>
 
       {/* Proof */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center [&>*]:min-w-0">
         <div>
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Proof · results</p>
           <h2 className="mt-3 text-[32px] sm:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.08]">
@@ -539,7 +539,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 pb-28 md:pb-12 grid sm:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 pb-28 md:pb-12 grid sm:grid-cols-3 gap-8 [&>*]:min-w-0">
           <div>
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}

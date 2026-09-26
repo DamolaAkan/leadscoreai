@@ -32,7 +32,7 @@ export function PhoneQuiz({ demos }: { demos: IndustryPage["demo"][] }) {
               <div className="h-full w-1/3 rounded-full bg-violet-400" />
             </div>
             <p className="mt-6 text-[19px] font-bold leading-snug">{demo.question}</p>
-            <div className="mt-5 grid grid-cols-2 gap-2.5">
+            <div className="mt-5 grid grid-cols-2 gap-2.5 [&>*]:min-w-0">
               {demo.options.map((o, i) => (
                 <div
                   key={o.text}
@@ -202,7 +202,7 @@ export function WtpVisual() {
           💰 Willingness-to-pay question
         </span>
         <p className="mt-4 text-[18px] font-bold leading-snug">How much do you spend on fuel for your generator each month?</p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2 [&>*]:min-w-0">
           {[
             ["⛽", "Over ₦150,000"],
             ["🔋", "₦50,000 to ₦150,000"],
@@ -223,7 +223,7 @@ export function WtpVisual() {
       </div>
       <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-200 text-[#0B0B12]">
         <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">A</span>
+          <span className="w-10 h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">C</span>
           <div className="min-w-0 flex-1">
             <div className="font-semibold">Chidi E.</div>
             <div className="text-[12px] text-slate-500 truncate">SunPower Solutions · 5kVA hybrid system</div>
