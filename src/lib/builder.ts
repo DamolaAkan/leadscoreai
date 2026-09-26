@@ -5,8 +5,9 @@
 
 import type { Qualification } from "./types";
 
-export const BUILDER_MODEL = "claude-opus-5";
-export const BUILDER_FALLBACK_MODEL = "claude-opus-4-8";
+// Sonnet 5 keeps each AI edit cheap enough for the ₦5,000 / 50-edit top-up
+// to stay profitable (Damola's call, 2026-09-26).
+export const BUILDER_MODEL = "claude-sonnet-5";
 
 export type QuizKind = "qualify" | "match";
 

@@ -5,7 +5,6 @@ import { getClaude, isClaudeConfigured } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
 import {
-  BUILDER_FALLBACK_MODEL,
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
   BUILDER_TURN_SCHEMA,
@@ -92,7 +91,7 @@ export async function POST(request: Request) {
     currentHasLeads = (count || 0) > 0;
   }
 
-  const messages: Anthropic.Beta.BetaMessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
+  const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
   if (current) {
     const { data: qs } = await supabase
       .from("quiz_questions")
@@ -120,13 +119,11 @@ export async function POST(request: Request) {
       });
     }
 
-    let response: Anthropic.Beta.BetaMessage;
+    let response: Anthropic.Message;
     try {
-      response = await getClaude().beta.messages.create({
+      response = await getClaude().messages.create({
         model: BUILDER_MODEL,
         max_tokens: 16000,
-        betas: ["server-side-fallback-2026-06-01"],
-        fallbacks: [{ model: BUILDER_FALLBACK_MODEL }],
         output_config: {
           effort: "medium",
           format: { type: "json_schema", schema: BUILDER_TURN_SCHEMA as unknown as Record<string, unknown> },
@@ -156,7 +153,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That quiz came out too long. Ask for fewer questions." }, { status: 502 });
     }
 
-    const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")?.text || "";
+    // Log token usage per AI edit so real cost replaces the estimates.
+    console.log("[builder/chat] usage", JSON.stringify(response.usage));
+
+    const text = response.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text || "";
     try {
       turn = JSON.parse(text) as BuilderTurn;
     } catch {
