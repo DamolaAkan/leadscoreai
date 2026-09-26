@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
-import { isPaid, computeAccess, TIERS, paystackConfigured, OrgBilling } from "@/lib/paystack";
+import { isPaid, computeAccess, TIERS, paystackConfigured, OrgBilling, plansFor, trialDaysFor } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +48,9 @@ export async function GET(request: Request) {
     currentPeriodEnd: b.current_period_end ?? null,
     paid: isPaid(b),
     prices: { core: TIERS.core.naira, pro: TIERS.pro.naira },
+    // The plans this org can buy (self-serve: Starter/Business; done-for-you: Core/Pro).
+    plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, naira: TIERS[t].naira })),
+    trialDays: trialDaysFor(b),
     configured: paystackConfigured(),
     // Trial / lock state
     locked: access.locked,

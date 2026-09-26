@@ -32,6 +32,8 @@ interface AccessInfo {
   leadLimit?: number;
   trialEndsAt?: string | null;
   prices?: { core: number; pro: number };
+  plans?: { tier: string; label: string; naira: number }[];
+  trialDays?: number;
   configured?: boolean;
 }
 
@@ -54,7 +56,7 @@ function LockScreen({
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState("");
 
-  const subscribe = async (tier: "core" | "pro") => {
+  const subscribe = async (tier: string) => {
     setBusy(tier);
     setErr("");
     try {
@@ -79,10 +81,12 @@ function LockScreen({
   const limit = info.leadLimit ?? 10;
   const headline =
     info.reason === "trial_expired"
-      ? "Your 30-day free trial has ended"
+      ? `Your ${info.trialDays ?? 30}-day free trial has ended`
       : `You've used all ${limit} of your free leads`;
-  const core = info.prices?.core ?? 130000;
-  const pro = info.prices?.pro ?? 250000;
+  const plans = info.plans ?? [
+    { tier: "core", label: "Core", naira: info.prices?.core ?? 130000 },
+    { tier: "pro", label: "Pro", naira: info.prices?.pro ?? 250000 },
+  ];
 
   return (
     <div
@@ -101,7 +105,7 @@ function LockScreen({
         </div>
         <h1 className="text-2xl font-bold text-[#16202e] mb-2">{headline}</h1>
         <p className="text-[#667085] leading-relaxed mb-1 max-w-md mx-auto">
-          {orgName}&apos;s scorecard is still live and collecting leads — but your dashboard is
+          {orgName}&apos;s quiz is still live and collecting leads, but your dashboard is
           locked until you subscribe.
         </p>
         <p className="text-sm text-[#98a2b3] mb-6">
@@ -109,10 +113,7 @@ function LockScreen({
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-          {([
-            ["core", "Core", core],
-            ["pro", "Pro", pro],
-          ] as const).map(([t, label, price]) => (
+          {plans.map(({ tier: t, label, naira: price }) => (
             <button
               key={t}
               onClick={() => subscribe(t)}

@@ -5,10 +5,20 @@ import crypto from "crypto";
 // plan-subscriptions are card-only). Each success keeps them paid for one month.
 // No-ops safely until PAYSTACK_SECRET_KEY is set.
 export const TIERS = {
+  // Done-for-you clients (Stella builds the scorecard).
   core: { label: "Core", naira: 130000 },
   pro: { label: "Pro", naira: 250000 },
+  // Self-serve quiz builder plans.
+  starter: { label: "Starter", naira: 30750 },
+  business: { label: "Business", naira: 50750 },
 } as const;
 export type Tier = keyof typeof TIERS;
+
+// Which plans an org can buy: self-serve builder accounts get Starter/Business,
+// done-for-you clients keep Core/Pro.
+export function plansFor(selfServe: boolean): Tier[] {
+  return selfServe ? ["starter", "business"] : ["core", "pro"];
+}
 
 export function paystackConfigured(): boolean {
   return !!process.env.PAYSTACK_SECRET_KEY;
@@ -23,6 +33,8 @@ export interface OrgBilling {
   // and activate the account. The 30-day trial clock counts from THIS, not the
   // DB row's creation. Null = onboarding not yet approved (day-clock not started).
   signup_date?: string | null;
+  // Self-serve builder sign-ups get a shorter trial (SELF_SERVE_TRIAL_DAYS).
+  self_serve?: boolean | null;
 }
 
 // Free-trial offer: full dashboard access until the client hits this many REAL
@@ -30,12 +42,17 @@ export interface OrgBilling {
 // dashboard locks until they subscribe. (Copy: "first 10 scored free or 30 days".)
 export const FREE_LEAD_LIMIT = 10;
 export const TRIAL_DAYS = 30;
+export const SELF_SERVE_TRIAL_DAYS = 7;
+
+export function trialDaysFor(org: OrgBilling | null | undefined): number {
+  return org?.self_serve ? SELF_SERVE_TRIAL_DAYS : TRIAL_DAYS;
+}
 
 // True only when the org has a live PAID subscription (core/pro, active, in date).
 export function isPaid(org: OrgBilling | null | undefined): boolean {
   if (!org) return false;
   const tier = org.billing_tier;
-  if (tier !== "core" && tier !== "pro") return false;
+  if (!tier || !(tier in TIERS)) return false;
   if (org.billing_status !== "active") return false;
   if (!org.current_period_end) return false;
   return new Date(org.current_period_end).getTime() > Date.now();
@@ -83,7 +100,7 @@ export function computeAccess(
   // On the trial. The 30-day clock runs from the staff-set signup_date; until an
   // account is activated it has no day-clock (only the lead limit can lock it).
   const signup = org?.signup_date ? new Date(org.signup_date) : null;
-  const trialEndsAt = signup ? new Date(signup.getTime() + TRIAL_DAYS * 24 * 3600 * 1000) : null;
+  const trialEndsAt = signup ? new Date(signup.getTime() + trialDaysFor(org) * 24 * 3600 * 1000) : null;
   const leadsExhausted = realLeadCount >= FREE_LEAD_LIMIT;
   const trialExpired = trialEndsAt ? Date.now() >= trialEndsAt.getTime() : false;
   const locked = leadsExhausted || trialExpired;

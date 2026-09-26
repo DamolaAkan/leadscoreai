@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
-import { initTransaction, paystackConfigured, TIERS, Tier } from "@/lib/paystack";
+import { initTransaction, paystackConfigured, TIERS, Tier, plansFor } from "@/lib/paystack";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,9 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const tier = body.tier as Tier;
-  if (!TIERS[tier]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  if (!TIERS[tier] || !plansFor(user.selfServe).includes(tier)) {
+    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
 
   const supabase = createServiceClient();
   const { data: org } = await supabase

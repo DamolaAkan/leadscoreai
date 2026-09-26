@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 import { getClaude, isClaudeConfigured } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
+import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
 import {
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
@@ -176,6 +176,19 @@ export async function POST(request: Request) {
 
   const reply = String(turn?.reply || "").slice(0, 2000);
   const questions = normalizeTapQuestions(turn?.questions);
+
+  // Out-of-scope asks double as product feedback: log them and tell Stella.
+  const featureRequest = typeof turn?.feature_request === "string" ? turn.feature_request.trim().slice(0, 500) : "";
+  if (featureRequest) {
+    await logFeatureRequest({
+      organizationId: user.organizationId,
+      orgName: user.orgName,
+      ownerEmail: user.username,
+      quizId,
+      request: featureRequest,
+      ownerMessage: history[history.length - 1].content,
+    });
+  }
   // Asking before (or pausing during) a build: nothing to save, current quiz untouched.
   if (!turn?.quiz) return NextResponse.json({ reply, questions, quizId });
   if (!normalized) {

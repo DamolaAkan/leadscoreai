@@ -2,23 +2,580 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { IndustryPage } from "@/lib/builder-industries";
+import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
+import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual } from "./landing-visuals";
 
-// Shared by /build and every /build/<industry> page; only the copy differs.
+const CTA = "Build my free interactive quiz";
+
+const OUTCOMES = [
+  {
+    icon: "💬",
+    title: "Describe it in plain words.",
+    body: "No forms, no templates, no design skills. Say what you sell and who you sell to. The builder asks a few tap-to-answer questions, then drafts the whole quiz while you watch. Want a change? Just ask.",
+    caption: "Powered by Claude · conversational AI",
+    visual: <ChatVisual />,
+  },
+  {
+    icon: "📲",
+    title: "Share it where your customers already are.",
+    body: "One tap sends your quiz to WhatsApp with a proper preview card. Put the link in your Instagram bio or status, or add it to your website with one line of code.",
+    caption: "WhatsApp · Instagram · your website",
+    visual: <ShareVisual />,
+  },
+  {
+    icon: "🎯",
+    title: "Every customer gets a real answer.",
+    body: "Not a “thanks, we'll be in touch”. Each person gets a detailed results page in your brand colour: their match, why it fits them and what to do next, with a button straight back to you.",
+    caption: "Qualify quizzes and Match quizzes",
+    visual: <ResultVisual />,
+  },
+  {
+    icon: "🔥",
+    title: "See who's ready to buy.",
+    body: "Every lead lands in your dashboard scored Hot, Warm or Cold, with their answers and contact details. Call the ready ones first and stop chasing people who were only browsing.",
+    caption: "Your dashboard · CSV export",
+    visual: <LeadsVisual />,
+  },
+];
+
+const STEPS = [
+  { title: "Tell us about your business", body: "In plain words, or tap to answer a few quick questions." },
+  {
+    title: "We build the whole quiz",
+    body: "Questions, scoring, emoji picture cards and a detailed results page in your brand colour.",
+  },
+  {
+    title: "Share it and get leads",
+    body: "One tap to WhatsApp or embed it on your website. Every answer lands in your dashboard.",
+  },
+];
+
+const MORE_INDUSTRIES = [
+  "Lending & finance",
+  "Clinics & wellness",
+  "Coaching",
+  "Fitness",
+  "Fashion",
+  "Events",
+  "Agencies",
+];
+
+const FAQS = [
+  {
+    q: "Do I need a website?",
+    a: "No. Every quiz gets its own link you can share on WhatsApp, Instagram or anywhere else. If you do have a website, you can embed the quiz on it too.",
+  },
+  {
+    q: "Can I build it on my phone?",
+    a: "Yes. The whole builder works on your phone: chat, preview your quiz and share it, all from one screen.",
+  },
+  {
+    q: "What kinds of quizzes can I make?",
+    a: "Two kinds. Qualify quizzes score each person so you know who is ready to buy (Hot, Warm or Cold). Match quizzes recommend the right product, package or programme for each person, like a skin-type or travel-style quiz.",
+  },
+  {
+    q: "Can I change my quiz after it's live?",
+    a: "Yes, just ask in the chat. If your quiz already has answers, we save the changes as a new version so no lead is lost.",
+  },
+  {
+    q: "What happens when the free trial ends?",
+    a: "Your quiz keeps collecting answers. To keep seeing your leads, pick Starter or Business. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
+  },
+  {
+    q: "What if I need something the builder can't do?",
+    a: "Ask anyway. The builder will tell you straight away and pass your request to our team. For custom work, email stella@leadscoreai.com.",
+  },
+];
+
+const PLANS = [
+  {
+    name: "Free trial",
+    blurb: "Try it on your real customers.",
+    price: "₦0",
+    per: "",
+    highlight: "7 days or 10 leads",
+    note: "whichever comes first",
+    features: ["1 live quiz", "20 AI edits", "WhatsApp sharing and website embed", "No card needed"],
+    popular: false,
+  },
+  {
+    name: "Starter",
+    blurb: "For businesses getting leads every week.",
+    price: "₦30,750",
+    per: "/month",
+    highlight: "500 leads a month",
+    note: "3 live quizzes",
+    features: ["60 AI edits a month", "Leads scored Hot, Warm or Cold", "CSV export", "WhatsApp sharing and website embed"],
+    popular: false,
+  },
+  {
+    name: "Business",
+    blurb: "For teams running quizzes across products.",
+    price: "₦50,750",
+    per: "/month",
+    highlight: "2,000 leads a month",
+    note: "10 live quizzes",
+    features: ["150 AI edits a month", "No “Powered by LeadScoreAI” on your quizzes", "Everything in Starter"],
+    popular: true,
+  },
+];
+
+// Shared by /build and every /build/<industry> page; only the hero copy and
+// the starting industry tab differ.
 export default function BuildLanding({ page }: { page: IndustryPage }) {
   const router = useRouter();
+  const [signedIn, setSignedIn] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const [starter, setStarter] = useState(page.starter);
+  const [industry, setIndustry] = useState(page.slug || INDUSTRY_PAGES[0].slug);
+  const [showBar, setShowBar] = useState(false);
 
-  // Carry the industry's starter idea into the studio's first chat message.
-  const goToStudio = () => {
-    if (page.starter) {
-      try {
-        localStorage.setItem("lsai-builder-starter", page.starter);
-      } catch {
-        /* ignore */
-      }
+  // Signed-in owners skip the sign-up sheet and go straight to building.
+  useEffect(() => {
+    const sid = localStorage.getItem("lsai-session");
+    if (!sid) return;
+    fetch("/api/builder/state", { headers: { Authorization: `Bearer ${sid}` } })
+      .then((r) => setSignedIn(r.ok))
+      .catch(() => {});
+  }, []);
+
+  // Phone: a sticky call-to-action once the hero button scrolls away.
+  useEffect(() => {
+    const onScroll = () => setShowBar(window.scrollY > 520);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const goToStudio = (idea: string) => {
+    try {
+      if (idea) localStorage.setItem("lsai-builder-starter", idea);
+    } catch {
+      /* ignore */
     }
     router.push("/build/studio");
   };
+
+  const start = (idea: string = page.starter) => {
+    if (signedIn) return goToStudio(idea);
+    setStarter(idea);
+    setSheet(true);
+  };
+
+  const active = INDUSTRY_PAGES.find((p) => p.slug === industry) || INDUSTRY_PAGES[0];
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFB] text-[#0B0B12] overflow-x-hidden">
+      {/* Nav */}
+      <div className="sticky top-0 z-40 px-3 pt-3">
+        <nav className="max-w-5xl mx-auto flex items-center gap-2 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.18)] pl-3 pr-1.5 py-1.5">
+          <a href="/build" className="flex items-center gap-2 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold tracking-tight">LeadScoreAI</span>
+          </a>
+          <div className="hidden md:flex items-center gap-1 mx-auto text-[15px] text-slate-600">
+            {[
+              ["How it works", "#how"],
+              ["Industries", "#industries"],
+              ["Pricing", "#pricing"],
+              ["FAQ", "#faq"],
+            ].map(([label, href]) => (
+              <a key={href} href={href} className="px-3.5 py-2 rounded-full hover:bg-slate-100 hover:text-slate-900">
+                {label}
+              </a>
+            ))}
+          </div>
+          <div className="ml-auto md:ml-0 flex items-center gap-1">
+            {!signedIn && (
+              <button
+                onClick={() => start("")}
+                className="hidden sm:block px-3.5 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
+              >
+                Sign in
+              </button>
+            )}
+            <button
+              onClick={() => start()}
+              className="rounded-full bg-violet-600 hover:bg-violet-700 text-white text-[14px] font-semibold px-4 py-2.5"
+            >
+              {signedIn ? "Open my studio" : "Start free"}
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      {/* Hero */}
+      <header className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 grid lg:grid-cols-[1.25fr_1fr] gap-12 lg:gap-8 items-center">
+        <div>
+          <p className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">{page.eyebrow}</p>
+          <h1
+            className="mt-4 font-extrabold tracking-[-0.035em] leading-[1.02]"
+            style={{ fontSize: "clamp(40px, 7vw, 76px)" }}
+          >
+            {page.headline}{" "}
+            <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
+              {page.highlight}
+            </span>
+          </h1>
+          <p className="mt-6 text-[17px] sm:text-[19px] leading-relaxed text-slate-600 max-w-xl">{page.sub}</p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => start()}
+              className="rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-7 py-4 shadow-[0_12px_30px_-10px_rgba(109,40,217,0.7)]"
+            >
+              {signedIn ? "Open my studio" : CTA}
+            </button>
+            <a
+              href="#how"
+              className="rounded-full bg-white border border-slate-200 text-slate-800 font-semibold text-[16px] px-7 py-4 text-center hover:bg-slate-50"
+            >
+              See how it works
+            </a>
+          </div>
+          <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · No card needed · Works on your phone</p>
+        </div>
+        <PhoneQuiz demo={page.demo} />
+      </header>
+
+      {/* Outcomes */}
+      <section id="how" className="scroll-mt-24 bg-white border-y border-slate-200/70">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Outcomes, not features</p>
+            <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+              Know what they want before you reply.
+            </h2>
+            <p className="mt-4 text-[17px] text-slate-600">
+              Four ways a quiz does the selling for you, while you get on with running the business.
+            </p>
+          </div>
+
+          <div className="mt-16 sm:mt-24 space-y-20 sm:space-y-28">
+            {OUTCOMES.map((o, i) => (
+              <div key={o.title} className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+                <div className={i % 2 ? "md:order-2" : ""}>
+                  <span className="inline-flex w-12 h-12 items-center justify-center rounded-2xl bg-violet-50 text-2xl">{o.icon}</span>
+                  <h3 className="mt-5 text-[26px] sm:text-[32px] font-bold tracking-[-0.02em] leading-tight">{o.title}</h3>
+                  <p className="mt-4 text-[17px] leading-relaxed text-slate-600">{o.body}</p>
+                  <p className="mt-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">{o.caption}</p>
+                </div>
+                <div className={`w-full max-w-md mx-auto ${i % 2 ? "md:order-1" : ""}`}>{o.visual}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Industries */}
+      <section id="industries" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+        <div className="text-center max-w-2xl mx-auto">
+          <h2 className="text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+            Built for the way you actually sell.
+          </h2>
+          <p className="mt-4 text-[17px] text-slate-600">Pick your industry and see the quizzes owners like you build.</p>
+        </div>
+        <div className="mt-10 -mx-4 px-4 flex sm:justify-center gap-2 overflow-x-auto pb-2">
+          {INDUSTRY_PAGES.map((p) => (
+            <button
+              key={p.slug}
+              onClick={() => setIndustry(p.slug)}
+              className={`shrink-0 rounded-full px-5 py-3 text-[15px] font-semibold transition ${
+                p.slug === industry ? "bg-[#0B0B12] text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {industryLabel(p)}
+            </button>
+          ))}
+        </div>
+        <div className="mt-8 grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto">
+          {active.examples.map((ex) => (
+            <button
+              key={ex.text}
+              onClick={() => start(active.starter)}
+              className="group text-left flex items-center gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-violet-300 hover:shadow-lg transition"
+            >
+              <span className="w-14 h-14 shrink-0 rounded-2xl bg-violet-50 flex items-center justify-center text-3xl">{ex.emoji}</span>
+              <span className="min-w-0">
+                <span className="block text-[17px] font-semibold leading-snug">{ex.text}</span>
+                <span className="mt-1 block text-[13px] text-violet-600 font-semibold opacity-80 group-hover:opacity-100">
+                  Build this quiz →
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-[15px] text-slate-500">
+          {active.sub.split(". ")[0]}.{" "}
+          <a href={`/build/${active.slug}`} className="font-semibold text-slate-900 underline underline-offset-4">
+            See the {industryLabel(active).toLowerCase()} page
+          </a>
+        </p>
+      </section>
+
+      {/* How it works */}
+      <section className="bg-white border-y border-slate-200/70">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-14">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">● How it works</p>
+            <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+              From idea to live quiz in one chat.
+            </h2>
+            <ol className="mt-10 border-l-2 border-slate-200 pl-6 space-y-8">
+              {STEPS.map((s, i) => (
+                <li key={s.title}>
+                  <p className="text-[13px] font-semibold tracking-widest text-slate-400">0{i + 1}</p>
+                  <p className="mt-1 text-[20px] font-bold">{s.title}</p>
+                  <p className="mt-1 text-[16px] text-slate-600">{s.body}</p>
+                </li>
+              ))}
+            </ol>
+            <button
+              onClick={() => start()}
+              className="mt-10 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-7 py-4"
+            >
+              {signedIn ? "Open my studio" : CTA} ↗
+            </button>
+          </div>
+          <div className="lg:pt-16">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {INDUSTRY_PAGES.map((p) => (
+                <a
+                  key={p.slug}
+                  href={`/build/${p.slug}`}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-[14px] font-medium hover:border-violet-300"
+                >
+                  <span>{p.examples[0].emoji}</span>
+                  <span className="truncate">{industryLabel(p)}</span>
+                </a>
+              ))}
+              {MORE_INDUSTRIES.map((name) => (
+                <span
+                  key={name}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-[14px] text-slate-500"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  <span className="truncate">{name}</span>
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-[14px] text-slate-500">
+              Any business that answers the same customer questions every day. If you can describe it, you can quiz it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Proof */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Proof · results</p>
+          <h2 className="mt-3 text-[32px] sm:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+            Oríkì Energy won a grant on the strength of their customer data.
+          </h2>
+          <p className="mt-6 text-[17px] leading-relaxed text-slate-600">
+            Oríkì Energy applied for the <b className="text-slate-900">Pillar of Innovation</b> grant, part of ZE-Gen, an
+            initiative backed by Innovate UK and the UK Government. What set them apart was something most companies in their
+            market can&apos;t show: they knew their customers. Who was applying, who was qualified, and who actually paid.
+          </p>
+          <p className="mt-4 text-[17px] leading-relaxed text-slate-600">
+            That data comes from their LeadScoreAI scorecard. Every applicant scored, every conversion recorded.
+          </p>
+        </div>
+        <figure className="relative rounded-3xl bg-[#0B0B12] text-white p-7 sm:p-10 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-1.5 flex">
+            <span className="flex-1 bg-[#16a34a]" />
+            <span className="flex-1 bg-[#d99409]" />
+            <span className="flex-1 bg-[#2563eb]" />
+            <span className="flex-1 bg-[#dc2626]" />
+            <span className="flex-[2] bg-violet-600" />
+          </div>
+          <span className="text-5xl font-serif leading-none text-violet-400">“</span>
+          <blockquote className="mt-2 text-[21px] sm:text-[26px] font-bold leading-snug tracking-[-0.01em]">
+            With LeadScoreAI we were able to determine our prospects&apos;{" "}
+            <span className="text-violet-300">willingness to pay</span>. We were able to build our own data. We no longer
+            need credit reports. We&apos;ve built our own credit report, based on our scorecard data.
+          </blockquote>
+          <figcaption className="mt-8 pt-6 border-t border-white/10 flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/proof/seni-olayemi.jpg" alt="Seni Olayemi" className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <div className="font-bold">Seni Olayemi</div>
+              <div className="text-[13px] text-slate-400">CEO, Oríkì Energy</div>
+            </div>
+          </figcaption>
+        </figure>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="scroll-mt-24 bg-white border-y border-slate-200/70">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Pricing</p>
+            <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+              Start free. Pay when it&apos;s working.
+            </h2>
+            <p className="mt-4 text-[17px] text-slate-600">Pay by bank transfer, card or USSD. Cancel anytime.</p>
+          </div>
+          <div className="mt-14 grid md:grid-cols-3 gap-4 rounded-[2rem] bg-slate-50 p-3 sm:p-4">
+            {PLANS.map((p) => (
+              <div
+                key={p.name}
+                className={`rounded-3xl p-7 flex flex-col ${
+                  p.popular ? "bg-white shadow-[0_20px_50px_-20px_rgba(76,29,149,0.35)] ring-1 ring-violet-200" : ""
+                }`}
+              >
+                {p.popular && (
+                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-violet-600 mb-2">Most popular</p>
+                )}
+                <p className="text-[20px] font-bold">{p.name}</p>
+                <p className="text-[14px] text-slate-500">{p.blurb}</p>
+                <p className="mt-6">
+                  <span className="text-[44px] font-extrabold tracking-[-0.03em]">{p.price}</span>
+                  <span className="text-slate-500">{p.per}</span>
+                </p>
+                <p className="mt-3 text-[18px] font-semibold text-violet-600">{p.highlight}</p>
+                <p className="text-[14px] text-slate-500">{p.note}</p>
+                <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px] flex-1">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex gap-2.5">
+                      <span className="text-violet-600">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => start()}
+                  className={`mt-8 rounded-full py-3.5 font-semibold text-[15px] ${
+                    p.popular ? "bg-violet-600 hover:bg-violet-700 text-white" : "bg-[#0B0B12] hover:bg-black text-white"
+                  }`}
+                >
+                  {p.name === "Free trial" ? "Start free" : `Start free, then ${p.name}`}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-[15px] text-slate-500">
+            Need more than 2,000 leads a month or a custom build?{" "}
+            <a href="mailto:stella@leadscoreai.com" className="font-semibold text-slate-900 underline underline-offset-4">
+              Talk to Stella
+            </a>
+          </p>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="scroll-mt-24 max-w-4xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+        <div className="text-center">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Common questions</p>
+          <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+            Things people ask before starting.
+          </h2>
+        </div>
+        <div className="mt-12 rounded-3xl bg-white border border-slate-200 px-5 sm:px-8 divide-y divide-slate-200">
+          {FAQS.map((f) => (
+            <details key={f.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[17px] font-semibold">
+                {f.q}
+                <span className="shrink-0 text-slate-400 transition group-open:rotate-180">⌄</span>
+              </summary>
+              <p className="mt-3 text-[16px] leading-relaxed text-slate-600">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="px-4 sm:px-6 pb-20 sm:pb-28 text-center">
+        <h2
+          className="font-extrabold tracking-[-0.04em] leading-[1.02] max-w-4xl mx-auto"
+          style={{ fontSize: "clamp(40px, 8vw, 88px)" }}
+        >
+          Your next customer is one quiz away.
+        </h2>
+        <p className="mt-5 text-[18px] text-slate-600">Build it in one chat. Share it on WhatsApp today.</p>
+        <button
+          onClick={() => start()}
+          className="mt-8 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-8 py-4 shadow-[0_12px_30px_-10px_rgba(109,40,217,0.7)]"
+        >
+          {signedIn ? "Open my studio" : CTA}
+        </button>
+        <p className="mt-4 text-[13px] text-slate-500">Free for 7 days · No card needed</p>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 pb-28 md:pb-12 grid sm:grid-cols-3 gap-8">
+          <div>
+            <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
+              <span className="font-bold text-lg">LeadScoreAI</span>
+            </div>
+            <p className="mt-2 text-[14px] text-slate-500">Interactive quizzes that find your buyers.</p>
+          </div>
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">For your industry</p>
+            <ul className="mt-3 space-y-2 text-[14px]">
+              {INDUSTRY_PAGES.map((p) => (
+                <li key={p.slug}>
+                  <a href={`/build/${p.slug}`} className="text-slate-600 hover:text-slate-900">
+                    {industryLabel(p)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">Talk to us</p>
+            <ul className="mt-3 space-y-2 text-[14px]">
+              <li>
+                <a href="mailto:stella@leadscoreai.com" className="text-slate-600 hover:text-slate-900">
+                  stella@leadscoreai.com
+                </a>
+              </li>
+              <li>
+                <a href="https://leadscoreai.com" className="text-slate-600 hover:text-slate-900">
+                  leadscoreai.com
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </footer>
+
+      {/* Phone: sticky call-to-action */}
+      <div
+        className={`md:hidden fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 transition-all duration-300 ${
+          showBar && !sheet ? "translate-y-0 opacity-100" : "translate-y-24 opacity-0 pointer-events-none"
+        }`}
+      >
+        <button
+          onClick={() => start()}
+          className="w-full rounded-full bg-violet-600 text-white font-semibold text-[16px] py-4 shadow-[0_16px_40px_-12px_rgba(109,40,217,0.8)]"
+        >
+          {signedIn ? "Open my studio" : CTA}
+        </button>
+      </div>
+
+      {sheet && <SignUpSheet page={page} onClose={() => setSheet(false)} onDone={() => goToStudio(starter)} />}
+    </div>
+  );
+}
+
+function industryLabel(p: IndustryPage): string {
+  const labels: Record<string, string> = {
+    "study-abroad": "Study abroad",
+    skincare: "Skincare & beauty",
+    travel: "Travel",
+    solar: "Solar",
+    "real-estate": "Real estate",
+  };
+  return labels[p.slug] || p.slug;
+}
+
+// Email → 6-digit code sign-up, as a bottom sheet on phones and a dialog on desktop.
+function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: () => void; onDone: () => void }) {
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -26,18 +583,15 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // Already signed in? Go straight to the studio (with this page's idea).
   useEffect(() => {
-    const sid = localStorage.getItem("lsai-session");
-    if (!sid) return;
-    fetch("/api/builder/state", { headers: { Authorization: `Bearer ${sid}` } })
-      .then((r) => {
-        if (!r.ok) return;
-        if (page.starter) localStorage.setItem("lsai-builder-starter", page.starter);
-        router.replace("/build/studio");
-      })
-      .catch(() => {});
-  }, [router, page.starter]);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +626,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid code");
       localStorage.setItem("lsai-session", data.session_id);
-      goToStudio();
+      onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Try again.");
       setBusy(false);
@@ -80,130 +634,101 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   };
 
   const input =
-    "w-full px-4 py-3 rounded-lg border border-slate-300 text-[15px] text-slate-900 outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/20";
+    "w-full px-4 py-3.5 rounded-xl border border-slate-300 text-[16px] text-slate-900 outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/20";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-violet-950 to-slate-900 text-white">
-      <header className="max-w-6xl mx-auto px-5 py-5 flex items-center gap-2.5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
-        <span className="font-bold">LeadScoreAI</span>
-        <span className="ml-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-violet-200">
-          Quiz Builder
-        </span>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-5 pt-4 lg:pt-8 pb-20 grid lg:grid-cols-2 gap-x-12 gap-y-8 lg:items-center">
-        <section className="lg:col-start-1">
-          {page.slug && (
-            <p className="text-xs font-semibold uppercase tracking-wider text-violet-300 mb-3">{page.eyebrow}</p>
-          )}
-          <h1 className="font-extrabold leading-[1.1]" style={{ fontSize: "clamp(32px, 5.5vw, 56px)" }}>
-            {page.headline}
-            <br />
-            <span className="text-violet-300">{page.highlight}</span>
-          </h1>
-          <p className="mt-5 text-base lg:text-lg text-slate-300 max-w-xl leading-relaxed">{page.sub}</p>
-        </section>
-
-        <section className="lg:col-start-1 lg:row-start-2">
-          <div className="grid sm:grid-cols-2 gap-3 max-w-xl">
-            {page.examples.map((ex) => (
-              <div key={ex.text} className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-                <span className="text-xl">{ex.emoji}</span>
-                <span className="text-sm text-slate-200">{ex.text}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-sm text-slate-400">
-            Free for your first 10 leads or 30 days · Share on WhatsApp · Every lead scored Hot, Warm or Cold
-          </p>
-        </section>
-
-        <section className="row-start-2 lg:row-start-1 lg:row-span-2 lg:col-start-2 bg-white text-slate-900 rounded-2xl p-6 md:p-9 shadow-2xl max-w-md w-full lg:justify-self-end">
-          {step === "email" ? (
-            <form onSubmit={sendCode} className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold">Build your first quiz</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  We&apos;ll email you a 6-digit code. No password needed.
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Business name</label>
-                <input
-                  className={input}
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder={page.namePlaceholder}
-                  maxLength={80}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Work email</label>
-                <input
-                  className={input}
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@yourbusiness.com"
-                />
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <button
-                type="submit"
-                disabled={busy}
-                className="w-full py-3.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold disabled:opacity-60"
-              >
-                {busy ? "Sending…" : "Get my code →"}
-              </button>
-              <p className="text-xs text-slate-400 text-center">
-                Already have an account? Use the same email and you&apos;ll go straight in.
-              </p>
-            </form>
-          ) : (
-            <form onSubmit={verify} className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold">Check your email</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  We sent a 6-digit code to <b>{email}</b>.
-                </p>
-              </div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
+      <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
+        <span className="sm:hidden absolute left-1/2 top-2.5 -translate-x-1/2 h-1.5 w-10 rounded-full bg-slate-200" />
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 w-9 h-9 rounded-full hover:bg-slate-100 text-slate-400 text-xl leading-none"
+        >
+          ×
+        </button>
+        {step === "email" ? (
+          <form onSubmit={sendCode} className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold">Build your free quiz</h2>
+              <p className="text-[15px] text-slate-500 mt-1">We&apos;ll email you a 6-digit code. No password needed.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Business name</label>
               <input
-                className={`${input} text-center text-2xl tracking-[0.4em] font-semibold`}
-                inputMode="numeric"
-                autoComplete="one-time-code"
+                className={input}
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder={page.namePlaceholder}
+                maxLength={80}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Work email</label>
+              <input
+                className={input}
+                type="email"
                 required
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="000000"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@yourbusiness.com"
                 autoFocus
               />
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <button
-                type="submit"
-                disabled={busy || code.length !== 6}
-                className="w-full py-3.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold disabled:opacity-60"
-              >
-                {busy ? "Signing in…" : "Start building →"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("email");
-                  setCode("");
-                  setError("");
-                }}
-                className="w-full text-sm text-slate-500 hover:text-slate-700"
-              >
-                Use a different email
-              </button>
-            </form>
-          )}
-        </section>
-      </main>
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full py-4 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold disabled:opacity-60"
+            >
+              {busy ? "Sending…" : "Get my code →"}
+            </button>
+            <p className="text-xs text-slate-400 text-center">
+              Already have an account? Use the same email and you&apos;ll go straight in.
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={verify} className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold">Check your email</h2>
+              <p className="text-[15px] text-slate-500 mt-1">
+                We sent a 6-digit code to <b>{email}</b>.
+              </p>
+            </div>
+            <input
+              className={`${input} text-center text-2xl tracking-[0.4em] font-semibold`}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="000000"
+              autoFocus
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy || code.length !== 6}
+              className="w-full py-4 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold disabled:opacity-60"
+            >
+              {busy ? "Signing in…" : "Start building →"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStep("email");
+                setCode("");
+                setError("");
+              }}
+              className="w-full text-sm text-slate-500 hover:text-slate-700"
+            >
+              Use a different email
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

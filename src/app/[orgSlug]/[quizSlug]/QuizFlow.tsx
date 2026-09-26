@@ -1247,8 +1247,20 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       </main>
 
       <footer className="py-5 text-center text-xs" style={{ color: "#94a3b8" }}>
-        All responses are confidential · Powered by LeadScoreAI
+        All responses are confidential
+        {!hideBranding(org) && " · Powered by LeadScoreAI"}
       </footer>
     </div>
+  );
+}
+
+// Business-plan accounts (paid, in date) can drop the LeadScoreAI credit.
+function hideBranding(org: Organization): boolean {
+  const o = org as Organization & { billing_tier?: string | null; billing_status?: string | null; current_period_end?: string | null };
+  return (
+    o.billing_tier === "business" &&
+    o.billing_status === "active" &&
+    !!o.current_period_end &&
+    new Date(o.current_period_end).getTime() > Date.now()
   );
 }

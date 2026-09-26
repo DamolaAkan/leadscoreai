@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quiz Builder: create a quiz by chatting",
+  title: "One chat. A quiz that finds your buyers. | LeadScoreAI",
   description:
-    "Describe your business and LeadScoreAI builds a beautiful quiz that qualifies your customers or recommends the right product. Publish a link or embed it on your website.",
+    "Describe your business in plain words. LeadScoreAI builds the questions, the results page and a WhatsApp link, so every customer tells you what they need before you reply. Free for 7 days.",
 };
 
 export default function BuildLayout({ children }: { children: React.ReactNode }) {

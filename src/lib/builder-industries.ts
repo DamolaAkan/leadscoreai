@@ -11,14 +11,16 @@ export interface IndustryPage {
   examples: { emoji: string; text: string }[];
   starter: string; // pre-fills the first chat message after sign-up
   namePlaceholder: string;
+  // The sample quiz shown in the hero phone.
+  demo: { brand: string; question: string; options: { emoji: string; text: string }[] };
 }
 
 export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
-  eyebrow: "Quiz Builder",
-  headline: "Describe your business.",
-  highlight: "Get a quiz that sells.",
-  sub: "Chat with our AI and it builds a beautiful quiz for your customers: one that tells you who is ready to buy, or recommends the right product for each person. Share it on WhatsApp or put it on your website in minutes. No design or code.",
+  eyebrow: "Quiz builder for businesses that sell on WhatsApp",
+  headline: "One chat. A quiz that finds your buyers.",
+  highlight: "Skincare, travel, study abroad.",
+  sub: "Describe your business in plain words. We build the questions, the results page and a WhatsApp link, so every customer tells you what they need before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },
     { emoji: "✨", text: "Which skincare routine fits your skin?" },
@@ -27,6 +29,16 @@ export const DEFAULT_PAGE: IndustryPage = {
   ],
   starter: "",
   namePlaceholder: "Glow Skincare Lagos",
+  demo: {
+    brand: "Glow Skincare",
+    question: "How does your skin feel by midday?",
+    options: [
+      { emoji: "💧", text: "Tight and dry" },
+      { emoji: "✨", text: "Shiny all over" },
+      { emoji: "🌗", text: "Oily T-zone only" },
+      { emoji: "🌸", text: "Comfortable" },
+    ],
+  },
 };
 
 export const INDUSTRY_PAGES: IndustryPage[] = [
@@ -45,6 +57,16 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     starter:
       "I run a study-abroad agency. I want a quiz that tells students if they're eligible to study in the UK, and shows me who has the grades, English test and funding to apply now.",
     namePlaceholder: "BrightPath Education Lagos",
+    demo: {
+      brand: "BrightPath Education",
+      question: "What's your highest qualification so far?",
+      options: [
+        { emoji: "🎓", text: "First class / 2:1 degree" },
+        { emoji: "📘", text: "2:2 degree" },
+        { emoji: "📝", text: "HND or OND" },
+        { emoji: "🏫", text: "WAEC / A-levels" },
+      ],
+    },
   },
   {
     slug: "skincare",
@@ -61,6 +83,16 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     starter:
       "I sell skincare. I want a quiz that recommends the right routine or product bundle for each customer's skin, and tells me who is ready to buy.",
     namePlaceholder: "Glow Skincare Lagos",
+    demo: {
+      brand: "Glow Skincare",
+      question: "How does your skin feel by midday?",
+      options: [
+        { emoji: "💧", text: "Tight and dry" },
+        { emoji: "✨", text: "Shiny all over" },
+        { emoji: "🌗", text: "Oily T-zone only" },
+        { emoji: "🌸", text: "Comfortable" },
+      ],
+    },
   },
   {
     slug: "travel",
@@ -77,6 +109,16 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     starter:
       "I'm a travel consultant. I want a fun quiz that matches people to the right holiday package and shows me who has the budget and dates to book soon.",
     namePlaceholder: "Wanderlust Travels Accra",
+    demo: {
+      brand: "Wanderlust Travels",
+      question: "Your perfect December looks like…",
+      options: [
+        { emoji: "🏝️", text: "Beach and sunsets" },
+        { emoji: "🏙️", text: "City lights and shopping" },
+        { emoji: "🦁", text: "Safari adventure" },
+        { emoji: "🏡", text: "Home with family" },
+      ],
+    },
   },
   {
     slug: "solar",
@@ -93,6 +135,16 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     starter:
       "I install solar. I want to find out which homes can actually afford a system before I visit, including their budget, power needs and how soon they want to install.",
     namePlaceholder: "SunPower Solutions Abuja",
+    demo: {
+      brand: "SunPower Solutions",
+      question: "How much do you spend on fuel each month?",
+      options: [
+        { emoji: "⛽", text: "Over ₦150,000" },
+        { emoji: "🔋", text: "₦50,000 to ₦150,000" },
+        { emoji: "💡", text: "Under ₦50,000" },
+        { emoji: "🤷", text: "Not sure" },
+      ],
+    },
   },
   {
     slug: "real-estate",
@@ -109,6 +161,16 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
     starter:
       "I'm a real estate agent. I want a quiz that shows which buyers have the budget, financing and timeline to buy soon, before I book viewings.",
     namePlaceholder: "Prime Homes Lekki",
+    demo: {
+      brand: "Prime Homes",
+      question: "When do you want to move in?",
+      options: [
+        { emoji: "🔑", text: "Within 3 months" },
+        { emoji: "📅", text: "3 to 6 months" },
+        { emoji: "🗓️", text: "This year" },
+        { emoji: "👀", text: "Just looking" },
+      ],
+    },
   },
 ];
 

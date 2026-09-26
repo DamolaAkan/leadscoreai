@@ -46,6 +46,7 @@ export default function SettingsTab({
   const [billing, setBilling] = useState<{
     tier: string | null; status: string | null; currentPeriodEnd: string | null;
     paid: boolean; prices: { core: number; pro: number }; configured: boolean;
+    plans?: { tier: string; label: string; naira: number }[];
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState("");
@@ -74,7 +75,7 @@ export default function SettingsTab({
     setLoading(false);
   }, [getAuthHeaders]);
 
-  const handleSubscribe = async (tier: "core" | "pro") => {
+  const handleSubscribe = async (tier: string) => {
     setSubBusy(tier);
     setSubMsg("");
     try {
@@ -323,7 +324,7 @@ export default function SettingsTab({
             <div>
               <div className="text-sm text-gray-500">Current plan</div>
               <div className="text-lg font-bold text-gray-900">
-                {billing?.tier === "core" ? "Core" : billing?.tier === "pro" ? "Pro" : "Free"}
+                {billing?.paid ? planLabel(billing.tier) : "Free trial"}
               </div>
             </div>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${billing?.paid ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
@@ -371,8 +372,7 @@ export default function SettingsTab({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(["core", "pro"] as const).map((t) => {
-              const price = billing?.prices?.[t] ?? (t === "core" ? 130000 : 250000);
+            {(billing?.plans ?? []).map(({ tier: t, label, naira: price }) => {
               const isCurrent = billing?.paid && billing?.tier === t;
               return (
                 <button
@@ -382,7 +382,7 @@ export default function SettingsTab({
                   className="rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
                   style={{ borderColor: accent }}
                 >
-                  <div className="font-bold text-gray-900">{t === "core" ? "Core" : "Pro"}</div>
+                  <div className="font-bold text-gray-900">{label}</div>
                   <div className="text-sm text-gray-600">₦{price.toLocaleString()}/month</div>
                   <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
                     {subBusy === t ? "Starting…" : isCurrent ? "Renew →" : "Subscribe →"}
@@ -439,4 +439,9 @@ export default function SettingsTab({
       </div>
     </div>
   );
+}
+
+function planLabel(tier: string | null): string {
+  if (!tier) return "Free trial";
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
