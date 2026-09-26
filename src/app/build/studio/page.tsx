@@ -22,9 +22,25 @@ interface QuizSummary {
   leads: number;
 }
 
+interface TapQuestion {
+  question: string;
+  options: string[];
+}
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  questions?: TapQuestion[];
+  answered?: boolean;
+}
+
+// What the API sees: tap questions become text so Claude remembers asking them.
+function toApiMessage(m: ChatMessage): { role: "user" | "assistant"; content: string } {
+  if (m.role === "assistant" && m.questions?.length) {
+    const asked = m.questions.map((q) => `${q.question} [${q.options.join(" / ")}]`).join("\n");
+    return { role: m.role, content: `${m.content}\n\n(Tap questions I asked:\n${asked})` };
+  }
+  return { role: m.role, content: m.content };
 }
 
 type Tab = "chat" | "preview" | "share";
@@ -88,6 +104,8 @@ export default function BuilderStudioPage() {
   const [tab, setTab] = useState<Tab>("chat");
   const [deskTab, setDeskTab] = useState<"preview" | "share">("preview");
   const [shareMsg, setShareMsg] = useState("");
+  const [taps, setTaps] = useState<Record<number, string>>({});
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [freshDraft, setFreshDraft] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -172,19 +190,29 @@ export default function BuilderStudioPage() {
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || thinking) return;
-    const next: ChatMessage[] = [...messages, { role: "user", content }];
+    // Any open tap card is settled once the owner sends something.
+    const settled = messages.map((m) => (m.questions?.length ? { ...m, answered: true } : m));
+    const next: ChatMessage[] = [...settled, { role: "user", content }];
     setMessages(next);
     setDraft("");
+    setTaps({});
     setError("");
     setThinking(true);
     setFreshDraft(false);
     try {
-      const convo = next.filter((m) => m.content !== WELCOME.content);
+      const convo = next.filter((m) => m.content !== WELCOME.content).map(toApiMessage);
       const data = await api("/api/builder/chat", {
         method: "POST",
         body: JSON.stringify({ quizId, messages: convo }),
       });
-      const withReply: ChatMessage[] = [...next, { role: "assistant", content: data.reply }];
+      const withReply: ChatMessage[] = [
+        ...next,
+        {
+          role: "assistant",
+          content: data.reply,
+          ...(Array.isArray(data.questions) && data.questions.length ? { questions: data.questions } : {}),
+        },
+      ];
       setMessages(withReply);
       const newId: string | null = data.quizId || null;
       if (newId && newId !== quizId) {
@@ -320,6 +348,72 @@ export default function BuilderStudioPage() {
                 >
                   {m.content}
                 </div>
+                {m.role === "assistant" && m.questions?.length ? (
+                  <div
+                    className={`mt-2 rounded-2xl border p-3.5 space-y-3.5 ${
+                      isLast && !m.answered ? "border-violet-500/50 bg-violet-500/5" : "border-[#2B3245] opacity-60"
+                    }`}
+                  >
+                    {m.questions.map((q, qi) => (
+                      <div key={qi}>
+                        <p className="text-[13px] font-semibold text-[#E4E8EB] mb-2">{q.question}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {q.options.map((opt) => {
+                            const picked = isLast && !m.answered && taps[qi] === opt;
+                            return (
+                              <button
+                                key={opt}
+                                disabled={!isLast || m.answered || thinking}
+                                onClick={() => {
+                                  const nextTaps = { ...taps, [qi]: opt };
+                                  setTaps(nextTaps);
+                                  // One question: a single tap sends it straight away.
+                                  if (m.questions!.length === 1) send(`${q.question} → ${opt}`);
+                                }}
+                                className={`px-3.5 py-2 rounded-full text-[13px] font-medium border transition active:scale-95 ${
+                                  picked
+                                    ? "bg-violet-600 border-violet-500 text-white"
+                                    : "bg-[#1C2333] border-[#2B3245] text-[#C2C8CC] hover:border-violet-500/60"
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    {isLast && !m.answered && (
+                      <div className="flex items-center gap-3 pt-1">
+                        {m.questions.length > 1 && (
+                          <button
+                            disabled={thinking || Object.keys(taps).length < m.questions.length}
+                            onClick={() =>
+                              send(m.questions!.map((q, qi) => `${q.question} → ${taps[qi]}`).join("\n"))
+                            }
+                            className="px-4 py-2 rounded-xl bg-violet-600 text-white text-[13px] font-semibold disabled:opacity-40"
+                          >
+                            Continue →
+                          </button>
+                        )}
+                        <button
+                          disabled={thinking}
+                          onClick={() => send("Use your best judgement and build it.")}
+                          className="text-[12.5px] text-[#9DA2A6] hover:text-[#F5F9FC]"
+                        >
+                          Skip, just build it
+                        </button>
+                        <button
+                          disabled={thinking}
+                          onClick={() => composerRef.current?.focus()}
+                          className="text-[12.5px] text-[#9DA2A6] hover:text-[#F5F9FC]"
+                        >
+                          Type my own
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
                 {isLast && m.role === "assistant" && freshDraft && current && (
                   <div className="flex gap-2 mt-2">
                     <button
@@ -385,6 +479,7 @@ export default function BuilderStudioPage() {
       >
         <div className="flex items-end gap-2 rounded-2xl bg-[#1C2333] border border-[#2B3245] focus-within:border-violet-500 px-3 py-2 transition">
           <textarea
+            ref={composerRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {

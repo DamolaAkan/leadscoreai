@@ -14,6 +14,9 @@ export interface QuizOption {
   points: number;
   // Match quizzes (builder): the outcome key this answer points to.
   outcome?: string;
+  // Builder quizzes: picture-card emoji and the results-page insight for this answer.
+  emoji?: string;
+  insight?: string;
 }
 
 export interface Quiz {

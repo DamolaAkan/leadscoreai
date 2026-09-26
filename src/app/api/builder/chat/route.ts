@@ -12,6 +12,7 @@ import {
   BuilderTurn,
   NormalizedQuiz,
   normalizeDraft,
+  normalizeTapQuestions,
   toDraftForPrompt,
 } from "@/lib/builder";
 
@@ -174,7 +175,9 @@ export async function POST(request: Request) {
   }
 
   const reply = String(turn?.reply || "").slice(0, 2000);
-  if (!turn?.quiz) return NextResponse.json({ reply, quizId });
+  const questions = normalizeTapQuestions(turn?.questions);
+  // Asking before (or pausing during) a build: nothing to save, current quiz untouched.
+  if (!turn?.quiz) return NextResponse.json({ reply, questions, quizId });
   if (!normalized) {
     console.error("[builder/chat] draft still invalid:", errorsForRetry);
     return NextResponse.json({
@@ -244,6 +247,7 @@ export async function POST(request: Request) {
     reply: forked
       ? `${reply}\n\n(Your live quiz already has leads, so I saved these changes as a new version. Publish it when you're ready.)`
       : reply,
+    questions,
     quizId: savedId,
     forked,
   });

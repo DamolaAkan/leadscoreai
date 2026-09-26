@@ -15,6 +15,13 @@ export interface BuilderBand {
   label: string;
   headline: string;
   body: string;
+  next_steps?: string[];
+}
+
+// A tap-to-answer question the AI asks before or during building.
+export interface TapQuestion {
+  question: string;
+  options: string[];
 }
 
 export interface BuilderOutcome {
@@ -30,6 +37,8 @@ export interface BuilderConfig {
   results: Record<Qualification, BuilderBand>;
   outcomes: BuilderOutcome[]; // Match quizzes only; empty for Qualify
   cta_text: string | null;
+  // Short topic per question (index = question_order - 1), for the results breakdown.
+  topics?: string[];
 }
 
 // ── What Claude returns ────────────────────────────────────────────────────
@@ -38,9 +47,12 @@ export interface DraftOption {
   text: string;
   points: number;
   outcome_key: string;
+  emoji: string;
+  insight: string;
 }
 
 export interface DraftQuestion {
+  topic: string;
   question_text: string;
   wtp_signal: boolean;
   options: DraftOption[];
@@ -67,6 +79,7 @@ export interface DraftQuiz {
 
 export interface BuilderTurn {
   reply: string;
+  questions: TapQuestion[];
   quiz: DraftQuiz | null;
 }
 
@@ -76,8 +89,9 @@ const band = {
     label: { type: "string" },
     headline: { type: "string" },
     body: { type: "string" },
+    next_steps: { type: "array", items: { type: "string" } },
   },
-  required: ["label", "headline", "body"],
+  required: ["label", "headline", "body", "next_steps"],
   additionalProperties: false,
 } as const;
 
@@ -94,6 +108,7 @@ const draftQuizSchema = {
       items: {
         type: "object",
         properties: {
+          topic: { type: "string" },
           question_text: { type: "string" },
           wtp_signal: { type: "boolean" },
           options: {
@@ -104,13 +119,15 @@ const draftQuizSchema = {
                 text: { type: "string" },
                 points: { type: "integer" },
                 outcome_key: { type: "string" },
+                emoji: { type: "string" },
+                insight: { type: "string" },
               },
-              required: ["text", "points", "outcome_key"],
+              required: ["text", "points", "outcome_key", "emoji", "insight"],
               additionalProperties: false,
             },
           },
         },
-        required: ["question_text", "wtp_signal", "options"],
+        required: ["topic", "question_text", "wtp_signal", "options"],
         additionalProperties: false,
       },
     },
@@ -158,19 +175,40 @@ export const BUILDER_TURN_SCHEMA = {
   type: "object",
   properties: {
     reply: { type: "string" },
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          options: { type: "array", items: { type: "string" } },
+        },
+        required: ["question", "options"],
+        additionalProperties: false,
+      },
+    },
     quiz: { anyOf: [draftQuizSchema, { type: "null" }] },
   },
-  required: ["reply", "quiz"],
+  required: ["reply", "questions", "quiz"],
   additionalProperties: false,
 } as const;
 
 export const BUILDER_SYSTEM_PROMPT = `You are the quiz designer inside LeadScoreAI, a product that lets business owners create interactive quizzes by chatting. Most users run small and mid-sized businesses in Africa (Nigeria, Ghana, Kenya, South Africa and elsewhere), but anyone can use it. Typical users: skincare and beauty brands, travel consultants, education and study-abroad consultants, solar installers, lenders, real estate agents, coaches, clinics and agencies.
 
-Each turn you return JSON with two fields:
-- "reply": a short message to the business owner (2 to 5 sentences, plain and warm, no markdown headings). Say what you built or changed, and ask at most two questions that would make the quiz better.
+Each turn you return JSON with three fields:
+- "reply": a short message to the business owner (1 to 4 sentences, plain and warm, no markdown headings, no lists). Say what you built or changed, or what you need to know.
+- "questions": tap-to-answer questions for the owner, shown as buttons. Usually an empty array.
 - "quiz": the complete, current quiz, or null.
 
-Return quiz = null only when you genuinely cannot tell what the business sells or who it serves (for example the user only said "hi"). In that case, use the reply to ask what they sell and who their customers are. As soon as you know roughly what the business does, draft a full quiz and state any assumptions in the reply. A draft the owner can react to beats more questions.
+## Tap questions (make building feel fast and friendly)
+
+The owner answers questions by tapping buttons, so asking is cheap for them, but every extra turn is a wait. Use them well:
+- Before the first draft, if the owner's message leaves important choices open, return quiz = null and ask 2 to 4 tap questions in one go. Good first questions: what the quiz should do (only if unclear: find ready buyers or recommend a product), style (for example "Fun and playful" / "Warm and professional"), length ("Quick: 5 questions" / "Detailed: 8 questions"), and pictures ("Emoji picture cards" / "Text only"). Never ask what the owner already told you.
+- If the owner's message already gives you enough, skip the questions and build straight away.
+- If the owner only says "hi" or you cannot tell what the business sells, ask what they sell and who their customers are in the reply (you may add a tap question with a few likely business types).
+- While building or editing, if a change needs a decision only the owner can make, you can pause: return quiz = null (the current quiz stays exactly as it is) with 1 to 2 tap questions. Or apply what you can, return the updated quiz, and add 1 tap question about the next improvement. Use your judgement; do not ask on every turn.
+- Each tap question has 2 to 4 options, each under 6 words, written as the answer the owner would give (for example "Fun and playful", not "Would you like fun?").
+- When the owner answers tap questions, their message lists the answers. Build or apply them without asking the same thing again.
 
 When the conversation includes a <current_quiz> block, that is the quiz as it stands. Apply the owner's requested changes to it and return the whole updated quiz, keeping everything they did not ask to change.
 
@@ -185,6 +223,9 @@ Pick the kind that fits the owner's goal. If they ask for the other kind, switch
 
 - 6 to 8 questions. Never fewer than 5. The questions are what qualify the lead, so do not make the quiz too short to be useful.
 - Every question is multiple choice with 2 to 5 options. Options must be short (under 12 words) and cover the realistic range of answers.
+- topic: a 1 to 3 word label for each question, used in the results breakdown (for example "Funding", "English test", "Skin type").
+- emoji: one emoji per option that pictures that answer (for example "💧" for dry skin, "🏖️" for a beach holiday). Options then show as picture cards. Use "" on every option if the owner chose text only.
+- insight: for every option, 1 to 2 sentences shown on the results page to people who picked it. Say what this answer means for them and give one concrete, useful tip, in the brand's voice. Make each insight specific to that answer (not generic), because this is what makes the results feel personal and worth sharing.
 - Do not ask for name, email or phone. Contact details are collected automatically after the last question.
 - Write for the owner's customers, in the owner's language and market. Use local currency and examples when the market is clear (for example naira for Nigeria). Keep wording simple enough to read on a phone.
 - start_headline: a hook under 12 words that makes the customer want to take the quiz. start_subheadline: one or two sentences on what they will learn. start_cta_text: 2 to 4 words, for example "Start the quiz".
@@ -207,7 +248,7 @@ Points measure how ready and able the person is to buy. For each question, the b
 
 ## Results
 
-- results holds four score bands: hot (80% and above), warm (60 to 79%), cold (40 to 59%) and not_qualified (below 40%). Each has a label (2 to 3 words, for example "Strong fit"), a headline, and a body of 1 to 2 sentences telling the person what their result means and what to do next.
+- results holds four score bands: hot (80% and above), warm (60 to 79%), cold (40 to 59%) and not_qualified (below 40%). Each has a label (2 to 3 words, for example "Strong fit"), a headline, a body of 2 to 3 sentences explaining what their result means, and next_steps: exactly 3 short, concrete actions for someone in that band (each under 20 words), in the brand's voice. The last step should naturally lead to contacting the business.
 - Be encouraging even to low scorers. Never promise outcomes the business cannot guarantee. For eligibility, visa, medical, legal or financial quizzes, say the result is an indication, not an official decision.
 - result_cta_text: button text on the results page, for example "Book a free consultation". result_cta_url: a link the owner gave you (website, WhatsApp link like https://wa.me/234..., or booking page), or "" if they have not given one. Never invent a URL.`;
 
@@ -217,7 +258,7 @@ export interface NormalizedQuestion {
   question_order: number;
   question_text: string;
   question_type: "radio";
-  options: { text: string; value: string; points: number; outcome?: string }[];
+  options: { text: string; value: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
   max_points: number;
   wtp_signal: boolean;
 }
@@ -265,8 +306,27 @@ function safeBand(b: Partial<BuilderBand> | undefined, fallback: BuilderBand): B
   return {
     label: clip(b?.label, 40) || fallback.label,
     headline: clip(b?.headline, 160) || fallback.headline,
-    body: clip(b?.body, 600) || fallback.body,
+    body: clip(b?.body, 700) || fallback.body,
+    next_steps: (Array.isArray(b?.next_steps) ? b!.next_steps : [])
+      .map((s) => clip(s, 200))
+      .filter(Boolean)
+      .slice(0, 3),
   };
+}
+
+// Tap questions shown as buttons in the studio chat.
+export function normalizeTapQuestions(qs: unknown): TapQuestion[] {
+  if (!Array.isArray(qs)) return [];
+  return qs
+    .slice(0, 4)
+    .map((q: { question?: unknown; options?: unknown }) => ({
+      question: clip(q?.question, 140),
+      options: (Array.isArray(q?.options) ? q.options : [])
+        .map((o: unknown) => clip(o, 48))
+        .filter(Boolean)
+        .slice(0, 4),
+    }))
+    .filter((q) => q.question && q.options.length >= 2);
 }
 
 // Returns either a normalized quiz or a list of problems to send back to Claude.
@@ -295,6 +355,7 @@ export function normalizeDraft(
   const outcomeKeys = new Set(outcomes.map((o) => o.key));
 
   const questions: NormalizedQuestion[] = [];
+  const topics: string[] = [];
   (draft.questions || []).slice(0, 12).forEach((q) => {
     const text = clip(q.question_text, 240);
     if (!text) return;
@@ -308,9 +369,21 @@ export function normalizeDraft(
       const points = Math.max(0, Math.min(100, Math.round(Number(o.points) || 0)));
       const rawKey = slugPart(String(o.outcome_key || "")).replace(/-/g, "_");
       const outcome = kind === "match" && outcomeKeys.has(rawKey) ? rawKey : undefined;
-      return [{ text: optText, value, points, ...(outcome ? { outcome } : {}) }];
+      const emoji = clip(o.emoji, 16);
+      const insight = clip(o.insight, 400);
+      return [
+        {
+          text: optText,
+          value,
+          points,
+          ...(outcome ? { outcome } : {}),
+          ...(emoji ? { emoji } : {}),
+          ...(insight ? { insight } : {}),
+        },
+      ];
     });
     if (options.length < 2) return;
+    topics.push(clip(q.topic, 40) || text.slice(0, 40));
     questions.push({
       question_order: questions.length + 1,
       question_text: text,
@@ -358,6 +431,7 @@ export function normalizeDraft(
         results,
         outcomes,
         cta_text: clip(draft.result_cta_text, 40) || null,
+        topics,
       },
       questions,
       suggested_color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
@@ -375,27 +449,39 @@ export function toDraftForPrompt(
     cta_url: string | null;
     builder_config: BuilderConfig;
   },
-  questions: { question_text: string; wtp_signal?: boolean; options: { text: string; points: number; outcome?: string }[] }[],
+  questions: {
+    question_text: string;
+    wtp_signal?: boolean;
+    options: { text: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
+  }[],
   color: string | null
 ): DraftQuiz {
   const c = quiz.builder_config;
+  const withSteps = (b: BuilderBand): BuilderBand => ({ ...b, next_steps: b.next_steps || [] });
   return {
     kind: c.kind,
     name: quiz.name,
     start_headline: quiz.start_headline || "",
     start_subheadline: quiz.start_subheadline || "",
     start_cta_text: quiz.start_cta_text || "",
-    questions: questions.map((q) => ({
+    questions: questions.map((q, i) => ({
+      topic: c.topics?.[i] || "",
       question_text: q.question_text,
       wtp_signal: !!q.wtp_signal,
-      options: q.options.map((o) => ({ text: o.text, points: o.points, outcome_key: o.outcome || "" })),
+      options: q.options.map((o) => ({
+        text: o.text,
+        points: o.points,
+        outcome_key: o.outcome || "",
+        emoji: o.emoji || "",
+        insight: o.insight || "",
+      })),
     })),
     outcomes: c.outcomes,
     results: {
-      hot: c.results.HOT_LEAD,
-      warm: c.results.WARM_LEAD,
-      cold: c.results.COLD_LEAD,
-      not_qualified: c.results.NOT_QUALIFIED,
+      hot: withSteps(c.results.HOT_LEAD),
+      warm: withSteps(c.results.WARM_LEAD),
+      cold: withSteps(c.results.COLD_LEAD),
+      not_qualified: withSteps(c.results.NOT_QUALIFIED),
     },
     result_cta_text: c.cta_text || "",
     result_cta_url: quiz.cta_url || "",

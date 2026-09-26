@@ -523,6 +523,33 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 {questions[currentQ].question_text}
               </h2>
 
+              {/* Builder quizzes with emoji on every answer: big tappable picture cards. */}
+              {builder && questions[currentQ].options.every((o) => o.emoji) ? (
+                <div className={`grid gap-3 mb-9 ${questions[currentQ].options.length === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
+                  {questions[currentQ].options.map((option) => {
+                    const isSel = selectedOption === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => setSelectedOption(option.value)}
+                        className={`rounded-xl border-2 px-3 py-5 flex ${
+                          questions[currentQ].options.length === 3 ? "flex-row sm:flex-col" : "flex-col"
+                        } items-center gap-3 text-center transition-transform active:scale-[0.98]`}
+                        style={
+                          isSel
+                            ? { borderColor: accent, backgroundColor: accent + "12" }
+                            : { borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }
+                        }
+                      >
+                        <span className="text-4xl leading-none">{option.emoji}</span>
+                        <span className="text-[14.5px] font-medium leading-snug" style={{ color: "#1e293b" }}>
+                          {option.text}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
               <div className="space-y-3 mb-9">
                 {questions[currentQ].options.map((option) => {
                   const isSel = selectedOption === option.value;
@@ -545,6 +572,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accent }} />
                         )}
                       </span>
+                      {option.emoji && <span className="text-xl mr-2.5 leading-none">{option.emoji}</span>}
                       <span className="text-[15px] font-medium" style={{ color: "#1e293b" }}>
                         {option.text}
                       </span>
@@ -552,6 +580,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   );
                 })}
               </div>
+              )}
 
               <div className="flex items-center justify-between gap-3">
                 <button
@@ -706,6 +735,76 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
           {step === "results" && qualification && builder && (() => {
             const firstName = contactName.split(" ")[0] || "there";
             const band = builder.results[qualification];
+
+            // Each answer with the insight the AI wrote for it, for the breakdown.
+            const picks = answers.flatMap((a) => {
+              const q = questions.find((x) => x.id === a.questionId);
+              const o = q?.options.find((x) => x.value === a.answerValue);
+              if (!q || !o) return [];
+              const topic = builder.topics?.[q.question_order - 1] || q.question_text;
+              const level: "strong" | "ok" | "work" | "none" =
+                q.max_points <= 0
+                  ? "none"
+                  : o.points >= q.max_points
+                  ? "strong"
+                  : o.points <= q.max_points * 0.4
+                  ? "work"
+                  : "ok";
+              return [{ q, o, topic, level }];
+            });
+            const marker = {
+              strong: { icon: "✓", color: "#16a34a", bg: "#dcfce7" },
+              ok: { icon: "•", color: "#2563eb", bg: "#dbeafe" },
+              work: { icon: "!", color: "#d97706", bg: "#fef3c7" },
+              none: { icon: "•", color: accent, bg: accent + "1a" },
+            } as const;
+            const insightRows = (rows: typeof picks) =>
+              rows
+                .filter((r) => r.o.insight)
+                .map((r) => (
+                  <div key={r.q.id} className="flex gap-3 py-3 border-t first:border-t-0" style={{ borderColor: "#f1f5f9" }}>
+                    <span
+                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                      style={{ backgroundColor: marker[r.level].bg, color: marker[r.level].color }}
+                    >
+                      {marker[r.level].icon}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold" style={{ color: "#1e293b" }}>
+                        {r.topic}
+                        <span className="font-normal" style={{ color: "#94a3b8" }}>
+                          {" "}· {r.o.emoji ? `${r.o.emoji} ` : ""}
+                          {r.o.text}
+                        </span>
+                      </p>
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: "#475569" }}>
+                        {r.o.insight}
+                      </p>
+                    </div>
+                  </div>
+                ));
+            const nextSteps = band.next_steps?.length ? (
+              <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                <h3 className="text-base font-semibold mb-4" style={{ color: "#1e293b" }}>
+                  Your next steps
+                </h3>
+                <ol className="space-y-3">
+                  {band.next_steps.map((s, i) => (
+                    <li key={i} className="flex gap-3 items-start">
+                      <span
+                        className="flex-shrink-0 w-6 h-6 rounded-full text-xs font-bold text-white flex items-center justify-center mt-0.5"
+                        style={{ backgroundColor: accent }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-sm leading-relaxed" style={{ color: "#475569" }}>
+                        {s}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null;
             // Viral loop: people who finish a quiz pass it on to friends on WhatsApp.
             const shareUrl =
               typeof window !== "undefined" ? `${window.location.origin}/${org.slug}/${quiz.slug}` : "";
@@ -752,6 +851,29 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                       {matchOutcome.description}
                     </p>
                   </div>
+                  {(() => {
+                    const why = insightRows(picks.filter((r) => r.o.outcome === matchOutcome.key)).slice(0, 4);
+                    return why.length ? (
+                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                        <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+                          Why this fits you
+                        </h3>
+                        {why}
+                      </div>
+                    ) : null;
+                  })()}
+                  {(() => {
+                    const good = insightRows(picks.filter((r) => r.q.max_points > 0));
+                    return good.length ? (
+                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                        <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
+                          Good to know
+                        </h3>
+                        {good}
+                      </div>
+                    ) : null;
+                  })()}
+                  {nextSteps}
                   <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
                     <h3 className="text-base font-semibold mb-2" style={{ color: accent }}>
                       Our recommendation for you
@@ -793,12 +915,31 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   </p>
                   <h2 className="text-xl font-bold mt-1 text-white">{band.headline}</h2>
                 </div>
-                <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                  <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#475569" }}>
+                <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                  <p className="text-[15px] leading-relaxed" style={{ color: "#334155" }}>
                     {band.body}
                   </p>
-                  {cta && <div className="mt-6">{cta}</div>}
                 </div>
+                {(() => {
+                  const rows = insightRows(picks);
+                  return rows.length ? (
+                    <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                      <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                        Your answers, analysed
+                      </h3>
+                      <p className="text-xs mt-1 mb-2" style={{ color: "#94a3b8" }}>
+                        ✓ strength · ! worth working on
+                      </p>
+                      {rows}
+                    </div>
+                  ) : null;
+                })()}
+                {nextSteps}
+                {cta && (
+                  <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                    {cta}
+                  </div>
+                )}
                 {shareFriend && <div className="text-center">{shareFriend}</div>}
                 {takeAgain}
                 <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
