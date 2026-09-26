@@ -18,9 +18,9 @@ export interface IndustryPage {
 export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
   eyebrow: "",
-  headline: "One chat. A quiz that finds your buyers.",
-  highlight: "Solar, real estate, hair, clinics.",
-  sub: "Describe your business in plain words. We build the questions, the results page and a WhatsApp link, so every customer tells you what they need, and whether they're ready to pay, before you reply.",
+  headline: "Stop replying to people who won't buy.",
+  highlight: "Let a quiz find your buyers.",
+  sub: "Describe your business in one chat. We build a quiz that tells you what each customer wants and whether they're ready to pay, before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },
     { emoji: "✨", text: "Which skincare routine fits your skin?" },

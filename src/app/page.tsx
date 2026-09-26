@@ -4,11 +4,11 @@ import { DEFAULT_PAGE } from "@/lib/builder-industries";
 
 // app.leadscoreai.com is the quiz builder's front door; client sign-in lives at /login.
 export const metadata: Metadata = {
-  title: { absolute: "One chat. A quiz that finds your buyers. | LeadScoreAI" },
+  title: { absolute: "Stop replying to people who won't buy. Let a quiz find your buyers. | LeadScoreAI" },
   description:
     "Describe your business in plain words. LeadScoreAI builds the questions, the results page and a WhatsApp link, so every customer tells you what they need before you reply. Build it free, pay only when you go live.",
   openGraph: {
-    title: "One chat. A quiz that finds your buyers.",
+    title: "Stop replying to people who won't buy. Let a quiz find your buyers.",
     description:
       "Build an interactive quiz for your business in one chat. Share it on WhatsApp and see who's ready to buy.",
     siteName: "LeadScoreAI",
