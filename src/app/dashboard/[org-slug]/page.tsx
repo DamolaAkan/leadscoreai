@@ -13,6 +13,7 @@ import DemoTab from "@/components/dashboard/DemoTab";
 import StartHereTab from "@/components/dashboard/StartHereTab";
 import BuilderStudio from "@/components/builder/BuilderStudio";
 import MetaPixel, { checkoutStartedPixel, purchaseReturnPixel } from "@/components/MetaPixel";
+import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
 
 export type DashboardTab =
   | "start"
@@ -319,6 +320,7 @@ export default function DashboardPage() {
         className={`${onBuilder ? "hidden" : ""} max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-8`}
       >
         <div>
+          <InstallAppPrompt />
           {activeTab === "start" && <StartHereTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />}
           {activeTab === "responses" && (
             <ResponsesTab

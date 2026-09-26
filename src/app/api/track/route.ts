@@ -22,6 +22,8 @@ const CLIENT_EVENTS = new Set([
   "credits_opened",
   "topup_clicked",
   "login_view",
+  "app_install_prompt",
+  "app_installed",
 ]);
 
 export async function POST(request: Request) {

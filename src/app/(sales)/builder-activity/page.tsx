@@ -62,6 +62,8 @@ const LABELS: Record<string, string> = {
   topup_checkout_started: "⚡ Started top-up checkout",
   topup_paid: "⚡ Topped up",
   feature_request: "💡 Feature request",
+  app_install_prompt: "📲 Was offered the app",
+  app_installed: "📲 Installed the app",
 };
 
 const ago = (iso: string | null) => {
