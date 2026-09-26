@@ -67,6 +67,10 @@ const WTP_SIGNALS = [
 
 const FAQS = [
   {
+    q: "What is an AI edit?",
+    a: "Each time the builder creates or changes your quiz, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your quiz, Pro includes 150 a month, and Pro accounts that run out can top up any amount from ₦5,000 (₦5,000 = 40 edits).",
+  },
+  {
     q: "What is a willingness-to-pay score?",
     a: "Every quiz includes a few questions about budget, timing and commitment, asked in your brand's voice. From those answers, each lead gets a score from 0 to 100 showing how able and ready they are to pay, right next to their quiz result. The builder suggests these questions for you, and you can change them in the chat.",
   },
@@ -106,7 +110,7 @@ const PLAN = {
   features: [
     "2,000 leads a month",
     "10 live quizzes",
-    "150 AI edits a month",
+    "150 AI edits a month, top up any time you run out (₦5,000 = 40 edits)",
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
     "WhatsApp sharing and website embed",
@@ -236,7 +240,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               See how it works
             </a>
           </div>
-          <p className="mt-4 text-[13px] text-slate-500">Free to build · Pay only when you go live · Works on your phone</p>
+          <p className="mt-4 text-[13px] text-slate-500">30 free AI edits to build · Pay only when you go live · Works on your phone</p>
         </div>
         <PhoneQuiz demos={page.slug ? [page.demo] : INDUSTRY_PAGES.map((p) => p.demo)} />
       </header>

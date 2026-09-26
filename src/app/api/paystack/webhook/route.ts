@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
+import { NAIRA_PER_EDIT } from "@/lib/credits";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +30,36 @@ export async function POST(request: Request) {
       purpose?: string;
       discount_naira?: number;
       publish_quiz_id?: string | null;
+      amount_naira?: number;
+      credits?: number;
     };
     const orgId = meta.orgId;
     const tier = meta.tier as Tier;
     const amountNaira = (Number(d.amount) || 0) / 100;
     // Metadata is set server-side at checkout; cap the discount at the offer anyway.
     const discount = Math.min(Math.max(Number(meta.discount_naira) || 0, 0), GO_LIVE_DISCOUNT_NAIRA);
+
+    // Builder AI-edit top-up: add the credits once per Paystack reference.
+    const credits = Math.floor(Number(meta.credits) || 0);
+    if (
+      meta.purpose === "leadscoreai_topup" &&
+      orgId &&
+      d.status === "success" &&
+      credits > 0 &&
+      amountNaira >= credits * NAIRA_PER_EDIT
+    ) {
+      const supabase = createServiceClient();
+      const { error } = await supabase.from("builder_credit_ledger").insert({
+        organization_id: orgId,
+        kind: "topup",
+        credits,
+        amount_naira: Math.round(amountNaira),
+        paystack_ref: (d.reference as string) || null,
+      });
+      // 23505 = this reference was already credited (Paystack retried the webhook).
+      if (error && error.code !== "23505") console.error("[paystack] top-up insert error:", error.message);
+      else if (!error) console.log(`[paystack] +${credits} AI edits for org ${orgId}`);
+    }
 
     // Guard: only our subscription charges, and the amount must cover the tier.
     if (
@@ -48,9 +73,13 @@ export async function POST(request: Request) {
         const supabase = createServiceClient();
         const { data: org } = await supabase
           .from("organizations")
-          .select("current_period_end")
+          .select("current_period_end, paystack_ref")
           .eq("id", orgId)
           .single();
+        // Paystack retries webhooks: never extend the period twice for one payment.
+        if (d.reference && org?.paystack_ref === d.reference) {
+          return NextResponse.json({ ok: true });
+        }
         // Extend from the later of now / the current period end.
         const cur = org?.current_period_end ? new Date(org.current_period_end) : null;
         const base = cur && cur > new Date() ? cur : new Date();

@@ -52,6 +52,21 @@ interface GoLiveInfo {
   offer: { eligible: boolean; discount: number; endsAt: string | null };
 }
 
+interface Credits {
+  paid: boolean;
+  allowance: number;
+  allowanceUsed: number;
+  allowanceRemaining: number;
+  topupRemaining: number;
+  remaining: number;
+  resetsAt: string | null;
+  canTopUp: boolean;
+}
+
+// Mirrors src/lib/credits.ts (₦5,000 = 40 edits, prorated).
+const TOPUP_MIN_NAIRA = 5000;
+const NAIRA_PER_EDIT = 125;
+
 function hoursLeft(endsAt: string | null): number {
   if (!endsAt) return 0;
   return Math.max(1, Math.ceil((new Date(endsAt).getTime() - Date.now()) / 3600000));
@@ -126,6 +141,12 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const [billing, setBilling] = useState<GoLiveInfo | null>(null);
   const [paywall, setPaywall] = useState(false);
   const [paying, setPaying] = useState(false);
+  // AI edits meter + top-ups.
+  const [credits, setCredits] = useState<Credits | null>(null);
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState(String(TOPUP_MIN_NAIRA));
+  const [toppingUp, setToppingUp] = useState(false);
+  const [creditsMsg, setCreditsMsg] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const cameWithStarter = useRef(false);
   const starterRef = useRef<string | null>(null);
@@ -153,6 +174,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     setOrg(data.org);
     setColor(data.org?.primary_color || "#7C3AED");
     setQuizzes(data.quizzes.filter((q: QuizSummary) => q.builder));
+    if (data.credits) setCredits(data.credits);
     // Go-live price + offer (best-effort; the publish route enforces it anyway).
     api("/api/dashboard/billing")
       .then((b) =>
@@ -211,6 +233,14 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   }, [session, refresh, embedded, router]);
 
   useEffect(() => {
+    if (!session || !window.location.search.includes("topup=success")) return;
+    setCreditsMsg("Payment received. Your new AI edits will show here in a few seconds.");
+    setCreditsOpen(true);
+    const timers = [4000, 12000].map((ms) => setTimeout(() => refresh().catch(() => {}), ms));
+    return () => timers.forEach(clearTimeout);
+  }, [session, refresh]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking, tab]);
 
@@ -227,6 +257,10 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || thinking) return;
+    if (credits && credits.remaining <= 0) {
+      setCreditsOpen(true);
+      return;
+    }
     // Any open tap card is settled once the owner sends something.
     const settled = messages.map((m) => (m.questions?.length ? { ...m, answered: true } : m));
     const next: ChatMessage[] = [...settled, { role: "user", content }];
@@ -251,6 +285,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         },
       ];
       setMessages(withReply);
+      if (data.credits) setCredits(data.credits);
       const newId: string | null = data.quizId || null;
       if (newId && newId !== quizId) {
         saveChat(newId, withReply);
@@ -266,6 +301,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
+      refresh().catch(() => {}); // e.g. out of edits: pull the latest balance
     } finally {
       setThinking(false);
     }
@@ -368,6 +404,55 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start checkout.");
       setPaying(false);
+    }
+  };
+
+  // Free accounts out of (or low on) edits: Pro = 150 edits a month.
+  const goPro = async () => {
+    setCreditsOpen(false);
+    if (current && billing) {
+      setPaywall(true);
+      return;
+    }
+    setPaying(true);
+    try {
+      const data = await api("/api/dashboard/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ tier: "builder" }),
+      });
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+        return;
+      }
+      throw new Error("Could not start checkout.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start checkout.");
+      setPaying(false);
+    }
+  };
+
+  const topupNaira = Math.floor(Number(topupAmount.replace(/[^0-9]/g, "")) || 0);
+  const topupEdits = Math.floor(topupNaira / NAIRA_PER_EDIT);
+  const topUp = async () => {
+    if (topupNaira < TOPUP_MIN_NAIRA) {
+      setCreditsMsg(`The minimum top-up is ₦${TOPUP_MIN_NAIRA.toLocaleString()}.`);
+      return;
+    }
+    setToppingUp(true);
+    setCreditsMsg("");
+    try {
+      const data = await api("/api/dashboard/billing/topup", {
+        method: "POST",
+        body: JSON.stringify({ amountNaira: topupNaira }),
+      });
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+        return;
+      }
+      throw new Error("Could not start checkout.");
+    } catch (err) {
+      setCreditsMsg(err instanceof Error ? err.message : "Could not start checkout.");
+      setToppingUp(false);
     }
   };
 
@@ -539,6 +624,40 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         <div ref={bottomRef} />
       </div>
       {error && <p className="px-4 pb-2 text-sm text-red-400">{error}</p>}
+      {credits && credits.remaining <= 5 && (
+        <div
+          className={`mx-3 mb-2 rounded-2xl border px-3.5 py-3 flex items-center gap-3 ${
+            credits.remaining <= 0 ? "border-red-500/40 bg-red-500/10" : "border-amber-400/40 bg-amber-400/10"
+          }`}
+        >
+          <span className="text-lg leading-none">{credits.remaining <= 0 ? "⛔" : "⚡"}</span>
+          <p className="flex-1 min-w-0 text-[13px] leading-snug text-[#E4E8EB]">
+            {credits.remaining <= 0
+              ? credits.paid
+                ? "You've used this month's AI edits."
+                : `You've used your ${credits.allowance} free AI edits.`
+              : `${credits.remaining} AI edit${credits.remaining === 1 ? "" : "s"} left${credits.paid && credits.allowanceRemaining > 0 ? " this month" : ""}.`}{" "}
+            <span className="text-[#9DA2A6]">
+              {!credits.paid
+                ? "Go Pro for 150 edits a month."
+                : credits.canTopUp
+                  ? `Top up: ₦5,000 = 40 edits.`
+                  : credits.resetsAt
+                    ? `Renews ${new Date(credits.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.`
+                    : ""}
+            </span>
+          </p>
+          {(!credits.paid || credits.canTopUp) && (
+            <button
+              type="button"
+              onClick={() => (credits.paid ? setCreditsOpen(true) : goPro())}
+              className="shrink-0 rounded-full bg-violet-600 hover:bg-violet-500 text-white text-[12.5px] font-bold px-3.5 py-2"
+            >
+              {credits.paid ? "Top up" : "Go Pro"}
+            </button>
+          )}
+        </div>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -558,9 +677,15 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               }
             }}
             rows={draft.length > 80 ? 3 : 1}
-            placeholder={current ? "Ask for a change… e.g. make it shorter" : "Describe your business and quiz…"}
+            placeholder={
+              credits && credits.remaining <= 0
+                ? "Out of AI edits"
+                : current
+                  ? "Ask for a change… e.g. make it shorter"
+                  : "Describe your business and quiz…"
+            }
             className="flex-1 resize-none bg-transparent text-[16px] lg:text-[14.5px] text-[#F5F9FC] placeholder:text-[#5F6B7A] outline-none py-1.5 max-h-40"
-            disabled={thinking}
+            disabled={thinking || (!!credits && credits.remaining <= 0)}
           />
           <button
             type="submit"
@@ -782,6 +907,23 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           <span className="lg:hidden text-[#9DA2A6] text-xs">▾</span>
         </button>
         <div className="ml-auto flex items-center gap-2">
+          {credits && (
+            <button
+              onClick={() => setCreditsOpen(true)}
+              aria-label={`${credits.remaining} AI edits left`}
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 h-9 text-[12.5px] font-bold ring-1 transition ${
+                credits.remaining <= 0
+                  ? "bg-red-500/15 text-red-300 ring-red-500/40"
+                  : credits.remaining <= 5
+                    ? "bg-amber-400/15 text-amber-200 ring-amber-400/40"
+                    : "bg-violet-500/15 text-violet-200 ring-violet-500/30"
+              }`}
+            >
+              <span aria-hidden>⚡</span>
+              {credits.remaining}
+              <span className="hidden sm:inline font-medium opacity-80">edits left</span>
+            </button>
+          )}
           {current?.is_active && (
             <a
               href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
@@ -902,6 +1044,107 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         </nav>
       )}
 
+      {/* AI edits: balance, how it works, Go Pro / top up */}
+      {creditsOpen && credits && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => !toppingUp && setCreditsOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-md bg-[#1C2333] border border-[#2B3245] rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#2B3245] sm:hidden" />
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-violet-300">AI edits</p>
+            <p className="mt-1.5 text-[28px] font-extrabold text-[#F5F9FC]">
+              ⚡ {credits.remaining} <span className="text-[16px] font-semibold text-[#9DA2A6]">left</span>
+            </p>
+            <div className="mt-3 h-2 rounded-full bg-[#0E1525] overflow-hidden">
+              <div
+                className={`h-full rounded-full ${credits.allowanceRemaining <= 5 ? "bg-amber-400" : "bg-violet-500"}`}
+                style={{ width: `${Math.round((credits.allowanceRemaining / Math.max(1, credits.allowance)) * 100)}%` }}
+              />
+            </div>
+            <div className="mt-3 space-y-1 text-[13.5px] text-[#C2C8CC]">
+              <p>
+                {credits.paid ? "Pro" : "Free"}: {credits.allowanceRemaining} of {credits.allowance} left
+                {credits.paid && credits.resetsAt
+                  ? ` this month · renews ${new Date(credits.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+                  : ""}
+              </p>
+              {credits.topupRemaining > 0 && <p>Top-up: {credits.topupRemaining} left (never expire)</p>}
+            </div>
+            <p className="mt-4 text-[12.5px] leading-relaxed text-[#9DA2A6]">
+              Each change the builder makes to your quiz uses 1 edit. Answering its tap questions is free, and
+              previewing, sharing and publishing never use edits.
+            </p>
+
+            {!credits.paid && (
+              <button
+                onClick={goPro}
+                disabled={paying}
+                className="mt-5 w-full py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[16px] font-bold disabled:opacity-60"
+              >
+                {paying ? "Opening secure checkout…" : "Go Pro: 150 edits a month →"}
+              </button>
+            )}
+
+            {credits.paid && credits.canTopUp && (
+              <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
+                <p className="text-[14px] font-semibold text-[#F5F9FC]">Top up</p>
+                <p className="text-[12.5px] text-[#9DA2A6]">₦5,000 = 40 edits. Any amount from ₦5,000. Top-ups never expire.</p>
+                <div className="mt-3 flex gap-2">
+                  {[5000, 10000, 20000].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setTopupAmount(String(n))}
+                      className={`flex-1 rounded-xl py-2 text-[13px] font-semibold ring-1 ${
+                        topupNaira === n ? "bg-violet-500/20 text-violet-100 ring-violet-400" : "text-[#C2C8CC] ring-[#2B3245]"
+                      }`}
+                    >
+                      ₦{n.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 flex items-center gap-2 rounded-xl bg-[#1C2333] ring-1 ring-[#2B3245] focus-within:ring-violet-500 px-3">
+                  <span className="text-[#9DA2A6]">₦</span>
+                  <input
+                    inputMode="numeric"
+                    value={topupAmount}
+                    onChange={(e) => setTopupAmount(e.target.value.replace(/[^0-9]/g, "").slice(0, 7))}
+                    className="flex-1 bg-transparent py-3 text-[16px] text-[#F5F9FC] outline-none"
+                    aria-label="Top-up amount in naira"
+                  />
+                  <span className="text-[13px] font-semibold text-violet-200 whitespace-nowrap">= {topupEdits} edits</span>
+                </label>
+                <button
+                  onClick={topUp}
+                  disabled={toppingUp || topupNaira < TOPUP_MIN_NAIRA}
+                  className="mt-3 w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[15px] font-bold disabled:opacity-50"
+                >
+                  {toppingUp ? "Opening secure checkout…" : `Pay ₦${topupNaira.toLocaleString()} →`}
+                </button>
+              </div>
+            )}
+
+            {credits.paid && !credits.canTopUp && (
+              <p className="mt-4 text-[12.5px] text-[#9DA2A6]">
+                Top-ups open once you&apos;ve used this month&apos;s {credits.allowance} edits.
+              </p>
+            )}
+
+            {creditsMsg && <p className="mt-3 text-[13px] text-amber-200">{creditsMsg}</p>}
+            <button
+              onClick={() => setCreditsOpen(false)}
+              disabled={toppingUp}
+              className="mt-3 w-full py-2.5 text-[13px] text-[#9DA2A6]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Go-live sheet: free to build, pay to publish */}
       {paywall && billing && current && (
         <div
@@ -945,7 +1188,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                 </>
               )}
               <p className="mt-3 text-[12px] text-[#9DA2A6]">
-                Pay by bank transfer, card or USSD. Cancel anytime.
+                Includes 150 AI edits a month. Pay by bank transfer, card or USSD. Cancel anytime.
               </p>
             </div>
 

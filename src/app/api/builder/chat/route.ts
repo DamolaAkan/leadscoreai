@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { getClaude, isClaudeConfigured } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
+import { addUsage, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
 import {
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
@@ -53,6 +54,35 @@ export async function POST(request: Request) {
       { status: 429 }
     );
   }
+
+  // AI edits: stop before calling Claude when the account has none left.
+  const creditOrg = await loadOrgForCredits(user.organizationId);
+  let credits: CreditStatus | null = creditOrg ? await getCreditStatus(creditOrg) : null;
+  if (credits && credits.remaining <= 0) {
+    return NextResponse.json(
+      {
+        error: credits.paid
+          ? "You've used this month's AI edits. Top up to keep building."
+          : "You've used your free AI edits. Go Pro to keep building.",
+        outOfCredits: true,
+        credits,
+      },
+      { status: 402 }
+    );
+  }
+  const usage = emptyUsage();
+  // Log this call's real cost; `charged` = it used one of the owner's edits.
+  const settle = async (charged: boolean, savedQuizId: string | null) => {
+    if (!credits) return null;
+    credits = await recordEdit({
+      organizationId: user.organizationId,
+      quizId: savedQuizId,
+      usage,
+      charged,
+      status: credits,
+    });
+    return credits;
+  };
 
   const body = await request.json().catch(() => ({}));
   const quizId: string | null = typeof body.quizId === "string" ? body.quizId : null;
@@ -143,14 +173,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
     }
 
+    addUsage(usage, response.usage);
     if (response.stop_reason === "refusal") {
       return NextResponse.json({
         reply: "I can't help build a quiz for that. Tell me about a different business or goal and I'll draft one.",
         quizId,
+        credits: await settle(false, quizId),
       });
     }
     if (response.stop_reason === "max_tokens") {
       console.error("[builder/chat] hit max_tokens");
+      await settle(false, quizId);
       return NextResponse.json({ error: "That quiz came out too long. Ask for fewer questions." }, { status: 502 });
     }
 
@@ -162,6 +195,7 @@ export async function POST(request: Request) {
       turn = JSON.parse(text) as BuilderTurn;
     } catch {
       console.error("[builder/chat] invalid JSON from model");
+      await settle(false, quizId);
       return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
     }
 
@@ -190,12 +224,17 @@ export async function POST(request: Request) {
     });
   }
   // Asking before (or pausing during) a build: nothing to save, current quiz untouched.
-  if (!turn?.quiz) return NextResponse.json({ reply, questions, quizId });
+  // Tap-question turns and passed-on feature requests are free; other replies cost 1 edit.
+  if (!turn?.quiz) {
+    const charged = questions.length === 0 && !featureRequest;
+    return NextResponse.json({ reply, questions, quizId, credits: await settle(charged, quizId) });
+  }
   if (!normalized) {
     console.error("[builder/chat] draft still invalid:", errorsForRetry);
     return NextResponse.json({
       reply: "I had trouble putting that quiz together. Could you describe it a little differently?",
       quizId,
+      credits: await settle(false, quizId),
     });
   }
 
@@ -220,6 +259,7 @@ export async function POST(request: Request) {
     const { error: upErr } = await supabase.from("quizzes").update(quizRow).eq("id", current.id);
     if (upErr) {
       console.error("[builder/chat] quiz update error:", upErr.message);
+      await settle(false, current.id);
       return NextResponse.json({ error: "Could not save your quiz. Try again." }, { status: 500 });
     }
     await supabase.from("quiz_questions").delete().eq("quiz_id", current.id);
@@ -234,6 +274,7 @@ export async function POST(request: Request) {
       .single();
     if (insErr || !created) {
       console.error("[builder/chat] quiz insert error:", insErr?.message);
+      await settle(false, null);
       return NextResponse.json({ error: "Could not save your quiz. Try again." }, { status: 500 });
     }
     savedId = created.id;
@@ -244,6 +285,7 @@ export async function POST(request: Request) {
     .insert(normalized.questions.map((q) => ({ ...q, quiz_id: savedId })));
   if (qErr) {
     console.error("[builder/chat] questions insert error:", qErr.message);
+    await settle(false, savedId);
     return NextResponse.json({ error: "Could not save your questions. Try again." }, { status: 500 });
   }
 
@@ -263,5 +305,6 @@ export async function POST(request: Request) {
     questions,
     quizId: savedId,
     forked,
+    credits: await settle(true, savedId),
   });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
+import { getCreditStatus, loadOrgForCredits } from "@/lib/credits";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +36,12 @@ export async function GET(request: Request) {
     for (const r of rows || []) counts.set(r.quiz_id, (counts.get(r.quiz_id) || 0) + 1);
   }
 
+  const creditOrg = await loadOrgForCredits(user.organizationId);
+  const credits = creditOrg ? await getCreditStatus(creditOrg) : null;
+
   return NextResponse.json({
     org,
+    credits,
     quizzes: (quizzes || []).map((q) => ({
       id: q.id,
       name: q.name,

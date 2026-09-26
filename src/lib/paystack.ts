@@ -200,6 +200,47 @@ export async function initTransaction(opts: {
   return res.json();
 }
 
+// Checkout for a builder AI-edit top-up (any amount from the minimum up).
+export async function initTopupTransaction(opts: {
+  email: string;
+  orgId: string;
+  amountNaira: number;
+  credits: number;
+  callbackUrl: string;
+}) {
+  const secret = process.env.PAYSTACK_SECRET_KEY!;
+  const res = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: opts.email,
+      amount: opts.amountNaira * 100, // kobo
+      currency: "NGN",
+      callback_url: opts.callbackUrl,
+      metadata: {
+        orgId: opts.orgId,
+        purpose: "leadscoreai_topup",
+        amount_naira: opts.amountNaira,
+        credits: opts.credits,
+      },
+      channels: ["bank_transfer", "bank", "ussd", "card", "qr"],
+    }),
+  });
+  return res.json();
+}
+
+// Paystack rejects placeholder/demo domains: first genuinely valid email wins.
+export function pickBillingEmail(...candidates: (string | null | undefined)[]): string | null {
+  for (const e of candidates) {
+    if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) continue;
+    const domain = e.split("@")[1].toLowerCase();
+    if (/\.(example|test|invalid|localhost)$/.test(domain)) continue;
+    if (["example.com", "example.org", "example.net"].includes(domain)) continue;
+    return e;
+  }
+  return null;
+}
+
 // Paystack signs the webhook body with HMAC-SHA512 of the raw payload using the
 // secret key. Verify before trusting anything in it.
 export function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
