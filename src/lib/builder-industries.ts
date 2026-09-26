@@ -45,8 +45,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "study-abroad",
     eyebrow: "For study-abroad & education consultants",
-    headline: "Find serious students",
-    highlight: "before you call them.",
+    headline: "Tired of time-wasting enquiries",
+    highlight: "in your study-abroad agency?",
     sub: "Give students a 2-minute eligibility check. They see where they stand; you get every enquiry scored Hot, Warm or Cold with their grades, English test, funding and start date. Share it on WhatsApp or embed it on your website.",
     examples: [
       { emoji: "🇬🇧", text: "Are you eligible to study in the UK?" },
@@ -97,8 +97,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "travel",
     eyebrow: "For travel consultants & agencies",
-    headline: "Find serious travellers",
-    highlight: "before you quote.",
+    headline: "Tired of quoting trips",
+    highlight: "for people who never book?",
     sub: "Let people discover their ideal trip in 2 minutes. They get a personal recommendation; you get their budget, dates and who's ready to book, straight to your dashboard.",
     examples: [
       { emoji: "🌍", text: "Which holiday package suits you?" },
@@ -123,8 +123,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "solar",
     eyebrow: "For solar installers",
-    headline: "Find serious solar buyers",
-    highlight: "before you visit.",
+    headline: "Tired of time-wasting enquiries",
+    highlight: "in your solar business?",
     sub: "A 2-minute check that tells you which homes and businesses can actually afford a system before you send anyone out. Every lead scored Hot, Warm or Cold with their budget and power needs.",
     examples: [
       { emoji: "☀️", text: "Can your home afford solar?" },
@@ -149,8 +149,8 @@ const PAGES: IndustryPage[] = [
   {
     slug: "real-estate",
     eyebrow: "For real estate agents & developers",
-    headline: "Find serious buyers",
-    highlight: "before the viewing.",
+    headline: "Tired of real estate inspections",
+    highlight: "that never turn into sales?",
     sub: "A quick quiz that shows which buyers and renters have the budget, timeline and documents to move now, so your team spends time on the ones who will close.",
     examples: [
       { emoji: "🏠", text: "Are you ready to buy a home?" },
