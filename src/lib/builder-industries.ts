@@ -18,8 +18,8 @@ export interface IndustryPage {
 export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
   eyebrow: "",
-  headline: "Stop replying to people who won't buy.",
-  highlight: "Let a quiz find your buyers.",
+  headline: "Tired of time\u2011wasting enquiries?",
+  highlight: "Let our quiz find your buyers.",
   sub: "Describe your business in one chat. We build a quiz that tells you what each customer wants and whether they're ready to pay, before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },

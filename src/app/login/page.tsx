@@ -134,7 +134,7 @@ export default function LoginPage() {
 
           <div className="left-mid">
             <h1>
-              Stop replying to people who won&apos;t buy. <em>Let a quiz find your buyers.</em>
+              Tired of time&#8209;wasting enquiries? <em>Let our quiz find your buyers.</em>
             </h1>
 
             <div className="ledger" aria-hidden="true">
