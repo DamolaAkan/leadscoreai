@@ -192,9 +192,9 @@ export async function initTransaction(opts: {
         discount_naira: discount,
         publish_quiz_id: opts.publishQuizId || null,
       },
-      // Bank transfer first — it's the default channel and the one Nigerians pay
-      // with most; card/USSD/QR remain available for those who prefer them.
-      channels: ["bank_transfer", "bank", "ussd", "card", "qr"],
+      // Bank transfer first: it's how most Nigerians pay. No "bank" (pay with
+      // online banking) option: it confused buyers and failed (2026-09-27).
+      channels: ["bank_transfer", "card", "ussd", "qr"],
     }),
   });
   return res.json();
@@ -223,7 +223,7 @@ export async function initTopupTransaction(opts: {
         amount_naira: opts.amountNaira,
         credits: opts.credits,
       },
-      channels: ["bank_transfer", "bank", "ussd", "card", "qr"],
+      channels: ["bank_transfer", "card", "ussd", "qr"],
     }),
   });
   return res.json();
