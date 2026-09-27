@@ -66,20 +66,123 @@ export function PhoneQuiz({ demos }: { demos: IndustryPage["demo"][] }) {
   );
 }
 
-export function ChatVisual() {
+// Example content for the feature visuals: the general set (mixed
+// industries) or the coaches & consultants set for /build/coaches.
+export type VisualSet = "default" | "coaches";
+type Row = { name: string; note: string; tag: "Hot" | "Warm" | "Cold"; pct: number };
+const TAGS = {
+  Hot: { color: "#16a34a", bg: "rgba(22,163,74,0.12)" },
+  Warm: { color: "#b7791f", bg: "rgba(217,148,9,0.14)" },
+  Cold: { color: "#1e40af", bg: "rgba(37,99,235,0.12)" },
+};
+const SETS = {
+  default: {
+    chat: {
+      msg: "I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.",
+      q: "Buyers, renters or both?",
+      on: "Buyers only",
+      off: "Both",
+    },
+    share: {
+      brand: "Luxe Hair Lagos",
+      title: "Find your perfect hair for December 👑",
+      preview: "Find your perfect hair | Luxe Hair Lagos",
+      previewSub: "Answer 6 quick questions and get your perfect look.",
+      message: "Hey babe! Take our 2-minute hair quiz and find the look made for you 💜",
+    },
+    result: {
+      title: "Full health screening 🩺",
+      desc: "A good next step for someone who hasn't had a check-up in over 3 years.",
+      why: [
+        ["✓", "Your last full check was over 3 years ago"],
+        ["✓", "Blood pressure runs in your family"],
+        ["!", "This is a guide, not a diagnosis"],
+      ],
+      cta: "Book my screening on WhatsApp →",
+    },
+    leads: {
+      title: "New leads · BrightPath Education",
+      rows: [
+        { name: "Adaeze O.", note: "UK Masters · funds ready · Jan intake", tag: "Hot", pct: 92 },
+        { name: "Kwame A.", note: "Canada · IELTS booked · comparing agents", tag: "Warm", pct: 71 },
+        { name: "Tolu B.", note: "Just exploring · no funding yet", tag: "Cold", pct: 44 },
+        { name: "Fatima S.", note: "UK Nursing · sponsor ready · Sept intake", tag: "Hot", pct: 86 },
+      ] as Row[],
+    },
+    wtp: {
+      q: "How much do you spend on fuel for your generator each month?",
+      opts: [["⛽", "Over ₦150,000"], ["🔋", "₦50,000 to ₦150,000"], ["💡", "Under ₦50,000"], ["🤷", "Not sure"]],
+      name: "Chidi E.",
+      sub: "SunPower Solutions · 5kVA hybrid system",
+      score: 86,
+      factors: [
+        { label: "Monthly fuel spend", pct: 90 },
+        { label: "Install timeline", pct: 80 },
+      ],
+    },
+  },
+  coaches: {
+    chat: {
+      msg: "I'm a business consultant in Lagos. I want a quiz that shows which companies have the budget to hire me before I book a discovery call.",
+      q: "Discovery call or webinar?",
+      on: "Discovery call",
+      off: "Webinar",
+    },
+    share: {
+      brand: "Better Together Coaching",
+      title: "How healthy is your relationship? 💞",
+      preview: "Relationship check | Better Together Coaching",
+      previewSub: "Answer 6 quick questions and get your personal report.",
+      message: "Hi! Take my free 2-minute relationship check and get your personal report 💜",
+    },
+    result: {
+      title: "Debt-Free in 90 Days 💰",
+      desc: "A good fit for someone ready to stop living from payday to payday.",
+      why: [
+        ["✓", "You run out of money before payday most months"],
+        ["✓", "You're ready to start this month"],
+        ["!", "This is a guide, not financial advice"],
+      ],
+      cta: "Book my free strategy call →",
+    },
+    leads: {
+      title: "New leads · Iron Body Fitness",
+      rows: [
+        { name: "Adaeze O.", note: "12-week transformation · ready this month", tag: "Hot", pct: 92 },
+        { name: "Kwame A.", note: "Online plan · comparing coaches", tag: "Warm", pct: 71 },
+        { name: "Tolu B.", note: "Just curious · no budget yet", tag: "Cold", pct: 44 },
+        { name: "Fatima S.", note: "1:1 coaching · budget ready", tag: "Hot", pct: 86 },
+      ] as Row[],
+    },
+    wtp: {
+      q: "How much are you ready to invest in coaching this quarter?",
+      opts: [["💎", "Over ₦1m"], ["💼", "₦300k to ₦1m"], ["🌱", "Under ₦300k"], ["🤔", "Not sure yet"]],
+      name: "Chidi E.",
+      sub: "Scale Up Coaching · 6-month programme",
+      score: 88,
+      factors: [
+        { label: "Coaching budget", pct: 90 },
+        { label: "Start date", pct: 85 },
+      ],
+    },
+  },
+};
+
+export function ChatVisual({ set = "default" }: { set?: VisualSet }) {
+  const c = SETS[set].chat;
   return (
     <div className="rounded-3xl bg-[#0E1525] p-5 sm:p-6 text-[14px] text-[#F5F9FC] shadow-xl space-y-3">
       <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-violet-600 px-4 py-3">
-        I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.
+        {c.msg}
       </div>
       <div className="max-w-[90%] rounded-2xl rounded-bl-md bg-[#1C2333] border border-[#2B3245] px-4 py-3">
         Love it. Two quick choices before I build:
-        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">Buyers, renters or both?</p>
+        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">{c.q}</p>
         <div className="mt-2 flex flex-wrap gap-2">
           <span className="rounded-full bg-violet-500/20 ring-1 ring-violet-400 px-3 py-1.5 text-[12.5px] text-violet-100">
-            Buyers only
+            {c.on}
           </span>
-          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">Both</span>
+          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">{c.off}</span>
         </div>
         <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">Pictures on the answers?</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -101,24 +204,25 @@ export function ChatVisual() {
   );
 }
 
-export function ShareVisual() {
+export function ShareVisual({ set = "default" }: { set?: VisualSet }) {
+  const c = SETS[set].share;
   return (
     <div className="rounded-3xl bg-[#E7DED4] p-5 sm:p-6 shadow-xl">
       <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-md bg-[#D9FDD3] p-2 shadow-sm">
         <div className="rounded-xl overflow-hidden bg-white">
           <div className="h-28 bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white">
             <div className="text-center px-4">
-              <div className="text-[11px] uppercase tracking-widest opacity-80">Luxe Hair Lagos</div>
-              <div className="mt-1 text-[17px] font-extrabold leading-tight">Find your perfect hair for December 👑</div>
+              <div className="text-[11px] uppercase tracking-widest opacity-80">{c.brand}</div>
+              <div className="mt-1 text-[17px] font-extrabold leading-tight">{c.title}</div>
             </div>
           </div>
           <div className="px-3 py-2">
-            <div className="text-[13px] font-semibold text-[#111B21]">Find your perfect hair | Luxe Hair Lagos</div>
-            <div className="text-[12px] text-[#667781]">Answer 6 quick questions and get your perfect look.</div>
+            <div className="text-[13px] font-semibold text-[#111B21]">{c.preview}</div>
+            <div className="text-[12px] text-[#667781]">{c.previewSub}</div>
           </div>
         </div>
         <p className="px-1.5 pt-2 text-[14px] text-[#111B21]">
-          Hey babe! Take our 2-minute hair quiz and find the look made for you 💜
+          {c.message}
         </p>
         <p className="px-1.5 text-right text-[11px] text-[#667781]">09:41 ✓✓</p>
       </div>
@@ -132,38 +236,37 @@ export function ShareVisual() {
   );
 }
 
-export function ResultVisual() {
+export function ResultVisual({ set = "default" }: { set?: VisualSet }) {
+  const c = SETS[set].result;
   return (
     <div className="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-xl">
       <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 p-5 text-white">
         <div className="text-[11px] font-bold uppercase tracking-widest opacity-80">Your match</div>
-        <div className="mt-1 text-[22px] font-extrabold leading-tight">Full health screening 🩺</div>
-        <p className="mt-2 text-[13px] opacity-90">A good next step for someone who hasn&apos;t had a check-up in over 3 years.</p>
+        <div className="mt-1 text-[22px] font-extrabold leading-tight">{c.title}</div>
+        <p className="mt-2 text-[13px] opacity-90">{c.desc}</p>
       </div>
       <p className="mt-5 text-[12px] font-bold uppercase tracking-wider text-slate-400">Why this fits you</p>
       <ul className="mt-2 space-y-2 text-[14px] text-slate-700">
-        <li className="flex gap-2"><span className="text-emerald-500">✓</span> Your last full check was over 3 years ago</li>
-        <li className="flex gap-2"><span className="text-emerald-500">✓</span> Blood pressure runs in your family</li>
-        <li className="flex gap-2"><span className="text-amber-500">!</span> This is a guide, not a diagnosis</li>
+        {c.why.map(([mark, text]) => (
+          <li key={text} className="flex gap-2">
+            <span className={mark === "!" ? "text-amber-500" : "text-emerald-500"}>{mark}</span> {text}
+          </li>
+        ))}
       </ul>
       <div className="mt-5 rounded-xl bg-violet-600 py-3 text-center text-[14px] font-bold text-white">
-        Book my screening on WhatsApp →
+        {c.cta}
       </div>
     </div>
   );
 }
 
-export function LeadsVisual() {
-  const rows = [
-    { name: "Adaeze O.", note: "UK Masters · funds ready · Jan intake", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 92 },
-    { name: "Kwame A.", note: "Canada · IELTS booked · comparing agents", tag: "Warm", color: "#b7791f", bg: "rgba(217,148,9,0.14)", pct: 71 },
-    { name: "Tolu B.", note: "Just exploring · no funding yet", tag: "Cold", color: "#1e40af", bg: "rgba(37,99,235,0.12)", pct: 44 },
-    { name: "Fatima S.", note: "UK Nursing · sponsor ready · Sept intake", tag: "Hot", color: "#16a34a", bg: "rgba(22,163,74,0.12)", pct: 86 },
-  ];
+export function LeadsVisual({ set = "default" }: { set?: VisualSet }) {
+  const c = SETS[set].leads;
+  const rows = c.rows.map((r) => ({ ...r, ...TAGS[r.tag] }));
   return (
     <div className="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-xl">
       <div className="flex items-center justify-between px-1 pb-3">
-        <span className="text-[14px] font-bold text-slate-900">New leads · BrightPath Education</span>
+        <span className="text-[14px] font-bold text-slate-900">{c.title}</span>
         <span className="text-[12px] text-slate-400">Today</span>
       </div>
       <div className="divide-y divide-slate-100">
@@ -190,25 +293,18 @@ export function LeadsVisual() {
   );
 }
 
-export function WtpVisual() {
-  const factors = [
-    { label: "Monthly fuel spend", pct: 90 },
-    { label: "Install timeline", pct: 80 },
-  ];
+export function WtpVisual({ set = "default" }: { set?: VisualSet }) {
+  const c = SETS[set].wtp;
+  const factors = c.factors;
   return (
     <div className="space-y-4">
       <div className="rounded-3xl bg-gradient-to-b from-[#2A1356] to-[#150A2E] p-5 sm:p-6 text-white shadow-xl">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300/15 ring-1 ring-amber-300/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-200">
           💰 Willingness-to-pay question
         </span>
-        <p className="mt-4 text-[18px] font-bold leading-snug">How much do you spend on fuel for your generator each month?</p>
+        <p className="mt-4 text-[18px] font-bold leading-snug">{c.q}</p>
         <div className="mt-4 grid grid-cols-2 gap-2 [&>*]:min-w-0">
-          {[
-            ["⛽", "Over ₦150,000"],
-            ["🔋", "₦50,000 to ₦150,000"],
-            ["💡", "Under ₦50,000"],
-            ["🤷", "Not sure"],
-          ].map(([e, t], i) => (
+          {c.opts.map(([e, t], i) => (
             <div
               key={t}
               className={`rounded-xl px-3 py-3 text-center border text-[12px] font-semibold ${
@@ -223,13 +319,13 @@ export function WtpVisual() {
       </div>
       <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-200 text-[#0B0B12]">
         <div className="flex items-center gap-3">
-          <span className="w-10 h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">C</span>
+          <span className="w-10 h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">{c.name.charAt(0)}</span>
           <div className="min-w-0 flex-1">
-            <div className="font-semibold">Chidi E.</div>
-            <div className="text-[12px] text-slate-500 truncate">SunPower Solutions · 5kVA hybrid system</div>
+            <div className="font-semibold">{c.name}</div>
+            <div className="text-[12px] text-slate-500 truncate">{c.sub}</div>
           </div>
           <div className="text-right">
-            <div className="text-[26px] font-extrabold leading-none text-emerald-600">86</div>
+            <div className="text-[26px] font-extrabold leading-none text-emerald-600">{c.score}</div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">WTP / 100</div>
           </div>
         </div>

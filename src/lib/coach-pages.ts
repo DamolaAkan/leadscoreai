@@ -1,23 +1,17 @@
-// Coaches & consultants: one hub (/build/coaches) plus a page per branch
-// (/build/coaches/<branch>), each speaking only to its own audience. Same
-// landing template as the industry pages. Add a branch by adding an entry.
+// Coaches & consultants: ONE landing page (/build/coaches). Every specialty
+// gets its own tab of example quizzes and the feature visuals use coach
+// examples. Add a specialty by adding an entry.
 import type { IndustryPage } from "./builder-industries";
 
 export interface CoachBranch {
-  key: string; // /build/coaches/<key>
+  key: string;
   group: "coach" | "consultant";
-  label: string; // chip + tab label
+  label: string; // specialty tab label
   emoji: string;
-  eyebrow: string;
-  business: string; // "…in your <business>?"
-  promise?: string; // defaults to PROMISE
-  headline?: string; // full override (e.g. faith & ministry)
-  sub: string;
-  demo: IndustryPage["demo"];
+  sub: string; // one line under the examples
+  demo: IndustryPage["demo"]; // sample quiz (hero phone rotation)
   examples: { emoji: string; text: string }[];
-  starter: string;
-  namePlaceholder: string;
-  latseminary?: boolean; // show the Latseminary case study
+  starter: string; // first builder message for "Build this quiz"
 }
 
 const PROMISE = "Let our quiz find clients ready to pay.";
@@ -29,9 +23,6 @@ export const COACH_BRANCHES: CoachBranch[] = [
     group: "coach",
     label: "Fitness",
     emoji: "🏋️",
-    eyebrow: "For fitness coaches & personal trainers",
-    business: "fitness coaching business",
-    promise: "Let our quiz find clients ready to commit.",
     sub: "A quick fitness quiz asks about their goal, budget and how soon they want to start, so you only talk to people ready to train.",
     demo: {
       brand: "Iron Body Fitness",
@@ -51,15 +42,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a fitness coach. I want a quiz that matches people to the right programme and shows me who is ready to pay for coaching now.",
-    namePlaceholder: "Iron Body Fitness Lagos",
   },
   {
     key: "sales",
     group: "coach",
     label: "Sales",
     emoji: "📈",
-    eyebrow: "For sales coaches & trainers",
-    business: "sales coaching business",
     sub: "A short quiz checks team size, targets and training budget before anyone books a discovery call with you.",
     demo: {
       brand: "Closers Academy",
@@ -79,15 +67,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I coach sales teams. I want a quiz that grades a company's sales process and shows me which ones have the team size and budget for training.",
-    namePlaceholder: "Closers Academy",
   },
   {
     key: "relationship",
     group: "coach",
     label: "Relationship",
     emoji: "💞",
-    eyebrow: "For relationship & marriage coaches",
-    business: "relationship coaching business",
     sub: "A caring quiz helps people see where their relationship stands, then invites the ones ready for help to your session, course or webinar.",
     demo: {
       brand: "Better Together",
@@ -107,16 +92,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a relationship coach. I want a quiz that rates people's communication in their relationship and invites the ones who need help to my webinar.",
-    namePlaceholder: "Better Together Coaching",
-    latseminary: true,
   },
   {
     key: "life",
     group: "coach",
     label: "Life",
     emoji: "🌱",
-    eyebrow: "For life coaches",
-    business: "life coaching business",
     sub: "A short quiz shows people what's holding them back and who is ready to invest in changing it, before your first call.",
     demo: {
       brand: "Next Chapter Coaching",
@@ -136,15 +117,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a life coach. I want a quiz that shows people what's holding them back and tells me who is ready to pay for coaching.",
-    namePlaceholder: "Next Chapter Coaching",
   },
   {
     key: "business",
     group: "coach",
     label: "Business",
     emoji: "🚀",
-    eyebrow: "For business coaches",
-    business: "business coaching practice",
     sub: "A quick quiz checks their revenue, biggest bottleneck and budget, so your calls are with owners ready to grow.",
     demo: {
       brand: "Scale Up Coaching",
@@ -164,15 +142,37 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I coach small business owners. I want a quiz that finds their biggest growth problem and shows me who has the revenue to pay for coaching.",
-    namePlaceholder: "Scale Up Coaching",
+  },
+  {
+    key: "finance",
+    group: "coach",
+    label: "Finance & money",
+    emoji: "💰",
+    sub: "A money quiz shows people where their finances stand and invites the ones ready to change it to your programme or strategy call.",
+    demo: {
+      brand: "Money Freedom Coaching",
+      question: "How do you feel about your money right now?",
+      options: [
+        { emoji: "😰", text: "Broke before payday" },
+        { emoji: "💳", text: "Stuck in debt" },
+        { emoji: "📉", text: "Saving, not growing" },
+        { emoji: "📈", text: "Ready to invest" },
+      ],
+    },
+    examples: [
+      { emoji: "💰", text: "What's your money personality?" },
+      { emoji: "📈", text: "Are you ready to invest?" },
+      { emoji: "🩺", text: "How healthy are your finances?" },
+      { emoji: "🧭", text: "Which money plan fits you?" },
+    ],
+    starter:
+      "I'm a finance coach. I want a quiz that shows people where their money stands and tells me who is ready to pay for my programme.",
   },
   {
     key: "career",
     group: "coach",
     label: "Career",
     emoji: "🎯",
-    eyebrow: "For career coaches",
-    business: "career coaching business",
     sub: "A short quiz finds where each person is in their career and who is ready to invest in their next move.",
     demo: {
       brand: "CareerLift",
@@ -192,16 +192,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a career coach. I want a quiz that shows people where they're stuck in their career and tells me who is ready to pay for coaching.",
-    namePlaceholder: "CareerLift Coaching",
   },
   {
     key: "health-nutrition",
     group: "coach",
     label: "Health & nutrition",
     emoji: "🥗",
-    eyebrow: "For nutrition & health coaches",
-    business: "health coaching business",
-    promise: "Let our quiz find clients ready to commit.",
     sub: "A friendly quiz points each person to the right plan, with a clear note that it's a guide, and shows you who is ready to start.",
     demo: {
       brand: "Nourish Well",
@@ -221,17 +217,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a nutrition coach. I want a quiz that points people to the right meal plan and shows me who is ready to pay for coaching.",
-    namePlaceholder: "Nourish Well Coaching",
   },
   {
     key: "faith-ministry",
     group: "coach",
     label: "Faith & ministry",
     emoji: "⛪",
-    eyebrow: "For pastors, churches & ministries",
-    business: "ministry",
-    headline: "Tired of empty seats at your programmes and webinars?",
-    promise: "Let our quiz find people ready to join.",
     sub: "A thoughtful quiz on marriage, relationships or purpose gives each person a personal report, then invites them to your programme, webinar or community.",
     demo: {
       brand: "Grace Life Ministry",
@@ -251,8 +242,6 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I run a ministry. I want a quiz that helps people rate communication in their marriage and invites them to our webinar and community.",
-    namePlaceholder: "Grace Life Ministry",
-    latseminary: true,
   },
   // ── Consultants ──
   {
@@ -260,8 +249,6 @@ export const COACH_BRANCHES: CoachBranch[] = [
     group: "consultant",
     label: "Business & strategy",
     emoji: "🧭",
-    eyebrow: "For business & strategy consultants",
-    business: "consulting business",
     sub: "A short assessment checks company size, the problem they need solved and their budget, before you spend an hour on a proposal.",
     demo: {
       brand: "Summit Advisory",
@@ -281,15 +268,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm a business consultant. I want an assessment that finds a company's biggest problem and shows me which ones have the budget to hire me.",
-    namePlaceholder: "Summit Advisory",
   },
   {
     key: "marketing",
     group: "consultant",
     label: "Marketing",
     emoji: "📣",
-    eyebrow: "For marketing consultants & agencies",
-    business: "marketing business",
     sub: "A quick marketing grader shows each business where they're losing customers and tells you who has the budget to fix it.",
     demo: {
       brand: "Brightline Marketing",
@@ -309,15 +293,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I run a marketing agency. I want a quiz that grades a business's marketing and shows me who has the budget to hire us.",
-    namePlaceholder: "Brightline Marketing",
   },
   {
     key: "hr",
     group: "consultant",
     label: "HR",
     emoji: "👥",
-    eyebrow: "For HR consultants",
-    business: "HR consulting business",
     sub: "A short HR check shows each company its gaps in hiring, compliance and retention, and tells you who is ready to hire help.",
     demo: {
       brand: "PeopleFirst HR",
@@ -337,15 +318,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm an HR consultant. I want a quiz that checks a company's HR gaps and shows me which ones are ready to pay for HR support.",
-    namePlaceholder: "PeopleFirst HR",
   },
   {
     key: "tax-accounting",
     group: "consultant",
     label: "Tax & accounting",
     emoji: "🧾",
-    eyebrow: "For accountants & tax consultants",
-    business: "accounting practice",
     sub: "A quick check shows each business how healthy their books and tax are, and tells you who needs an accountant now.",
     demo: {
       brand: "ClearBooks Accounting",
@@ -365,15 +343,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm an accountant. I want a quiz that checks how healthy a small business's books and tax are and shows me who is ready to hire me.",
-    namePlaceholder: "ClearBooks Accounting",
   },
   {
     key: "immigration",
     group: "consultant",
     label: "Immigration",
     emoji: "✈️",
-    eyebrow: "For immigration & visa consultants",
-    business: "immigration consulting business",
     sub: "A 2-minute eligibility check asks about their route, funds and timeline, so you spend consultations on people ready to apply.",
     demo: {
       brand: "Global Route Consult",
@@ -393,15 +368,12 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm an immigration consultant. I want an eligibility quiz that shows people which visa route fits them and tells me who has the funds to apply now.",
-    namePlaceholder: "Global Route Consult",
   },
   {
     key: "it-tech",
     group: "consultant",
     label: "IT & tech",
     emoji: "💻",
-    eyebrow: "For IT & tech consultants",
-    business: "tech consulting business",
     sub: "A quick tech check shows each business where it's exposed or slowed down, and tells you who has the budget for a project.",
     demo: {
       brand: "Stackwise Tech",
@@ -421,7 +393,6 @@ export const COACH_BRANCHES: CoachBranch[] = [
     ],
     starter:
       "I'm an IT consultant. I want a quiz that checks a business's tech needs and shows me who has the budget for a project.",
-    namePlaceholder: "Stackwise Tech",
   },
 ];
 
@@ -452,28 +423,12 @@ export const COACH_HUB: IndustryPage = {
   },
 };
 
-// A branch as a full landing page.
-export function coachBranchPage(b: CoachBranch): IndustryPage {
-  return {
-    slug: `coaches/${b.key}`,
-    eyebrow: b.eyebrow,
-    headline: b.headline ?? `Tired of unserious enquiries in your ${b.business}?`,
-    highlight: b.promise ?? PROMISE,
-    sub: b.sub,
-    examples: b.examples,
-    starter: b.starter,
-    namePlaceholder: b.namePlaceholder,
-    demo: b.demo,
-  };
-}
-
-export function getCoachBranch(key: string): CoachBranch | undefined {
-  return COACH_BRANCHES.find((b) => b.key === key);
-}
+// Hero phone on /build/coaches rotates through a few specialties.
+export const COACH_HERO_DEMOS: IndustryPage["demo"][] = ["relationship", "finance", "fitness", "business-strategy"]
+  .map((k) => COACH_BRANCHES.find((b) => b.key === k)?.demo)
+  .filter((d): d is IndustryPage["demo"] => !!d);
 
 // Pages that carry the Latseminary case study.
 export function showsLatseminary(slug: string): boolean {
-  if (slug === "" || slug === "coaches") return true;
-  const b = slug.startsWith("coaches/") ? getCoachBranch(slug.slice(8)) : undefined;
-  return !!b?.latseminary;
+  return slug === "" || slug === "coaches";
 }

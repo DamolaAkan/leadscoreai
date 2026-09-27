@@ -1,6 +1,4 @@
-// Proof blocks and the coaches & consultants specialty picker for the
-// builder landing pages.
-import { COACH_BRANCHES } from "@/lib/coach-pages";
+// Proof blocks for the builder landing pages.
 
 // Latseminary (Women & Marriage webinar): numbers from the original
 // LeadScoreAI dashboard. Organisation name only.
@@ -51,45 +49,6 @@ export function LatseminaryProof() {
             <div className="mt-5 rounded-xl bg-violet-600 py-3 text-[15px] font-bold text-white">Get started</div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-// "What kind of coach or consultant are you?": one tap to your own page.
-export function CoachBranchPicker({ current }: { current: string }) {
-  const groups: [string, "coach" | "consultant"][] = [
-    ["Coaches", "coach"],
-    ["Consultants", "consultant"],
-  ];
-  return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
-      <div className="rounded-3xl bg-white border border-slate-200 p-5 sm:p-8">
-        <p className="text-[18px] sm:text-[22px] font-bold tracking-[-0.01em]">What kind of coach or consultant are you?</p>
-        <p className="mt-1 text-[15px] text-slate-500">Pick yours to see quizzes made for your clients.</p>
-        {groups.map(([title, group]) => (
-          <div key={group} className="mt-5">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">{title}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {COACH_BRANCHES.filter((b) => b.group === group).map((b) => {
-                const on = current === b.key;
-                return (
-                  <a
-                    key={b.key}
-                    href={`/build/coaches/${b.key}`}
-                    aria-current={on ? "page" : undefined}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold transition ${
-                      on ? "bg-[#0B0B12] text-white" : "bg-slate-100 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
-                    }`}
-                  >
-                    <span>{b.emoji}</span>
-                    {b.label}
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );

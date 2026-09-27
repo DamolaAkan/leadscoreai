@@ -7,8 +7,7 @@ import { INDUSTRY_PAGES, getIndustryPage } from "@/lib/builder-industries";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  // /build/coaches has its own route (hub + branch pages).
-  return INDUSTRY_PAGES.filter((p) => p.slug !== "coaches").map((p) => ({ industry: p.slug }));
+  return INDUSTRY_PAGES.map((p) => ({ industry: p.slug }));
 }
 
 export function generateMetadata({ params }: { params: { industry: string } }): Metadata {

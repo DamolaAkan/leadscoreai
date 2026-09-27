@@ -5,40 +5,41 @@ import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
 import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/lib/track-client";
 import MetaPixel, { trackLead } from "@/components/MetaPixel";
-import { COACH_BRANCHES, showsLatseminary } from "@/lib/coach-pages";
-import { CoachBranchPicker, LatseminaryProof } from "./landing-proof";
-import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
+import { COACH_BRANCHES, COACH_HERO_DEMOS, showsLatseminary } from "@/lib/coach-pages";
+import { LatseminaryProof } from "./landing-proof";
+import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual, type VisualSet } from "./landing-visuals";
 
 const CTA = "Find my serious buyers";
 
-const OUTCOMES = [
+// Feature rows; `set` picks industry-mixed or coaches & consultants examples.
+const outcomesFor = (set: VisualSet) => [
   {
     icon: "💬",
     title: "Describe it in plain words.",
     body: "No forms, no templates, no design skills. Say what you sell and who you sell to. The builder asks a few tap-to-answer questions, then drafts the whole quiz while you watch. Want a change? Just ask.",
     caption: "Tap to answer · edit by chatting",
-    visual: <ChatVisual />,
+    visual: <ChatVisual set={set} />,
   },
   {
     icon: "📲",
     title: "Share it where your customers already are.",
     body: "One tap sends your quiz to WhatsApp with a proper preview card. Put the link in your Instagram bio or status, or add it to your website with one line of code.",
     caption: "WhatsApp · Instagram · your website",
-    visual: <ShareVisual />,
+    visual: <ShareVisual set={set} />,
   },
   {
     icon: "🎯",
     title: "Every customer gets a real answer.",
     body: "Not a “thanks, we'll be in touch”. Each person gets a detailed results page in your brand colour: their match, why it fits them and what to do next, with a button straight back to you.",
     caption: "Qualify quizzes and Match quizzes",
-    visual: <ResultVisual />,
+    visual: <ResultVisual set={set} />,
   },
   {
     icon: "🔥",
     title: "See who's ready to buy.",
     body: "Every lead lands in your dashboard with a willingness-to-pay score, a Hot, Warm or Cold rating, their answers and contact details. Call the ready ones first and stop chasing people who were only browsing.",
     caption: "Your dashboard · CSV export",
-    visual: <LeadsVisual />,
+    visual: <LeadsVisual set={set} />,
   },
 ];
 
@@ -128,10 +129,23 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [starter, setStarter] = useState(page.starter);
-  const isCoach = page.slug === "coaches" || page.slug.startsWith("coaches/");
-  const [industry, setIndustry] = useState(
-    INDUSTRY_PAGES.some((p) => p.slug === page.slug) ? page.slug : isCoach ? "coaches" : INDUSTRY_PAGES[0].slug
+  // Coaches & consultants: one page, with coach examples everywhere and
+  // specialty tabs instead of industry tabs.
+  const isCoach = page.slug === "coaches";
+  const set: VisualSet = isCoach ? "coaches" : "default";
+  // Coaches talk about "clients", not "customers".
+  const OUTCOMES = outcomesFor(set).map((o) =>
+    isCoach
+      ? {
+          ...o,
+          title: o.title.replace("See who's ready to buy.", "See who's ready to pay.").replace(/customer/g, "client"),
+          body: o.body.replace(/customers/g, "clients").replace(/customer/g, "client"),
+        }
+      : o
   );
+  const [industry, setIndustry] = useState(page.slug || INDUSTRY_PAGES[0].slug);
+  const [branch, setBranch] = useState(COACH_BRANCHES[0].key);
+  const activeBranch = COACH_BRANCHES.find((b) => b.key === branch) || COACH_BRANCHES[0];
   const [showBar, setShowBar] = useState(false);
 
   // Signed-in owners skip the sign-up sheet and go straight to building.
@@ -275,15 +289,12 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           demos={
             !page.slug
               ? INDUSTRY_PAGES.map((p) => p.demo)
-              : page.slug === "coaches"
-                ? [page.demo, ...COACH_BRANCHES.map((b) => b.demo)]
+              : isCoach
+                ? COACH_HERO_DEMOS
                 : [page.demo]
           }
         />
       </header>
-
-      {/* Coaches & consultants: every branch gets its own page */}
-      {isCoach && <CoachBranchPicker current={page.slug.replace(/^coaches\/?/, "")} />}
 
       {/* Willingness to pay: the LeadScoreAI difference */}
       <section className="bg-[#0B0B12] text-white">
@@ -315,7 +326,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             </p>
           </div>
           <div className="w-full max-w-md mx-auto">
-            <WtpVisual />
+            <WtpVisual set={set} />
           </div>
         </div>
       </section>
@@ -349,7 +360,59 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         </div>
       </section>
 
-      {/* Industries */}
+      {/* Coaches & consultants: one tab per specialty */}
+      {isCoach ? (
+        <section id="industries" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center max-w-2xl mx-auto">
+            <h2 className="text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
+              Built for every kind of coach and consultant.
+            </h2>
+            <p className="mt-4 text-[17px] text-slate-600">Pick your specialty and see the quizzes your clients would take.</p>
+          </div>
+          {(["coach", "consultant"] as const).map((group) => (
+            <div key={group} className="mt-8">
+              <p className="text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {group === "coach" ? "Coaches" : "Consultants"}
+              </p>
+              <div className="mt-3 -mx-4 px-4 flex sm:flex-wrap sm:justify-center gap-2 overflow-x-auto pb-2">
+                {COACH_BRANCHES.filter((b) => b.group === group).map((b) => (
+                  <button
+                    key={b.key}
+                    onClick={() => {
+                      setBranch(b.key);
+                      trackClient("industry_tab", { industry: `coaches:${b.key}` });
+                    }}
+                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[15px] font-semibold transition ${
+                      b.key === branch ? "bg-[#0B0B12] text-white" : "bg-slate-100 text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    <span>{b.emoji}</span>
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="mt-8 grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto [&>*]:min-w-0">
+            {activeBranch.examples.map((ex) => (
+              <button
+                key={ex.text}
+                onClick={() => start(activeBranch.starter, `coaches_${activeBranch.key}`)}
+                className="group text-left flex items-center gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-violet-300 hover:shadow-lg transition"
+              >
+                <span className="w-14 h-14 shrink-0 rounded-2xl bg-violet-50 flex items-center justify-center text-3xl">{ex.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-[17px] font-semibold leading-snug">{ex.text}</span>
+                  <span className="mt-1 block text-[13px] text-violet-600 font-semibold opacity-80 group-hover:opacity-100">
+                    Build this quiz →
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-[15px] text-slate-500 max-w-2xl mx-auto">{activeBranch.sub}</p>
+        </section>
+      ) : (
       <section id="industries" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
@@ -397,6 +460,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           </a>
         </p>
       </section>
+      )}
 
       {/* How it works */}
       <section className="bg-white border-y border-slate-200/70">
