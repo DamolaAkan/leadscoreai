@@ -7,7 +7,16 @@ import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/l
 import MetaPixel, { trackLead } from "@/components/MetaPixel";
 import { COACH_BRANCHES, COACH_HERO_DEMOS, showsLatseminary } from "@/lib/coach-pages";
 import { LatseminaryProof } from "./landing-proof";
-import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual, type VisualSet } from "./landing-visuals";
+import {
+  ChatVisual,
+  LeadsVisual,
+  PhoneQuiz,
+  ResultVisual,
+  ShareVisual,
+  WtpVisual,
+  visualSetFor,
+  type VisualSet,
+} from "./landing-visuals";
 
 const CTA = "Find my serious buyers";
 
@@ -129,10 +138,10 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [starter, setStarter] = useState(page.starter);
-  // Coaches & consultants: one page, with coach examples everywhere and
-  // specialty tabs instead of industry tabs.
+  // Coaches & consultants: one page with specialty tabs instead of industry tabs.
   const isCoach = page.slug === "coaches";
-  const set: VisualSet = isCoach ? "coaches" : "default";
+  // Each industry page shows its own examples; the home page mixes them.
+  const set: VisualSet = visualSetFor(page.slug);
   // Coaches talk about "clients", not "customers".
   const OUTCOMES = outcomesFor(set).map((o) =>
     isCoach

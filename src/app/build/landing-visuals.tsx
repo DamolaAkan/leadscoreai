@@ -68,105 +68,413 @@ export function PhoneQuiz({ demos }: { demos: IndustryPage["demo"][] }) {
 
 // Example content for the feature visuals: the general set (mixed
 // industries) or the coaches & consultants set for /build/coaches.
-export type VisualSet = "default" | "coaches";
 type Row = { name: string; note: string; tag: "Hot" | "Warm" | "Cold"; pct: number };
 const TAGS = {
   Hot: { color: "#16a34a", bg: "rgba(22,163,74,0.12)" },
   Warm: { color: "#b7791f", bg: "rgba(217,148,9,0.14)" },
   Cold: { color: "#1e40af", bg: "rgba(37,99,235,0.12)" },
 };
-const SETS = {
-  default: {
-    chat: {
-      msg: "I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.",
-      q: "Buyers, renters or both?",
-      on: "Buyers only",
-      off: "Both",
-    },
-    share: {
-      brand: "Luxe Hair Lagos",
-      title: "Find your perfect hair for December 👑",
-      preview: "Find your perfect hair | Luxe Hair Lagos",
-      previewSub: "Answer 6 quick questions and get your perfect look.",
-      message: "Hey babe! Take our 2-minute hair quiz and find the look made for you 💜",
-    },
-    result: {
-      title: "Full health screening 🩺",
-      desc: "A good next step for someone who hasn't had a check-up in over 3 years.",
-      why: [
-        ["✓", "Your last full check was over 3 years ago"],
-        ["✓", "Blood pressure runs in your family"],
-        ["!", "This is a guide, not a diagnosis"],
-      ],
-      cta: "Book my screening on WhatsApp →",
-    },
-    leads: {
-      title: "New leads · BrightPath Education",
-      rows: [
-        { name: "Adaeze O.", note: "UK Masters · funds ready · Jan intake", tag: "Hot", pct: 92 },
-        { name: "Kwame A.", note: "Canada · IELTS booked · comparing agents", tag: "Warm", pct: 71 },
-        { name: "Tolu B.", note: "Just exploring · no funding yet", tag: "Cold", pct: 44 },
-        { name: "Fatima S.", note: "UK Nursing · sponsor ready · Sept intake", tag: "Hot", pct: 86 },
-      ] as Row[],
-    },
-    wtp: {
-      q: "How much do you spend on fuel for your generator each month?",
-      opts: [["⛽", "Over ₦150,000"], ["🔋", "₦50,000 to ₦150,000"], ["💡", "Under ₦50,000"], ["🤷", "Not sure"]],
-      name: "Chidi E.",
-      sub: "SunPower Solutions · 5kVA hybrid system",
-      score: 86,
-      factors: [
-        { label: "Monthly fuel spend", pct: 90 },
-        { label: "Install timeline", pct: 80 },
-      ],
-    },
+type Chat = { msg: string; qs: { q: string; on: string; off: string }[] };
+type Share = { brand: string; title: string; preview: string; previewSub: string; message: string };
+type Result = { title: string; desc: string; why: [string, string][]; cta: string };
+type Wtp = { q: string; opts: [string, string][]; name: string; sub: string; score: number; factors: { label: string; pct: number }[] };
+type Content = { chat: Chat; share: Share; result: Result; leads: { title: string; rows: Row[] }; wtp: Wtp };
+
+const CHECK_FIRST = "What should it check first?";
+
+const SOLAR: Content = {
+  chat: {
+    msg: "I install solar in Abuja. I want to know which homes can afford a system before I send my team out.",
+    qs: [
+      { q: "Homes, businesses or both?", on: "Homes", off: "Both" },
+      { q: CHECK_FIRST, on: "Fuel spend", off: "Install date" },
+    ],
   },
-  coaches: {
-    chat: {
-      msg: "I'm a business consultant in Lagos. I want a quiz that shows which companies have the budget to hire me before I book a discovery call.",
-      q: "Discovery call or webinar?",
-      on: "Discovery call",
-      off: "Webinar",
-    },
-    share: {
-      brand: "Better Together Coaching",
-      title: "How healthy is your relationship? 💞",
-      preview: "Relationship check | Better Together Coaching",
-      previewSub: "Answer 6 quick questions and get your personal report.",
-      message: "Hi! Take my free 2-minute relationship check and get your personal report 💜",
-    },
-    result: {
-      title: "Debt-Free in 90 Days 💰",
-      desc: "A good fit for someone ready to stop living from payday to payday.",
-      why: [
-        ["✓", "You run out of money before payday most months"],
-        ["✓", "You're ready to start this month"],
-        ["!", "This is a guide, not financial advice"],
-      ],
-      cta: "Book my free strategy call →",
-    },
-    leads: {
-      title: "New leads · Iron Body Fitness",
-      rows: [
-        { name: "Adaeze O.", note: "12-week transformation · ready this month", tag: "Hot", pct: 92 },
-        { name: "Kwame A.", note: "Online plan · comparing coaches", tag: "Warm", pct: 71 },
-        { name: "Tolu B.", note: "Just curious · no budget yet", tag: "Cold", pct: 44 },
-        { name: "Fatima S.", note: "1:1 coaching · budget ready", tag: "Hot", pct: 86 },
-      ] as Row[],
-    },
-    wtp: {
-      q: "How much are you ready to invest in coaching this quarter?",
-      opts: [["💎", "Over ₦1m"], ["💼", "₦300k to ₦1m"], ["🌱", "Under ₦300k"], ["🤔", "Not sure yet"]],
-      name: "Chidi E.",
-      sub: "Scale Up Coaching · 6-month programme",
-      score: 88,
-      factors: [
-        { label: "Coaching budget", pct: 90 },
-        { label: "Start date", pct: 85 },
-      ],
-    },
+  share: {
+    brand: "SunPower Solutions",
+    title: "Can your home afford solar? ☀️",
+    preview: "Solar check | SunPower Solutions",
+    previewSub: "Answer 6 quick questions and see what size system fits you.",
+    message: "Tired of NEPA and fuel prices? Take our 2-minute solar check and see what system fits your home ☀️",
+  },
+  result: {
+    title: "5kVA hybrid system ☀️",
+    desc: "A good fit for a home spending over ₦150,000 a month on fuel.",
+    why: [
+      ["✓", "You spend over ₦150k on fuel every month"],
+      ["✓", "You want to install within 30 days"],
+      ["!", "Final size is confirmed at a site visit"],
+    ],
+    cta: "Book my free site visit →",
+  },
+  leads: {
+    title: "New leads · SunPower Solutions",
+    rows: [
+      { name: "Chidi E.", note: "5kVA hybrid · ₦180k fuel/mo · this month", tag: "Hot", pct: 92 },
+      { name: "Bola A.", note: "3kVA · comparing 3 quotes", tag: "Warm", pct: 71 },
+      { name: "Musa K.", note: "Just checking prices", tag: "Cold", pct: 44 },
+      { name: "Ngozi O.", note: "10kVA · business · budget ready", tag: "Hot", pct: 86 },
+    ],
+  },
+  wtp: {
+    q: "How much do you spend on fuel for your generator each month?",
+    opts: [["⛽", "Over ₦150,000"], ["🔋", "₦50,000 to ₦150,000"], ["💡", "Under ₦50,000"], ["🤷", "Not sure"]],
+    name: "Chidi E.",
+    sub: "SunPower Solutions · 5kVA hybrid system",
+    score: 86,
+    factors: [
+      { label: "Monthly fuel spend", pct: 90 },
+      { label: "Install timeline", pct: 80 },
+    ],
   },
 };
+
+const REAL_ESTATE: Content = {
+  chat: {
+    msg: "I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.",
+    qs: [
+      { q: "Buyers, renters or both?", on: "Buyers only", off: "Both" },
+      { q: CHECK_FIRST, on: "Budget", off: "Move-in date" },
+    ],
+  },
+  share: {
+    brand: "Prime Homes Lekki",
+    title: "Are you ready to buy a home? 🔑",
+    preview: "Home buyer check | Prime Homes Lekki",
+    previewSub: "Answer 6 quick questions and see what you can afford.",
+    message: "Thinking of buying in Lekki? Take our 2-minute buyer check and see what fits your budget 🏠",
+  },
+  result: {
+    title: "3-bedroom terrace in Lekki 🏡",
+    desc: "A good match for your budget, family size and move-in date.",
+    why: [
+      ["✓", "Your budget covers ₦150m to ₦200m"],
+      ["✓", "You want to move in within 3 months"],
+      ["!", "Prices and availability can change"],
+    ],
+    cta: "Book a viewing on WhatsApp →",
+  },
+  leads: {
+    title: "New leads · Prime Homes Lekki",
+    rows: [
+      { name: "Tunde A.", note: "4-bed · ₦250m · mortgage approved", tag: "Hot", pct: 94 },
+      { name: "Ifeoma K.", note: "3-bed · renting now · in 6 months", tag: "Warm", pct: 70 },
+      { name: "Sam O.", note: "Just browsing listings", tag: "Cold", pct: 38 },
+      { name: "Aisha B.", note: "Duplex · cash buyer · this quarter", tag: "Hot", pct: 88 },
+    ],
+  },
+  wtp: {
+    q: "What's your budget for this home?",
+    opts: [["💎", "Over ₦200m"], ["🏠", "₦100m to ₦200m"], ["🔑", "Under ₦100m"], ["🤔", "Not sure yet"]],
+    name: "Tunde A.",
+    sub: "Prime Homes · 4-bed in Lekki",
+    score: 94,
+    factors: [
+      { label: "Budget", pct: 95 },
+      { label: "Move-in date", pct: 90 },
+    ],
+  },
+};
+
+const HAIR: Content = {
+  chat: {
+    msg: "I sell hair extensions and wigs in Lagos. I want a quiz that matches customers to the right hair and shows me who's ready to order.",
+    qs: [
+      { q: "Wigs, bundles or both?", on: "Both", off: "Wigs only" },
+      { q: CHECK_FIRST, on: "Budget", off: "When they need it" },
+    ],
+  },
+  share: {
+    brand: "Luxe Hair Lagos",
+    title: "Find your perfect hair for December 👑",
+    preview: "Find your perfect hair | Luxe Hair Lagos",
+    previewSub: "Answer 6 quick questions and get your perfect look.",
+    message: "Hey babe! Take our 2-minute hair quiz and find the look made for you 💜",
+  },
+  result: {
+    title: "Bone straight 24-inch wig 👑",
+    desc: "A good match for a sleek, everyday look that lasts.",
+    why: [
+      ["✓", "You want a sleek, low-maintenance look"],
+      ["✓", "You need it before your event next week"],
+      ["!", "Final length and colour are confirmed on WhatsApp"],
+    ],
+    cta: "Order my wig on WhatsApp →",
+  },
+  leads: {
+    title: "New leads · Luxe Hair Lagos",
+    rows: [
+      { name: "Amaka N.", note: "Bone straight wig · wedding next week · ₦250k", tag: "Hot", pct: 93 },
+      { name: "Kemi F.", note: "Body wave bundles · this month", tag: "Warm", pct: 72 },
+      { name: "Rita E.", note: "Asking prices", tag: "Cold", pct: 35 },
+      { name: "Zainab M.", note: "Full glam wig · budget ready", tag: "Hot", pct: 85 },
+    ],
+  },
+  wtp: {
+    q: "How much do you usually spend on hair?",
+    opts: [["💎", "Over ₦200k"], ["💁🏾‍♀️", "₦80k to ₦200k"], ["🌱", "Under ₦80k"], ["🤷", "It varies"]],
+    name: "Amaka N.",
+    sub: "Luxe Hair · bone straight wig for a wedding",
+    score: 93,
+    factors: [
+      { label: "Hair budget", pct: 95 },
+      { label: "Needed by", pct: 90 },
+    ],
+  },
+};
+
+const CLINICS: Content = {
+  chat: {
+    msg: "I run a private clinic in Ikeja. I want a quiz that points people to the right check-up and shows me who is ready to book.",
+    qs: [
+      { q: "Walk-ins or appointments?", on: "Appointments", off: "Both" },
+      { q: CHECK_FIRST, on: "How they'll pay", off: "How soon" },
+    ],
+  },
+  share: {
+    brand: "CarePoint Clinic",
+    title: "Are you due for a health check? 🩺",
+    preview: "Health check | CarePoint Clinic",
+    previewSub: "Answer 6 quick questions and see which check-up fits you.",
+    message: "When did you last check your health? Take our 2-minute check and see which screening fits you 🩺",
+  },
+  result: {
+    title: "Full health screening 🩺",
+    desc: "A good next step for someone who hasn't had a check-up in over 3 years.",
+    why: [
+      ["✓", "Your last full check was over 3 years ago"],
+      ["✓", "Blood pressure runs in your family"],
+      ["!", "This is a guide, not a diagnosis"],
+    ],
+    cta: "Book my screening on WhatsApp →",
+  },
+  leads: {
+    title: "New leads · CarePoint Clinic",
+    rows: [
+      { name: "Amaka N.", note: "Full screening · paying cash · this week", tag: "Hot", pct: 91 },
+      { name: "David O.", note: "Eye test · HMO · next month", tag: "Warm", pct: 69 },
+      { name: "Grace T.", note: "Asking about prices", tag: "Cold", pct: 33 },
+      { name: "Musa K.", note: "Heart check · family history · ready", tag: "Hot", pct: 86 },
+    ],
+  },
+  wtp: {
+    q: "How would you pay for your check-up?",
+    opts: [["💳", "Cash or card"], ["🏥", "HMO or insurance"], ["👨‍👩‍👧", "Family pays"], ["🤔", "Not sure"]],
+    name: "Amaka N.",
+    sub: "CarePoint Clinic · full health screening",
+    score: 91,
+    factors: [
+      { label: "Payment ready", pct: 95 },
+      { label: "Booking date", pct: 88 },
+    ],
+  },
+};
+
+const STUDY_ABROAD: Content = {
+  chat: {
+    msg: "I run a study-abroad agency. I want a quiz that shows which students have the grades, English test and funds to apply now.",
+    qs: [
+      { q: "UK, Canada or both?", on: "Both", off: "UK only" },
+      { q: CHECK_FIRST, on: "Funding", off: "Intake date" },
+    ],
+  },
+  share: {
+    brand: "BrightPath Education",
+    title: "Are you eligible to study in the UK? 🇬🇧",
+    preview: "UK eligibility check | BrightPath Education",
+    previewSub: "Answer 6 quick questions and see where you stand.",
+    message: "Dreaming of a UK Masters? Take our free 2-minute eligibility check 🎓",
+  },
+  result: {
+    title: "UK Masters · January intake 🎓",
+    desc: "You look ready to apply for a January start.",
+    why: [
+      ["✓", "Your grades meet most UK entry requirements"],
+      ["✓", "Your tuition funding is ready"],
+      ["!", "This is a guide, not an admission decision"],
+    ],
+    cta: "Book my free consultation →",
+  },
+  leads: {
+    title: "New leads · BrightPath Education",
+    rows: [
+      { name: "Adaeze O.", note: "UK Masters · funds ready · Jan intake", tag: "Hot", pct: 92 },
+      { name: "Kwame A.", note: "Canada · IELTS booked · comparing agents", tag: "Warm", pct: 71 },
+      { name: "Tolu B.", note: "Just exploring · no funding yet", tag: "Cold", pct: 44 },
+      { name: "Fatima S.", note: "UK Nursing · sponsor ready · Sept intake", tag: "Hot", pct: 86 },
+    ],
+  },
+  wtp: {
+    q: "How will you fund your studies?",
+    opts: [["💷", "Funds ready now"], ["👪", "Family sponsor"], ["🎓", "Need a scholarship"], ["🤔", "Not sure yet"]],
+    name: "Adaeze O.",
+    sub: "BrightPath · UK Masters · January intake",
+    score: 92,
+    factors: [
+      { label: "Funding ready", pct: 95 },
+      { label: "Intake timing", pct: 86 },
+    ],
+  },
+};
+
+const SKINCARE: Content = {
+  chat: {
+    msg: "I sell skincare on Instagram. I want a quiz that recommends the right routine and shows me who is ready to buy.",
+    qs: [
+      { q: "Full routines or single products?", on: "Full routines", off: "Both" },
+      { q: CHECK_FIRST, on: "Skin type", off: "Monthly spend" },
+    ],
+  },
+  share: {
+    brand: "Glow Skincare",
+    title: "Which routine fits your skin? ✨",
+    preview: "Skin quiz | Glow Skincare",
+    previewSub: "Answer 6 quick questions and get your perfect routine.",
+    message: "Not sure what your skin needs? Take our 2-minute skin quiz and get your routine ✨",
+  },
+  result: {
+    title: "The Oil-Balance routine 🌗",
+    desc: "Made for skin that's oily in the T-zone and dry on the cheeks.",
+    why: [
+      ["✓", "Your T-zone gets shiny by midday"],
+      ["✓", "You want a simple 3-step routine"],
+      ["!", "Patch test new products first"],
+    ],
+    cta: "Order my routine on WhatsApp →",
+  },
+  leads: {
+    title: "New leads · Glow Skincare",
+    rows: [
+      { name: "Zainab M.", note: "Oily T-zone · full routine · ₦45k", tag: "Hot", pct: 88 },
+      { name: "Kemi F.", note: "Dry skin · wants one serum", tag: "Warm", pct: 67 },
+      { name: "Rita E.", note: "Just curious", tag: "Cold", pct: 30 },
+      { name: "Tolu B.", note: "Acne care · budget ready", tag: "Hot", pct: 84 },
+    ],
+  },
+  wtp: {
+    q: "How much do you spend on skincare each month?",
+    opts: [["💎", "Over ₦50k"], ["✨", "₦20k to ₦50k"], ["🌱", "Under ₦20k"], ["🤷", "It varies"]],
+    name: "Zainab M.",
+    sub: "Glow Skincare · Oil-Balance routine",
+    score: 88,
+    factors: [
+      { label: "Skincare budget", pct: 92 },
+      { label: "Ready to order", pct: 85 },
+    ],
+  },
+};
+
+const TRAVEL: Content = {
+  chat: {
+    msg: "I sell holiday packages from Lagos. I want a quiz that matches travellers to the right trip and shows me who has the budget to book.",
+    qs: [
+      { q: "Local, international or both?", on: "Both", off: "International" },
+      { q: CHECK_FIRST, on: "Budget", off: "Travel dates" },
+    ],
+  },
+  share: {
+    brand: "Wanderlust Travels",
+    title: "Where should you go this December? 🌍",
+    preview: "Trip finder | Wanderlust Travels",
+    previewSub: "Answer 6 quick questions and get your perfect trip.",
+    message: "Planning your December getaway? Take our 2-minute trip quiz and find your perfect holiday 🏝️",
+  },
+  result: {
+    title: "Zanzibar beach escape 🏝️",
+    desc: "A good match for sun, sea and a relaxed December break.",
+    why: [
+      ["✓", "You want beaches and sunsets"],
+      ["✓", "Your budget covers 5 nights for two"],
+      ["!", "Prices depend on your travel dates"],
+    ],
+    cta: "Get my quote on WhatsApp →",
+  },
+  leads: {
+    title: "New leads · Wanderlust Travels",
+    rows: [
+      { name: "Ngozi A.", note: "Dubai · 2 adults · ₦4.5m · Dec 18", tag: "Hot", pct: 91 },
+      { name: "Seun O.", note: "Zanzibar honeymoon · dates flexible", tag: "Warm", pct: 67 },
+      { name: "Ife B.", note: "Just browsing deals", tag: "Cold", pct: 30 },
+      { name: "Kunle D.", note: "Family of 4 · Cape Town · budget ready", tag: "Hot", pct: 87 },
+    ],
+  },
+  wtp: {
+    q: "What's your budget for this trip?",
+    opts: [["💎", "Over ₦5m"], ["✈️", "₦2m to ₦5m"], ["🌱", "Under ₦2m"], ["🤔", "Not sure yet"]],
+    name: "Ngozi A.",
+    sub: "Wanderlust · Dubai for two in December",
+    score: 91,
+    factors: [
+      { label: "Trip budget", pct: 92 },
+      { label: "Travel dates set", pct: 85 },
+    ],
+  },
+};
+
+const COACHES: Content = {
+  chat: {
+    msg: "I'm a business consultant in Lagos. I want a quiz that shows which companies have the budget to hire me before I book a discovery call.",
+    qs: [
+      { q: "Discovery call or webinar?", on: "Discovery call", off: "Webinar" },
+      { q: CHECK_FIRST, on: "Budget to invest", off: "Start date" },
+    ],
+  },
+  share: {
+    brand: "Better Together Coaching",
+    title: "How healthy is your relationship? 💞",
+    preview: "Relationship check | Better Together Coaching",
+    previewSub: "Answer 6 quick questions and get your personal report.",
+    message: "Hi! Take my free 2-minute relationship check and get your personal report 💜",
+  },
+  result: {
+    title: "Debt-Free in 90 Days 💰",
+    desc: "A good fit for someone ready to stop living from payday to payday.",
+    why: [
+      ["✓", "You run out of money before payday most months"],
+      ["✓", "You're ready to start this month"],
+      ["!", "This is a guide, not financial advice"],
+    ],
+    cta: "Book my free strategy call →",
+  },
+  leads: {
+    title: "New leads · Iron Body Fitness",
+    rows: [
+      { name: "Adaeze O.", note: "12-week transformation · ready this month", tag: "Hot", pct: 92 },
+      { name: "Kwame A.", note: "Online plan · comparing coaches", tag: "Warm", pct: 71 },
+      { name: "Tolu B.", note: "Just curious · no budget yet", tag: "Cold", pct: 44 },
+      { name: "Fatima S.", note: "1:1 coaching · budget ready", tag: "Hot", pct: 86 },
+    ],
+  },
+  wtp: {
+    q: "How much are you ready to invest in coaching this quarter?",
+    opts: [["💎", "Over ₦1m"], ["💼", "₦300k to ₦1m"], ["🌱", "Under ₦300k"], ["🤔", "Not sure yet"]],
+    name: "Chidi E.",
+    sub: "Scale Up Coaching · 6-month programme",
+    score: 88,
+    factors: [
+      { label: "Coaching budget", pct: 90 },
+      { label: "Start date", pct: 85 },
+    ],
+  },
+};
+
+// Home page: a spread of industries across the feature rows.
+const SETS = {
+  default: { chat: REAL_ESTATE.chat, share: HAIR.share, result: CLINICS.result, leads: STUDY_ABROAD.leads, wtp: SOLAR.wtp },
+  coaches: COACHES,
+  solar: SOLAR,
+  "real-estate": REAL_ESTATE,
+  hair: HAIR,
+  clinics: CLINICS,
+  "study-abroad": STUDY_ABROAD,
+  skincare: SKINCARE,
+  travel: TRAVEL,
+} satisfies Record<string, Content>;
+
+export type VisualSet = keyof typeof SETS;
+export function visualSetFor(slug: string): VisualSet {
+  return slug in SETS ? (slug as VisualSet) : "default";
+}
 
 export function ChatVisual({ set = "default" }: { set?: VisualSet }) {
   const c = SETS[set].chat;
@@ -177,20 +485,17 @@ export function ChatVisual({ set = "default" }: { set?: VisualSet }) {
       </div>
       <div className="max-w-[90%] rounded-2xl rounded-bl-md bg-[#1C2333] border border-[#2B3245] px-4 py-3">
         Love it. Two quick choices before I build:
-        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">{c.q}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <span className="rounded-full bg-violet-500/20 ring-1 ring-violet-400 px-3 py-1.5 text-[12.5px] text-violet-100">
-            {c.on}
-          </span>
-          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">{c.off}</span>
-        </div>
-        <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">Pictures on the answers?</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <span className="rounded-full bg-violet-500/20 ring-1 ring-violet-400 px-3 py-1.5 text-[12.5px] text-violet-100">
-            Emoji picture cards
-          </span>
-          <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">Text only</span>
-        </div>
+        {c.qs.map((q) => (
+          <div key={q.q}>
+            <p className="mt-3 text-[12px] font-semibold text-[#9DA2A6]">{q.q}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="rounded-full bg-violet-500/20 ring-1 ring-violet-400 px-3 py-1.5 text-[12.5px] text-violet-100">
+                {q.on}
+              </span>
+              <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 text-[12.5px]">{q.off}</span>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="flex items-center gap-2 text-[12px] text-[#9DA2A6]">
         <span className="flex gap-1">
