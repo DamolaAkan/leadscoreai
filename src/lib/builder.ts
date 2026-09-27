@@ -5,7 +5,7 @@
 
 import type { Qualification } from "./types";
 
-// Sonnet 5 keeps each AI edit cheap enough for the ₦5,000 / 50-edit top-up
+// Sonnet 5 keeps each AI edit (~₦91 incl. free turns) well under the ₦225 top-up price
 // to stay profitable (Damola's call, 2026-09-26).
 export const BUILDER_MODEL = "claude-sonnet-5";
 

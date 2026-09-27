@@ -68,9 +68,9 @@ interface Credits {
   canTopUp: boolean;
 }
 
-// Mirrors src/lib/credits.ts (₦5,000 = 40 edits, prorated).
-const TOPUP_MIN_NAIRA = 5000;
-const NAIRA_PER_EDIT = 125;
+// Mirrors src/lib/credits.ts (₦9,000 = 40 edits, prorated at ₦225/edit).
+const TOPUP_MIN_NAIRA = 9000;
+const NAIRA_PER_EDIT = 225;
 
 function hoursLeft(endsAt: string | null): number {
   if (!endsAt) return 0;
@@ -723,7 +723,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               {!credits.paid
                 ? "Go Pro for 150 edits a month."
                 : credits.canTopUp
-                  ? `Top up: ₦5,000 = 40 edits.`
+                  ? `Top up: ₦9,000 = 40 edits.`
                   : credits.resetsAt
                     ? `Renews ${new Date(credits.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.`
                     : ""}
@@ -1191,9 +1191,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             {credits.paid && credits.canTopUp && (
               <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
                 <p className="text-[14px] font-semibold text-[#F5F9FC]">Top up</p>
-                <p className="text-[12.5px] text-[#9DA2A6]">₦5,000 = 40 edits. Any amount from ₦5,000. Top-ups never expire.</p>
+                <p className="text-[12.5px] text-[#9DA2A6]">₦9,000 = 40 edits. Any amount from ₦9,000. Top-ups never expire.</p>
                 <div className="mt-3 flex gap-2">
-                  {[5000, 10000, 20000].map((n) => (
+                  {[9000, 18000, 36000].map((n) => (
                     <button
                       key={n}
                       onClick={() => setTopupAmount(String(n))}

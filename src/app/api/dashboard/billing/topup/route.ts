@@ -14,7 +14,7 @@ import { track } from "@/lib/track";
 export const dynamic = "force-dynamic";
 
 // Buy extra builder AI edits. Only Pro accounts that have used this month's
-// allowance can top up; any whole-naira amount from ₦5,000, prorated at ₦125/edit.
+// allowance can top up; any whole-naira amount from ₦9,000, prorated at ₦225/edit.
 export async function POST(request: Request) {
   const sessionId = getSessionIdFromRequest(request);
   if (!sessionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

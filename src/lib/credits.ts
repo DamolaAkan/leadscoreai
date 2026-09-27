@@ -9,9 +9,11 @@ import { isPaid, type OrgBilling } from "./paystack";
 
 export const FREE_EDITS = 30;
 export const PRO_MONTHLY_EDITS = 150;
-export const TOPUP_MIN_NAIRA = 5000;
+export const TOPUP_MIN_NAIRA = 9000;
 export const TOPUP_MAX_NAIRA = 500000;
-export const NAIRA_PER_EDIT = 125; // ₦5,000 = 40 edits, prorated for larger amounts
+// ₦9,000 = 40 edits (₦225/edit), prorated for larger amounts. Priced for >50%
+// margin on real costs (~₦91/edit incl. free turns) even at ₦1,600/$.
+export const NAIRA_PER_EDIT = 225;
 
 export function editsForNaira(naira: number): number {
   return Math.floor(naira / NAIRA_PER_EDIT);
