@@ -80,7 +80,7 @@ const WTP_SIGNALS = [
 const FAQS = [
   {
     q: "What is an AI edit?",
-    a: "Each time the builder creates or changes your quiz, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your quiz, Pro includes 150 a month, and Pro accounts that run out can top up any amount from ₦9,000 (₦9,000 = 40 edits).",
+    a: "Each time the builder creates or changes your quiz, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your quiz, Pro includes 150 a month, and Pro accounts that run out can top up in ₦10,000 steps (₦10,000 = 45 edits).",
   },
   {
     q: "What is a willingness-to-pay score?",
@@ -122,7 +122,7 @@ const PLAN = {
   features: [
     "2,000 leads a month",
     "10 live quizzes",
-    "150 AI edits a month, top up any time you run out (₦9,000 = 40 edits)",
+    "150 AI edits a month, top up any time you run out (₦10,000 = 45 edits)",
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
     "WhatsApp sharing and website embed",

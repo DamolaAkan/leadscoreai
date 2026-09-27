@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
-import { NAIRA_PER_EDIT } from "@/lib/credits";
+import { editsForNaira } from "@/lib/credits";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { track } from "@/lib/track";
 import { sendMetaEvent } from "@/lib/meta-capi";
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       orgId &&
       d.status === "success" &&
       credits > 0 &&
-      amountNaira >= credits * NAIRA_PER_EDIT
+      credits <= editsForNaira(amountNaira)
     ) {
       const supabase = createServiceClient();
       const { error } = await supabase.from("builder_credit_ledger").insert({

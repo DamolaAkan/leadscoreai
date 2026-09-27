@@ -5,6 +5,7 @@ import { initTopupTransaction, paystackConfigured, pickBillingEmail } from "@/li
 import {
   TOPUP_MAX_NAIRA,
   TOPUP_MIN_NAIRA,
+  TOPUP_STEP_NAIRA,
   editsForNaira,
   getCreditStatus,
   loadOrgForCredits,
@@ -14,7 +15,7 @@ import { track } from "@/lib/track";
 export const dynamic = "force-dynamic";
 
 // Buy extra builder AI edits. Only Pro accounts that have used this month's
-// allowance can top up; any whole-naira amount from ₦9,000, prorated at ₦225/edit.
+// allowance can top up, in ₦10,000 steps (₦10,000 = 45 edits).
 export async function POST(request: Request) {
   const sessionId = getSessionIdFromRequest(request);
   if (!sessionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,9 +29,14 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const amountNaira = Math.floor(Number(body.amountNaira));
-  if (!Number.isFinite(amountNaira) || amountNaira < TOPUP_MIN_NAIRA || amountNaira > TOPUP_MAX_NAIRA) {
+  if (
+    !Number.isFinite(amountNaira) ||
+    amountNaira < TOPUP_MIN_NAIRA ||
+    amountNaira > TOPUP_MAX_NAIRA ||
+    amountNaira % TOPUP_STEP_NAIRA !== 0
+  ) {
     return NextResponse.json(
-      { error: `Top up any amount from ₦${TOPUP_MIN_NAIRA.toLocaleString()} to ₦${TOPUP_MAX_NAIRA.toLocaleString()}.` },
+      { error: `Top up in steps of ₦${TOPUP_STEP_NAIRA.toLocaleString()} (up to ₦${TOPUP_MAX_NAIRA.toLocaleString()}).` },
       { status: 400 }
     );
   }

@@ -9,14 +9,15 @@ import { isPaid, type OrgBilling } from "./paystack";
 
 export const FREE_EDITS = 30;
 export const PRO_MONTHLY_EDITS = 150;
-export const TOPUP_MIN_NAIRA = 9000;
+// Top-ups come in ₦10,000 steps of 45 edits (≈₦222/edit): >50% margin on real
+// costs (~₦91/edit incl. free turns) even at ₦1,600/$.
+export const TOPUP_STEP_NAIRA = 10000;
+export const EDITS_PER_STEP = 45;
+export const TOPUP_MIN_NAIRA = TOPUP_STEP_NAIRA;
 export const TOPUP_MAX_NAIRA = 500000;
-// ₦9,000 = 40 edits (₦225/edit), prorated for larger amounts. Priced for >50%
-// margin on real costs (~₦91/edit incl. free turns) even at ₦1,600/$.
-export const NAIRA_PER_EDIT = 225;
 
 export function editsForNaira(naira: number): number {
-  return Math.floor(naira / NAIRA_PER_EDIT);
+  return Math.floor(naira / TOPUP_STEP_NAIRA) * EDITS_PER_STEP;
 }
 
 // Claude Sonnet 5 list prices, USD per million tokens (5-minute cache writes).

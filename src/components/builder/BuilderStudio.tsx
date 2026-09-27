@@ -68,9 +68,10 @@ interface Credits {
   canTopUp: boolean;
 }
 
-// Mirrors src/lib/credits.ts (₦9,000 = 40 edits, prorated at ₦225/edit).
-const TOPUP_MIN_NAIRA = 9000;
-const NAIRA_PER_EDIT = 225;
+// Mirrors src/lib/credits.ts: top-ups in ₦10,000 steps of 45 edits.
+const TOPUP_STEP_NAIRA = 10000;
+const EDITS_PER_STEP = 45;
+const TOPUP_MIN_NAIRA = TOPUP_STEP_NAIRA;
 
 function hoursLeft(endsAt: string | null): number {
   if (!endsAt) return 0;
@@ -513,7 +514,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   };
 
   const topupNaira = Math.floor(Number(topupAmount.replace(/[^0-9]/g, "")) || 0);
-  const topupEdits = Math.floor(topupNaira / NAIRA_PER_EDIT);
+  const topupEdits = Math.floor(topupNaira / TOPUP_STEP_NAIRA) * EDITS_PER_STEP;
+  const stepTopup = (dir: 1 | -1) =>
+    setTopupAmount(String(Math.min(500000, Math.max(TOPUP_MIN_NAIRA, topupNaira + dir * TOPUP_STEP_NAIRA))));
   const topUp = async () => {
     if (topupNaira < TOPUP_MIN_NAIRA) {
       setCreditsMsg(`The minimum top-up is ₦${TOPUP_MIN_NAIRA.toLocaleString()}.`);
@@ -723,7 +726,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               {!credits.paid
                 ? "Go Pro for 150 edits a month."
                 : credits.canTopUp
-                  ? `Top up: ₦9,000 = 40 edits.`
+                  ? `Top up: ₦10,000 = 45 edits.`
                   : credits.resetsAt
                     ? `Renews ${new Date(credits.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.`
                     : ""}
@@ -1191,9 +1194,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             {credits.paid && credits.canTopUp && (
               <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
                 <p className="text-[14px] font-semibold text-[#F5F9FC]">Top up</p>
-                <p className="text-[12.5px] text-[#9DA2A6]">₦9,000 = 40 edits. Any amount from ₦9,000. Top-ups never expire.</p>
+                <p className="text-[12.5px] text-[#9DA2A6]">₦10,000 = 45 edits, in ₦10,000 steps. Top-ups never expire.</p>
                 <div className="mt-3 flex gap-2">
-                  {[9000, 18000, 36000].map((n) => (
+                  {[10000, 20000, 30000].map((n) => (
                     <button
                       key={n}
                       onClick={() => setTopupAmount(String(n))}
@@ -1205,17 +1208,30 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                     </button>
                   ))}
                 </div>
-                <label className="mt-3 flex items-center gap-2 rounded-xl bg-[#1C2333] ring-1 ring-[#2B3245] focus-within:ring-violet-500 px-3">
-                  <span className="text-[#9DA2A6]">₦</span>
-                  <input
-                    inputMode="numeric"
-                    value={topupAmount}
-                    onChange={(e) => setTopupAmount(e.target.value.replace(/[^0-9]/g, "").slice(0, 7))}
-                    className="flex-1 bg-transparent py-3 text-[16px] text-[#F5F9FC] outline-none"
-                    aria-label="Top-up amount in naira"
-                  />
-                  <span className="text-[13px] font-semibold text-violet-200 whitespace-nowrap">= {topupEdits} edits</span>
-                </label>
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-[#1C2333] ring-1 ring-[#2B3245] px-2">
+                  <button
+                    type="button"
+                    onClick={() => stepTopup(-1)}
+                    disabled={topupNaira <= TOPUP_MIN_NAIRA}
+                    aria-label="₦10,000 less"
+                    className="w-10 h-10 rounded-lg text-[20px] text-[#F5F9FC] disabled:opacity-30"
+                  >
+                    −
+                  </button>
+                  <span className="flex-1 text-center py-3 text-[16px] font-semibold text-[#F5F9FC]">
+                    ₦{topupNaira.toLocaleString()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => stepTopup(1)}
+                    disabled={topupNaira >= 500000}
+                    aria-label="₦10,000 more"
+                    className="w-10 h-10 rounded-lg text-[20px] text-[#F5F9FC] disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                  <span className="pr-2 text-[13px] font-semibold text-violet-200 whitespace-nowrap">= {topupEdits} edits</span>
+                </div>
                 <button
                   onClick={topUp}
                   disabled={toppingUp || topupNaira < TOPUP_MIN_NAIRA}
