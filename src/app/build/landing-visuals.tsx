@@ -24,9 +24,9 @@ export function PhoneQuiz({ demos }: { demos: IndustryPage["demo"][] }) {
             <span className="h-5 w-24 rounded-full bg-black/80" />
           </div>
           <div key={idx} className="px-5 pt-4 pb-6 animate-[fadeIn_0.5s_ease]">
-            <div className="flex items-center justify-between text-[11px] text-violet-200/80">
-              <span className="font-semibold">{demo.brand}</span>
-              <span>Question 2 of 6</span>
+            <div className="flex items-center justify-between gap-3 text-[11px] text-violet-200/80">
+              <span className="font-semibold truncate min-w-0">{demo.brand}</span>
+              <span className="shrink-0">Question 2 of 6</span>
             </div>
             <div className="mt-2 h-1.5 rounded-full bg-white/10">
               <div className="h-full w-1/3 rounded-full bg-violet-400" />
