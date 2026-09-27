@@ -172,6 +172,12 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   // Activity log: every landing visit, with where it came from (ads / UTM).
   useEffect(() => {
     captureFirstTouch();
+    // Remember their industry so the builder's examples match it.
+    try {
+      if (page.slug) localStorage.setItem("lsai-industry", page.slug);
+    } catch {
+      /* ignore */
+    }
     const q = new URLSearchParams(window.location.search);
     trackClient("landing_view", {
       page: page.slug || "home",

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Confetti from "./Confetti";
+import { INDUSTRY_PAGES } from "@/lib/builder-industries";
+import { COACH_BRANCHES } from "@/lib/coach-pages";
 import { trackClient } from "@/lib/track-client";
 import { checkoutStartedPixel } from "@/components/MetaPixel";
 
@@ -75,12 +77,28 @@ function hoursLeft(endsAt: string | null): number {
   return Math.max(1, Math.ceil((new Date(endsAt).getTime() - Date.now()) / 3600000));
 }
 
-const STARTERS = [
+const DEFAULT_STARTERS = [
   { emoji: "🎓", text: "I run a study-abroad agency in Lagos. I want a quiz that tells students if they're eligible to study in the UK." },
   { emoji: "✨", text: "I sell skincare online. I want a quiz that recommends the right routine for each customer's skin." },
   { emoji: "🌍", text: "I'm a travel consultant. I want a fun quiz that matches people to the right holiday package." },
   { emoji: "☀️", text: "I install solar in Abuja. I want to find out which homes can actually afford it before I visit." },
 ];
+
+// Examples that match the industry page the owner came from (remembered by
+// the landing page as "lsai-industry"); the generic mix otherwise.
+function startersFor(industry: string | null): { emoji: string; text: string }[] {
+  const intro = (starter: string) => starter.split(". ")[0].replace(/\.$/, "") + ".";
+  const ask = (i: string, title: string) => `${i} I want a "${title}" quiz that shows me who is serious and ready to pay.`;
+  if (industry === "coaches") {
+    return ["fitness", "relationship", "finance", "business-strategy"]
+      .map((k) => COACH_BRANCHES.find((b) => b.key === k))
+      .filter((b): b is (typeof COACH_BRANCHES)[number] => !!b)
+      .map((b) => ({ emoji: b.examples[0].emoji, text: ask(intro(b.starter), b.examples[0].text) }));
+  }
+  const page = INDUSTRY_PAGES.find((p) => p.slug === industry);
+  if (!page) return DEFAULT_STARTERS;
+  return page.examples.map((ex) => ({ emoji: ex.emoji, text: ask(intro(page.starter), ex.text) }));
+}
 
 const WELCOME: ChatMessage = {
   role: "assistant",
@@ -153,6 +171,14 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   // First-quiz celebration: confetti the first time the owner opens its preview.
   const [celebrate, setCelebrate] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [starters, setStarters] = useState(DEFAULT_STARTERS);
+  useEffect(() => {
+    try {
+      setStarters(startersFor(localStorage.getItem("lsai-industry")));
+    } catch {
+      /* storage blocked: keep the generic examples */
+    }
+  }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cameWithStarter = useRef(false);
   const starterRef = useRef<string | null>(null);
@@ -665,7 +691,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         {userCount === 0 && !thinking && !current && (
           <div className="pt-1 space-y-2">
             <p className="text-xs text-[#9DA2A6] px-1">Or start from an example</p>
-            {STARTERS.map((s) => (
+            {starters.map((s) => (
               <button
                 key={s.text}
                 onClick={() => send(s.text)}
