@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { INDUSTRY_PAGES, type IndustryPage } from "@/lib/builder-industries";
 import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/lib/track-client";
 import MetaPixel, { trackLead } from "@/components/MetaPixel";
+import { COACH_BRANCHES, showsLatseminary } from "@/lib/coach-pages";
+import { CoachBranchPicker, LatseminaryProof } from "./landing-proof";
 import { ChatVisual, LeadsVisual, PhoneQuiz, ResultVisual, ShareVisual, WtpVisual } from "./landing-visuals";
 
 const CTA = "Find my serious buyers";
@@ -54,8 +56,6 @@ const STEPS = [
 
 const MORE_INDUSTRIES = [
   "Lending & finance",
-  "Coaching",
-  "Fitness",
   "Fashion",
   "Events",
   "Agencies",
@@ -128,7 +128,10 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [starter, setStarter] = useState(page.starter);
-  const [industry, setIndustry] = useState(page.slug || INDUSTRY_PAGES[0].slug);
+  const isCoach = page.slug === "coaches" || page.slug.startsWith("coaches/");
+  const [industry, setIndustry] = useState(
+    INDUSTRY_PAGES.some((p) => p.slug === page.slug) ? page.slug : isCoach ? "coaches" : INDUSTRY_PAGES[0].slug
+  );
   const [showBar, setShowBar] = useState(false);
 
   // Signed-in owners skip the sign-up sheet and go straight to building.
@@ -236,7 +239,15 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           )}
           <h1
             className="font-extrabold tracking-[-0.035em] leading-[1.02]"
-            style={{ fontSize: "clamp(40px, 7vw, 76px)" }}
+            // Long headlines (coaches & consultants) step down so they don't swamp the hero.
+            style={{
+              fontSize:
+                page.headline.length + page.highlight.length > 90
+                  ? "clamp(34px, 5.2vw, 58px)"
+                  : page.headline.length + page.highlight.length > 70
+                    ? "clamp(36px, 6vw, 66px)"
+                    : "clamp(40px, 7vw, 76px)",
+            }}
           >
             {page.headline}{" "}
             <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">
@@ -260,8 +271,19 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           </div>
           <p className="mt-4 text-[13px] text-slate-500">30 free AI edits to build · Pay only when you go live · Works on your phone</p>
         </div>
-        <PhoneQuiz demos={page.slug ? [page.demo] : INDUSTRY_PAGES.map((p) => p.demo)} />
+        <PhoneQuiz
+          demos={
+            !page.slug
+              ? INDUSTRY_PAGES.map((p) => p.demo)
+              : page.slug === "coaches"
+                ? [page.demo, ...COACH_BRANCHES.map((b) => b.demo)]
+                : [page.demo]
+          }
+        />
       </header>
+
+      {/* Coaches & consultants: every branch gets its own page */}
+      {isCoach && <CoachBranchPicker current={page.slug.replace(/^coaches\/?/, "")} />}
 
       {/* Willingness to pay: the LeadScoreAI difference */}
       <section className="bg-[#0B0B12] text-white">
@@ -430,6 +452,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       </section>
 
       {/* Proof */}
+      {showsLatseminary(page.slug) && <LatseminaryProof />}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center [&>*]:min-w-0">
         <div>
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Proof · results</p>
@@ -636,6 +659,7 @@ function industryLabel(p: IndustryPage): string {
     "real-estate": "Real estate",
     hair: "Hair & wigs",
     clinics: "Clinics & health",
+    coaches: "Coaches & consultants",
   };
   return labels[p.slug] || p.slug;
 }

@@ -1,3 +1,5 @@
+import { COACH_HUB } from "./coach-pages";
+
 // One landing page per industry (/build/<slug>), like techimmigrate's
 // per-profession guides. Same page template; only this copy changes. Add an
 // industry by adding an entry here.
@@ -226,9 +228,12 @@ const PAGES: IndustryPage[] = [
   },
 ];
 
-// Display order: the widest spread of industries first.
-const ORDER = ["solar", "real-estate", "hair", "clinics", "study-abroad", "skincare", "travel"];
-export const INDUSTRY_PAGES: IndustryPage[] = ORDER.map((slug) => PAGES.find((p) => p.slug === slug)!).filter(Boolean);
+// Display order: the widest spread of industries first. Coaches & consultants
+// is a hub with its own branch pages (src/lib/coach-pages.ts).
+const ORDER = ["solar", "real-estate", "hair", "clinics", "coaches", "study-abroad", "skincare", "travel"];
+export const INDUSTRY_PAGES: IndustryPage[] = ORDER.map((slug) =>
+  slug === "coaches" ? COACH_HUB : PAGES.find((p) => p.slug === slug)!
+).filter(Boolean);
 
 export function getIndustryPage(slug: string): IndustryPage | undefined {
   return INDUSTRY_PAGES.find((p) => p.slug === slug);
