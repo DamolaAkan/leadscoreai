@@ -5,6 +5,7 @@ import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 import { lagosNow, sendTeamAlert } from "@/lib/builder-emails";
+import { waLink } from "@/lib/builder-server";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { data: org } = await supabase
     .from("organizations")
-    .select("id, name, slug, email, self_serve, signup_date, last_paid_at")
+    .select("id, name, slug, email, phone, self_serve, signup_date, last_paid_at")
     .eq("id", user.organizationId)
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
     await sendTeamAlert(`🛒 Checkout opened: ${org.name ?? email}`, [
       ["Business", org.name ?? ""],
       ["Email", email],
+      ["WhatsApp", org.phone ? waLink(org.phone) : "Not given"],
       ["Amount", `₦${amountNaira.toLocaleString("en-NG")}${amountNaira < priceNaira ? ` (₦${(priceNaira - amountNaira).toLocaleString("en-NG")} go-live discount)` : ""}`],
       ["Going live with", publishQuizId ? "A quiz is waiting to publish" : "No quiz picked"],
       ["Reference", reference],

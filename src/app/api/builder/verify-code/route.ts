@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { createServiceClient } from "@/lib/supabase";
 import { generateDashboardSessionId } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { EMAIL_RE, escapeLike, uniqueOrgSlug } from "@/lib/builder-server";
+import { EMAIL_RE, escapeLike, normalizeWhatsApp, uniqueOrgSlug, waLink } from "@/lib/builder-server";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { attributeVisitor, describeFirstTouch, sanitizeFirstTouch, track } from "@/lib/track";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 // Quiz builder step 2: verify the code, then sign in to the business that owns
 // this email, or create a new one (on the free trial) if there isn't one.
 export async function POST(request: Request) {
-  const { email, code, businessName, loginOnly, visitorId, firstTouch } = await request.json().catch(() => ({}));
+  const { email, code, businessName, whatsapp, loginOnly, visitorId, firstTouch } = await request.json().catch(() => ({}));
+  const phone = normalizeWhatsApp(whatsapp);
   const ft = sanitizeFirstTouch(firstTouch);
   const norm = String(email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(norm) || !code) {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   // Existing business with this email (including accounts Stella onboarded)?
   let { data: org } = await supabase
     .from("organizations")
-    .select("id, name, slug")
+    .select("id, name, slug, phone")
     .ilike("email", escapeLike(norm))
     .eq("is_active", true)
     .order("created_at", { ascending: true })
@@ -79,14 +80,18 @@ export async function POST(request: Request) {
         signup_date: new Date().toISOString(),
         signup_source: "builder",
         self_serve: true,
+        phone,
       })
-      .select("id, name, slug")
+      .select("id, name, slug, phone")
       .single();
     if (error || !created) {
       console.error("[builder/verify-code] org create error:", error?.message);
       return NextResponse.json({ error: "Could not create your account. Try again." }, { status: 500 });
     }
     org = created;
+  } else if (phone && !org.phone) {
+    // Existing account signing up again from a landing page: keep the number.
+    await supabase.from("organizations").update({ phone }).eq("id", org.id);
   }
 
   const sessionId = generateDashboardSessionId();
@@ -142,6 +147,7 @@ export async function POST(request: Request) {
       sendTeamAlert(`🆕 New self-serve sign-up: ${org.name}`, [
         ["Business", org.name],
         ["Email", norm],
+        ["WhatsApp", phone ? waLink(phone) : "Not given"],
         ["Signed up", lagosNow()],
         ["Came from", describeFirstTouch(ft)],
         ["Dashboard slug", org.slug],

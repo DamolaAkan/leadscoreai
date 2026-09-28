@@ -8,6 +8,22 @@ import type { AuthUser } from "./dashboard-types";
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// WhatsApp number from the sign-up form → international digits (no +), or null.
+// Nigerian local numbers (0811…) become 234811…; anything else must already
+// carry its country code.
+export function normalizeWhatsApp(raw: unknown): string | null {
+  let d = String(raw ?? "").replace(/[^\d+]/g, "");
+  if (d.startsWith("+")) d = d.slice(1);
+  else if (d.startsWith("00")) d = d.slice(2);
+  else if (/^0\d{10}$/.test(d)) d = "234" + d.slice(1);
+  else if (/^[789]\d{9}$/.test(d)) d = "234" + d; // Nigerian number without the 0
+  d = d.replace(/\D/g, "");
+  return /^\d{10,15}$/.test(d) ? d : null;
+}
+
+// Tap-to-chat link for team alerts.
+export const waLink = (digits: string) => `https://wa.me/${digits}`;
+
 // Escape % _ \ so a user's email can't act as an ILIKE wildcard pattern.
 export function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);

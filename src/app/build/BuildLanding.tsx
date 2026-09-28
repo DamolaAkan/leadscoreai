@@ -748,6 +748,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -765,6 +766,11 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const digits = whatsapp.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 15) {
+      setError("Enter your WhatsApp number, e.g. 0811 000 0000.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch("/api/builder/request-code", {
@@ -790,7 +796,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
       const res = await fetch("/api/builder/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, businessName, visitorId: getVisitorId(), firstTouch: getFirstTouch() }),
+        body: JSON.stringify({ email, code, businessName, whatsapp, visitorId: getVisitorId(), firstTouch: getFirstTouch() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid code");
@@ -845,6 +851,20 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@yourbusiness.com"
                 autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">WhatsApp number</label>
+              <input
+                className={input}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                required
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                placeholder="0811 000 0000"
+                maxLength={20}
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
