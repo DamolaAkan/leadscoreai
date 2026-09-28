@@ -129,7 +129,7 @@ export async function POST(request: Request) {
   if (current) {
     const { data: qs } = await supabase
       .from("quiz_questions")
-      .select("question_text, question_type, wtp_signal, options")
+      .select("question_text, wtp_signal, options")
       .eq("quiz_id", current.id)
       .order("question_order", { ascending: true });
     const draft = toDraftForPrompt(current, qs || [], user.primaryColor || null);
