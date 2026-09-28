@@ -139,7 +139,6 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const router = useRouter();
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [sheetSignIn, setSheetSignIn] = useState(false);
   const [starter, setStarter] = useState(page.starter);
   // Coaches & consultants: one page with specialty tabs instead of industry tabs.
   const isCoach = page.slug === "coaches";
@@ -213,7 +212,6 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     if (signedIn) return goToStudio(idea);
     trackClient("signup_sheet_open", { where, page: page.slug || "home" });
     setStarter(idea);
-    setSheetSignIn(where === "nav_signin");
     setSheet(true);
   };
 
@@ -245,14 +243,6 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             ))}
           </div>
           <div className="ml-auto md:ml-0 flex items-center gap-1">
-            {!signedIn && (
-              <button
-                onClick={() => start("", "nav_signin")}
-                className="hidden sm:block px-3.5 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
-              >
-                Sign in
-              </button>
-            )}
             <button
               onClick={() => start(undefined, "nav")}
               className="rounded-full bg-violet-600 hover:bg-violet-700 text-white text-[13px] sm:text-[14px] font-semibold px-3.5 sm:px-4 py-2.5 whitespace-nowrap"
@@ -750,7 +740,6 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
       {sheet && (
         <SignUpSheet
           page={page}
-          signIn={sheetSignIn}
           onClose={() => setSheet(false)}
           // A specific example they tapped wins; otherwise the scorecard's own first message.
           onDone={(personal) => goToStudio(starter && starter !== page.starter ? starter : personal || starter)}
@@ -775,19 +764,17 @@ function industryLabel(p: IndustryPage): string {
 }
 
 // Email → 6-digit code sign-up, as a bottom sheet on phones and a dialog on desktop.
-// New owners first tap through the sign-up scorecard; "Sign in" skips it.
+// New owners first tap through the sign-up scorecard ("I already have an account" skips it).
 function SignUpSheet({
   page,
-  signIn,
   onClose,
   onDone,
 }: {
   page: IndustryPage;
-  signIn: boolean;
   onClose: () => void;
   onDone: (starter?: string) => void;
 }) {
-  const [step, setStep] = useState<"quiz" | "email" | "code">(signIn ? "email" : "quiz");
+  const [step, setStep] = useState<"quiz" | "email" | "code">("quiz");
   const [answers, setAnswers] = useState<Answers | null>(null);
   const result = answers ? scoreAnswers(answers) : null;
   // WhatsApp is required in Nigeria (a Lagos device clock, which a VPN doesn't
