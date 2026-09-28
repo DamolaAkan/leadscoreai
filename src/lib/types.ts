@@ -42,7 +42,7 @@ export interface QuizQuestion {
   quiz_id: string;
   question_order: number;
   question_text: string;
-  question_type: "radio" | "text" | "matrix";
+  question_type: "radio" | "text" | "matrix" | "calculator";
   options: QuizOption[];
   max_points: number;
   wtp_signal?: boolean;

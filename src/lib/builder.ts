@@ -4,6 +4,7 @@
 // quizzes.builder_config; quizzes without it keep the original behaviour.
 
 import type { Qualification } from "./types";
+import { CALCULATOR_MAX_POINTS, CALC_CURRENCIES, sanitizeCalculator, type CalculatorConfig } from "./calculator";
 
 // Sonnet 5 keeps each AI edit (~₦91 incl. free turns) well under the top-up price (₦10,000 = 45 edits)
 // to stay profitable (Damola's call, 2026-09-26).
@@ -39,6 +40,8 @@ export interface BuilderConfig {
   cta_text: string | null;
   // Short topic per question (index = question_order - 1), for the results breakdown.
   topics?: string[];
+  // Optional calculator step (question 1, question_type "calculator").
+  calculator?: CalculatorConfig | null;
 }
 
 // ── What Claude returns ────────────────────────────────────────────────────
@@ -75,6 +78,7 @@ export interface DraftQuiz {
   result_cta_text: string;
   result_cta_url: string;
   suggested_color: string;
+  calculator: CalculatorConfig | null;
 }
 
 export interface BuilderTurn {
@@ -94,6 +98,39 @@ const band = {
     next_steps: { type: "array", items: { type: "string" } },
   },
   required: ["label", "headline", "body", "next_steps"],
+  additionalProperties: false,
+} as const;
+
+const calculatorSchema = {
+  type: "object",
+  properties: {
+    type: { type: "string", enum: ["loan", "instalment"] },
+    title: { type: "string" },
+    currency: { type: "string", enum: Object.keys(CALC_CURRENCIES) },
+    item_label: { type: "string" },
+    price_min: { type: "number" },
+    price_max: { type: "number" },
+    price_default: { type: "number" },
+    rate_pct: { type: "number" },
+    terms: { type: "array", items: { type: "integer" } },
+    min_deposit_pct: { type: "number" },
+    max_loan: { anyOf: [{ type: "number" }, { type: "null" }] },
+    allow_reverse: { type: "boolean" },
+  },
+  required: [
+    "type",
+    "title",
+    "currency",
+    "item_label",
+    "price_min",
+    "price_max",
+    "price_default",
+    "rate_pct",
+    "terms",
+    "min_deposit_pct",
+    "max_loan",
+    "allow_reverse",
+  ],
   additionalProperties: false,
 } as const;
 
@@ -156,6 +193,7 @@ const draftQuizSchema = {
     result_cta_text: { type: "string" },
     result_cta_url: { type: "string" },
     suggested_color: { type: "string" },
+    calculator: { anyOf: [calculatorSchema, { type: "null" }] },
   },
   required: [
     "kind",
@@ -169,6 +207,7 @@ const draftQuizSchema = {
     "result_cta_text",
     "result_cta_url",
     "suggested_color",
+    "calculator",
   ],
   additionalProperties: false,
 } as const;
@@ -240,6 +279,17 @@ When the conversation includes a <current_quiz> block, that is the quiz as it st
 
 Pick the kind that fits the owner's goal. If they ask for the other kind, switch.
 
+## Calculators (optional first step)
+
+A quiz can open with a calculator: the customer moves sliders and instantly sees their monthly repayment (or, for loans, the most they can afford from a monthly budget), then answers the multiple-choice questions. Offer one when the owner sells something paid over time: mortgages and property, car or asset finance, loans, off-plan payment plans, school or tuition fees, or when they ask for a "calculator", "how much can I afford" or "monthly repayment". Set "calculator" for that; otherwise set it to null.
+- Our code does all the maths. You only fill in the settings. Never put repayment figures in questions, insights or results; the results page shows the customer's own estimate automatically.
+- type "loan": interest charged on a reducing balance (mortgages, car and asset finance, loans). type "instalment": a payment plan with an optional flat yearly markup (off-plan property, land, school fees, big-ticket items).
+- NEVER assume the interest rate, terms, minimum deposit or loan cap. They differ by lender, scheme and country (for example a Nigerian MREIF mortgage, a UK mortgage and a South African home loan all differ). If the owner has not given them, return quiz = null and ask with tap questions, for example "What yearly interest rate do you offer?" and "Which terms do you offer?", and say in the reply that they can also type exact numbers. You may suggest a scheme's usual numbers as options, but let the owner confirm.
+- rate_pct: yearly interest % for loans; yearly flat markup % for instalment plans (0 if the plan has no markup). terms: years for loans (for example [5, 10, 15]); months for instalment plans (for example [6, 12, 24]). min_deposit_pct: the minimum deposit or down payment as a % of the price (0 if none). max_loan: the largest loan they give, in the currency, or null if there is no cap (always null for instalment plans). allow_reverse: true for loans unless the owner says otherwise (it adds "what can I afford?" from a monthly budget); false for instalment plans.
+- currency: the owner's currency code. price_min, price_max and price_default: a realistic price range and a typical price in that currency for what they sell. item_label: what is being paid for, for example "Property price", "Car price", "School fees". title: a short invitation, for example "Work out your monthly repayment".
+- With a calculator, keep 5 to 7 multiple-choice questions after it. The calculator already covers price and budget, so do not ask a budget question again. Make the willingness-to-pay questions about timing (when they want to buy), readiness (deposit or down payment ready, proof of income), commitment and availability.
+- In your reply, repeat the settings you used (rate, terms, minimum deposit, loan cap, currency) so the owner can check them. In results for a calculator quiz, say the figures are an estimate, not a loan offer.
+
 ## Rules for every quiz
 
 - 6 to 8 questions. Never fewer than 5. The questions are what qualify the lead, so do not make the quiz too short to be useful.
@@ -285,7 +335,7 @@ Points measure how ready and able the person is to buy. For each question, the b
 export interface NormalizedQuestion {
   question_order: number;
   question_text: string;
-  question_type: "radio";
+  question_type: "radio" | "calculator";
   options: { text: string; value: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
   max_points: number;
   wtp_signal: boolean;
@@ -422,8 +472,16 @@ export function normalizeDraft(
     });
   });
 
+  // Optional calculator: validated here, stored in builder_config, shown as question 1.
+  let calculator: CalculatorConfig | null = null;
+  if (draft.calculator) {
+    const calc = sanitizeCalculator(draft.calculator);
+    if (calc.ok) calculator = calc.config;
+    else errors.push(...calc.errors);
+  }
+
   if (questions.length < 3) errors.push("The quiz needs at least 3 valid multiple-choice questions.");
-  const maxScore = questions.reduce((s, q) => s + q.max_points, 0);
+  const maxScore = questions.reduce((s, q) => s + q.max_points, 0) + (calculator ? CALCULATOR_MAX_POINTS : 0);
   if (maxScore <= 0) errors.push("At least one question must carry points (budget, timeline or readiness).");
   // WTP is the product's core: every quiz needs at least one scored money/readiness question.
   if (!questions.some((q) => q.wtp_signal && q.max_points > 0)) {
@@ -448,6 +506,18 @@ export function normalizeDraft(
   };
 
   const color = clip(draft.suggested_color, 7);
+  if (calculator) {
+    questions.forEach((q) => (q.question_order += 1));
+    questions.unshift({
+      question_order: 1,
+      question_text: calculator.title,
+      question_type: "calculator",
+      options: [],
+      max_points: CALCULATOR_MAX_POINTS,
+      wtp_signal: true,
+    });
+    topics.unshift(calculator.type === "loan" ? "Affordability" : "Payment plan");
+  }
   return {
     ok: true,
     quiz: {
@@ -464,6 +534,7 @@ export function normalizeDraft(
         outcomes,
         cta_text: clip(draft.result_cta_text, 40) || null,
         topics,
+        calculator,
       },
       questions,
       suggested_color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
@@ -483,6 +554,7 @@ export function toDraftForPrompt(
   },
   questions: {
     question_text: string;
+    question_type?: string;
     wtp_signal?: boolean;
     options: { text: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
   }[],
@@ -490,14 +562,18 @@ export function toDraftForPrompt(
 ): DraftQuiz {
   const c = quiz.builder_config;
   const withSteps = (b: BuilderBand): BuilderBand => ({ ...b, next_steps: b.next_steps || [] });
+  // The calculator step (question 1) goes back as "calculator", not as a question.
+  const hasCalc = questions.some((q) => q.question_type === "calculator");
+  const offset = hasCalc ? 1 : 0;
   return {
     kind: c.kind,
     name: quiz.name,
     start_headline: quiz.start_headline || "",
     start_subheadline: quiz.start_subheadline || "",
     start_cta_text: quiz.start_cta_text || "",
-    questions: questions.map((q, i) => ({
-      topic: c.topics?.[i] || "",
+    calculator: hasCalc ? c.calculator ?? null : null,
+    questions: questions.filter((q) => q.question_type !== "calculator").map((q, i) => ({
+      topic: c.topics?.[i + offset] || "",
       question_text: q.question_text,
       wtp_signal: !!q.wtp_signal,
       options: q.options.map((o) => ({
