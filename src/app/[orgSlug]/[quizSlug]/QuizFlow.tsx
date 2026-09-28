@@ -23,6 +23,8 @@ import {
   SOLAR_WHY_US,
 } from "@/lib/insights";
 import { computeMatchOutcome, type BuilderOutcome } from "@/lib/builder";
+import { calcPoints, computeCalc, defaultInputs, describeCalc, formatMoney, type CalcInputs } from "@/lib/calculator";
+import CalculatorStep from "./CalculatorStep";
 
 const SUPPORTED_COUNTRIES: Country[] = [
   "US", "GB", "CA", "NG", "AE", "SA", "QA", "ZA", "GH", "AU",
@@ -78,6 +80,9 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   const [sessionId] = useState(() => generateSessionId());
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Calculator step (builder quizzes that open with one).
+  const calc = builder?.calculator ?? null;
+  const [calcInputs, setCalcInputs] = useState<CalcInputs | null>(() => (calc ? defaultInputs(calc) : null));
 
   // Contact form
   const [contactName, setContactName] = useState("");
@@ -182,9 +187,45 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
 
   // Submit answer for current question
   const handleAnswer = useCallback(async () => {
-    if (!selectedOption || !responseId) return;
-
+    if (!responseId) return;
     const question = questions[currentQ];
+
+    // Calculator step: save their numbers and the computed figures as the answer.
+    if (question.question_type === "calculator") {
+      if (!calc || !calcInputs) return;
+      const result = computeCalc(calc, calcInputs);
+      const points = calcPoints(calc, calcInputs, result);
+      const text = describeCalc(calc, calcInputs, result);
+      setIsSubmitting(true);
+      if (!preview) {
+        const res = await fetch("/api/scorecard/answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            responseId,
+            questionId: question.id,
+            questionOrder: question.question_order,
+            answerValue: { selected: "calculator", text, inputs: calcInputs, result },
+            pointsAwarded: points,
+          }),
+        });
+        if (!res.ok) {
+          console.error("Failed to save answer");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      setAnswers([
+        ...answers,
+        { questionId: question.id, questionOrder: question.question_order, answerValue: "calculator", points },
+      ]);
+      if (currentQ < questions.length - 1) setCurrentQ(currentQ + 1);
+      else setStep("contact");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!selectedOption) return;
     const option = question.options.find((o) => o.value === selectedOption);
     if (!option) return;
 
@@ -230,7 +271,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
     }
 
     setIsSubmitting(false);
-  }, [preview, selectedOption, responseId, questions, currentQ, answers]);
+  }, [preview, selectedOption, responseId, questions, currentQ, answers, calc, calcInputs]);
 
   // Go back one question (removes the last saved answer so it can be re-picked).
   const handleBack = useCallback(async () => {
@@ -513,8 +554,11 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 {questions[currentQ].question_text}
               </h2>
 
-              {/* Builder quizzes with emoji on every answer: big tappable picture cards. */}
-              {builder && questions[currentQ].options.every((o) => o.emoji) ? (
+              {/* Calculator step: sliders and a live estimate. */}
+              {questions[currentQ].question_type === "calculator" && calc && calcInputs ? (
+                <CalculatorStep config={calc} inputs={calcInputs} accent={accent} onChange={setCalcInputs} />
+              ) : /* Builder quizzes with emoji on every answer: big tappable picture cards. */
+              builder && questions[currentQ].options.every((o) => o.emoji) ? (
                 <div className={`grid gap-3 mb-9 ${questions[currentQ].options.length === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
                   {questions[currentQ].options.map((option) => {
                     const isSel = selectedOption === option.value;
@@ -583,7 +627,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 </button>
                 <button
                   onClick={handleAnswer}
-                  disabled={!selectedOption || isSubmitting}
+                  disabled={(!selectedOption && questions[currentQ].question_type !== "calculator") || isSubmitting}
                   className="px-7 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
                   style={{ backgroundColor: accent }}
                 >
@@ -823,6 +867,32 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 {builder.cta_text || "Get in touch"}
               </a>
             ) : null;
+            // Their calculator figures, recomputed from what they entered.
+            const estimate =
+              calc && calcInputs && answers.some((a) => a.answerValue === "calculator")
+                ? (() => {
+                    const r = computeCalc(calc, calcInputs);
+                    const reverse = calc.type === "loan" && calcInputs.mode === "budget";
+                    return (
+                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
+                        <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                          Your estimate
+                        </h3>
+                        <p className="font-extrabold mt-2" style={{ fontSize: "clamp(24px, 5vw, 32px)", color: accent }}>
+                          {reverse
+                            ? `Up to ${formatMoney(r.maxPrice ?? 0, calc.currency)}`
+                            : `${formatMoney(r.monthly, calc.currency)} a month`}
+                        </p>
+                        <p className="text-sm mt-2 leading-relaxed" style={{ color: "#475569" }}>
+                          {describeCalc(calc, calcInputs, r)}
+                        </p>
+                        <p className="text-xs mt-3" style={{ color: "#94a3b8" }}>
+                          An estimate to guide you, not a loan offer. {org.name} will confirm your exact terms.
+                        </p>
+                      </div>
+                    );
+                  })()
+                : null;
 
             if (builder.kind === "match" && matchOutcome) {
               return (
@@ -841,6 +911,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                       {matchOutcome.description}
                     </p>
                   </div>
+                  {estimate}
                   {(() => {
                     const why = insightRows(picks.filter((r) => r.o.outcome === matchOutcome.key)).slice(0, 4);
                     return why.length ? (
@@ -904,6 +975,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   </p>
                   <h2 className="text-xl font-bold mt-1 text-white">{band.headline}</h2>
                 </div>
+                {estimate}
                 <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
                   <p className="text-[15px] leading-relaxed" style={{ color: "#334155" }}>
                     {band.body}

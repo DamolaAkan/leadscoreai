@@ -11,6 +11,7 @@ import {
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
   BUILDER_TURN_SCHEMA,
+  BUILDER_TURN_SCHEMA_BASIC,
   BuilderConfig,
   BuilderTurn,
   NormalizedQuiz,
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
   if (current) {
     const { data: qs } = await supabase
       .from("quiz_questions")
-      .select("question_text, wtp_signal, options")
+      .select("question_text, question_type, wtp_signal, options")
       .eq("quiz_id", current.id)
       .order("question_order", { ascending: true });
     const draft = toDraftForPrompt(current, qs || [], user.primaryColor || null);
@@ -158,6 +159,12 @@ export async function POST(request: Request) {
   let normalized: NormalizedQuiz | null = null;
   let errorsForRetry: string[] = [];
 
+  // Full schema (with the calculator field). If the API ever rejects it as too
+  // large, fall back to the basic schema so the builder keeps working.
+  const fullSchema = BUILDER_TURN_SCHEMA as unknown as Record<string, unknown>;
+  const basicSchema = BUILDER_TURN_SCHEMA_BASIC as unknown as Record<string, unknown>;
+  let turnSchema = fullSchema;
+
   // Up to two attempts: if the draft fails validation, tell Claude what to fix.
   for (let attempt = 0; attempt < 2; attempt++) {
     const attemptMessages = [...messages];
@@ -169,27 +176,35 @@ export async function POST(request: Request) {
       });
     }
 
-    let response: Anthropic.Message;
-    try {
-      response = await getClaude().messages.create({
-        model: BUILDER_MODEL,
-        max_tokens: 16000,
-        output_config: {
-          effort: "medium",
-          format: { type: "json_schema", schema: BUILDER_TURN_SCHEMA as unknown as Record<string, unknown> },
-        },
-        system: [
-          { type: "text", text: BUILDER_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-          { type: "text", text: businessContext },
-        ],
-        messages: attemptMessages,
-      });
-    } catch (err) {
-      if (err instanceof Anthropic.RateLimitError) {
-        return NextResponse.json({ error: "The builder is busy. Try again in a minute." }, { status: 503 });
+    let response: Anthropic.Message | null = null;
+    while (!response) {
+      try {
+        response = await getClaude().messages.create({
+          model: BUILDER_MODEL,
+          max_tokens: 16000,
+          output_config: {
+            effort: "medium",
+            format: { type: "json_schema", schema: turnSchema },
+          },
+          system: [
+            { type: "text", text: BUILDER_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+            { type: "text", text: businessContext },
+          ],
+          messages: attemptMessages,
+        });
+      } catch (err) {
+        if (err instanceof Anthropic.RateLimitError) {
+          return NextResponse.json({ error: "The builder is busy. Try again in a minute." }, { status: 503 });
+        }
+        if (err instanceof Anthropic.BadRequestError && turnSchema === fullSchema && /grammar/i.test(err.message)) {
+          console.error("[builder/chat] full schema rejected, using the basic schema:", err.message);
+          await track("builder_schema_fallback", { orgId: user.organizationId, quizId, props: { reason: "grammar" }, request });
+          turnSchema = basicSchema;
+          continue;
+        }
+        console.error("[builder/chat] Claude error:", err);
+        return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
       }
-      console.error("[builder/chat] Claude error:", err);
-      return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
     }
 
     addUsage(usage, response.usage);
@@ -219,7 +234,7 @@ export async function POST(request: Request) {
     }
 
     if (!turn.quiz) break; // Claude needs more info; nothing to save.
-    const result = normalizeDraft(turn.quiz);
+    const result = normalizeDraft(turn.quiz, turn.calculator);
     if (result.ok) {
       normalized = result.quiz;
       break;

@@ -4,6 +4,7 @@
 // quizzes.builder_config; quizzes without it keep the original behaviour.
 
 import type { Qualification } from "./types";
+import { CALCULATOR_MAX_POINTS, CALC_CURRENCIES, sanitizeCalculator, type CalculatorConfig } from "./calculator";
 
 // Sonnet 5 keeps each AI edit (~₦91 incl. free turns) well under the top-up price (₦10,000 = 45 edits)
 // to stay profitable (Damola's call, 2026-09-26).
@@ -39,6 +40,8 @@ export interface BuilderConfig {
   cta_text: string | null;
   // Short topic per question (index = question_order - 1), for the results breakdown.
   topics?: string[];
+  // Optional calculator step (question 1, question_type "calculator").
+  calculator?: CalculatorConfig | null;
 }
 
 // ── What Claude returns ────────────────────────────────────────────────────
@@ -75,6 +78,8 @@ export interface DraftQuiz {
   result_cta_text: string;
   result_cta_url: string;
   suggested_color: string;
+  // Only in <current_quiz> for the model: the current calculator as a JSON string ("" = none).
+  calculator?: string;
 }
 
 export interface BuilderTurn {
@@ -83,6 +88,8 @@ export interface BuilderTurn {
   quiz: DraftQuiz | null;
   // Out-of-scope ask, summarised for Stella's feature-request log (null otherwise).
   feature_request: string | null;
+  // Calculator settings as a JSON string, or "" for none (absent on the basic schema).
+  calculator?: string;
 }
 
 const band = {
@@ -173,7 +180,11 @@ const draftQuizSchema = {
   additionalProperties: false,
 } as const;
 
-export const BUILDER_TURN_SCHEMA = {
+// The calculator's settings travel as one JSON string beside the quiz, not as a
+// nested object: a structured calculator pushed the compiled grammar over the
+// API's size limit ("The compiled grammar is too large", 2026-09-28), which broke
+// every builder turn. sanitizeCalculator() parses and validates the string.
+const BUILDER_TURN_SCHEMA_BASE = {
   type: "object",
   properties: {
     reply: { type: "string" },
@@ -196,15 +207,25 @@ export const BUILDER_TURN_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+export const BUILDER_TURN_SCHEMA = {
+  ...BUILDER_TURN_SCHEMA_BASE,
+  properties: { ...BUILDER_TURN_SCHEMA_BASE.properties, calculator: { type: "string" } },
+  required: [...BUILDER_TURN_SCHEMA_BASE.required, "calculator"],
+} as const;
+
+// Fallback if the API ever rejects the full schema: plain quizzes, no calculator.
+export const BUILDER_TURN_SCHEMA_BASIC = BUILDER_TURN_SCHEMA_BASE;
+
 export const BUILDER_SYSTEM_PROMPT = `You are the quiz designer inside LeadScoreAI, a product that lets business owners create interactive quizzes by chatting. Most users run small and mid-sized businesses in Africa (Nigeria, Ghana, Kenya, South Africa and elsewhere), but anyone can use it. Typical users: skincare and beauty brands, travel consultants, education and study-abroad consultants, solar installers, lenders, real estate agents, coaches, clinics and agencies.
 
 LeadScoreAI's core idea is willingness to pay (WTP): every quiz is not just a quiz, it is a quiz that helps the owner find their buyers. Each quiz includes a few questions that reveal whether the person is able and ready to pay, and every lead gets a 0 to 100 willingness-to-pay score from those answers. This applies to every kind of quiz, including fun personality and product-match quizzes.
 
-Each turn you return JSON with four fields:
+Each turn you return JSON with five fields:
 - "reply": a short message to the business owner (1 to 4 sentences, plain and warm, no markdown headings, no lists). Say what you built or changed, or what you need to know.
 - "questions": tap-to-answer questions for the owner, shown as buttons. Usually an empty array.
 - "quiz": the complete, current quiz, or null.
 - "feature_request": null, unless the owner asked for something the builder cannot do (see below).
+- "calculator": the quiz's calculator settings as a JSON string (see Calculators), or "" when the quiz has no calculator or quiz is null.
 
 ## Tap questions (make building feel fast and friendly)
 
@@ -239,6 +260,18 @@ When the conversation includes a <current_quiz> block, that is the quiz as it st
 2. "match": each answer points to one of several outcomes, and the person gets the outcome that fits them best (for example "Which skincare routine fits your skin?", "Which holiday suits you?", personality quizzes). Use this when the business wants to recommend a product, package or type.
 
 Pick the kind that fits the owner's goal. If they ask for the other kind, switch.
+
+## Calculators (optional first step)
+
+A quiz can open with a calculator: the customer moves sliders and instantly sees their monthly repayment (or, for loans, the most they can afford from a monthly budget), then answers the multiple-choice questions. Offer one when the owner sells something paid over time: mortgages and property, car or asset finance, loans, off-plan payment plans, school or tuition fees, or when they ask for a "calculator", "how much can I afford" or "monthly repayment". Otherwise set "calculator" to "".
+- Write "calculator" as a JSON string with exactly these keys: {"type": "loan" or "instalment", "title": string, "currency": one of ${Object.keys(CALC_CURRENCIES).join(", ")}, "item_label": string, "price_min": number, "price_max": number, "price_default": number, "rate_pct": number, "terms": [numbers], "min_deposit_pct": number, "max_loan": number or null, "allow_reverse": true or false}. Plain numbers only, no commas or currency signs in them. When editing a quiz that has a calculator (shown as "calculator" in the current quiz), return its settings again, changed only where the owner asked.
+- Our code does all the maths. You only fill in the settings. Never put repayment figures in questions, insights or results; the results page shows the customer's own estimate automatically.
+- type "loan": interest charged on a reducing balance (mortgages, car and asset finance, loans). type "instalment": a payment plan with an optional flat yearly markup (off-plan property, land, school fees, big-ticket items).
+- NEVER assume the interest rate, terms, minimum deposit or loan cap. They differ by lender, scheme and country (for example a Nigerian MREIF mortgage, a UK mortgage and a South African home loan all differ). If the owner has not given them, return quiz = null and ask with tap questions, for example "What yearly interest rate do you offer?" and "Which terms do you offer?", and say in the reply that they can also type exact numbers. You may suggest a scheme's usual numbers as options, but let the owner confirm.
+- rate_pct: yearly interest % for loans; yearly flat markup % for instalment plans (0 if the plan has no markup). terms: years for loans (for example [5, 10, 15]); months for instalment plans (for example [6, 12, 24]). min_deposit_pct: the minimum deposit or down payment as a % of the price (0 if none). max_loan: the largest loan they give, in the currency, or null if there is no cap (always null for instalment plans). allow_reverse: true for loans unless the owner says otherwise (it adds "what can I afford?" from a monthly budget); false for instalment plans.
+- currency: the owner's currency code. price_min, price_max and price_default: a realistic price range and a typical price in that currency for what they sell. item_label: what is being paid for, for example "Property price", "Car price", "School fees". title: a short invitation, for example "Work out your monthly repayment".
+- With a calculator, keep 5 to 7 multiple-choice questions after it. The calculator already covers price and budget, so do not ask a budget question again. Make the willingness-to-pay questions about timing (when they want to buy), readiness (deposit or down payment ready, proof of income), commitment and availability.
+- In your reply, repeat the settings you used (rate, terms, minimum deposit, loan cap, currency) so the owner can check them. In results for a calculator quiz, say the figures are an estimate, not a loan offer.
 
 ## Rules for every quiz
 
@@ -285,7 +318,7 @@ Points measure how ready and able the person is to buy. For each question, the b
 export interface NormalizedQuestion {
   question_order: number;
   question_text: string;
-  question_type: "radio";
+  question_type: "radio" | "calculator";
   options: { text: string; value: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
   max_points: number;
   wtp_signal: boolean;
@@ -359,7 +392,8 @@ export function normalizeTapQuestions(qs: unknown): TapQuestion[] {
 
 // Returns either a normalized quiz or a list of problems to send back to Claude.
 export function normalizeDraft(
-  draft: DraftQuiz
+  draft: DraftQuiz,
+  calculatorJson?: string | null
 ): { ok: true; quiz: NormalizedQuiz } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   const kind: QuizKind = draft.kind === "match" ? "match" : "qualify";
@@ -422,8 +456,25 @@ export function normalizeDraft(
     });
   });
 
+  // Optional calculator: validated here, stored in builder_config, shown as question 1.
+  let calculator: CalculatorConfig | null = null;
+  const calcText = String(calculatorJson ?? "").trim();
+  if (calcText) {
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(calcText);
+    } catch {
+      errors.push('"calculator" must be a valid JSON string of the calculator settings, or "" for none.');
+    }
+    if (raw) {
+      const calc = sanitizeCalculator(raw);
+      if (calc.ok) calculator = calc.config;
+      else errors.push(...calc.errors);
+    }
+  }
+
   if (questions.length < 3) errors.push("The quiz needs at least 3 valid multiple-choice questions.");
-  const maxScore = questions.reduce((s, q) => s + q.max_points, 0);
+  const maxScore = questions.reduce((s, q) => s + q.max_points, 0) + (calculator ? CALCULATOR_MAX_POINTS : 0);
   if (maxScore <= 0) errors.push("At least one question must carry points (budget, timeline or readiness).");
   // WTP is the product's core: every quiz needs at least one scored money/readiness question.
   if (!questions.some((q) => q.wtp_signal && q.max_points > 0)) {
@@ -448,6 +499,18 @@ export function normalizeDraft(
   };
 
   const color = clip(draft.suggested_color, 7);
+  if (calculator) {
+    questions.forEach((q) => (q.question_order += 1));
+    questions.unshift({
+      question_order: 1,
+      question_text: calculator.title,
+      question_type: "calculator",
+      options: [],
+      max_points: CALCULATOR_MAX_POINTS,
+      wtp_signal: true,
+    });
+    topics.unshift(calculator.type === "loan" ? "Affordability" : "Payment plan");
+  }
   return {
     ok: true,
     quiz: {
@@ -464,6 +527,7 @@ export function normalizeDraft(
         outcomes,
         cta_text: clip(draft.result_cta_text, 40) || null,
         topics,
+        calculator,
       },
       questions,
       suggested_color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
@@ -483,6 +547,7 @@ export function toDraftForPrompt(
   },
   questions: {
     question_text: string;
+    question_type?: string;
     wtp_signal?: boolean;
     options: { text: string; points: number; outcome?: string; emoji?: string; insight?: string }[];
   }[],
@@ -490,14 +555,18 @@ export function toDraftForPrompt(
 ): DraftQuiz {
   const c = quiz.builder_config;
   const withSteps = (b: BuilderBand): BuilderBand => ({ ...b, next_steps: b.next_steps || [] });
+  // The calculator step (question 1) goes back as "calculator", not as a question.
+  const hasCalc = questions.some((q) => q.question_type === "calculator");
+  const offset = hasCalc ? 1 : 0;
   return {
     kind: c.kind,
     name: quiz.name,
     start_headline: quiz.start_headline || "",
     start_subheadline: quiz.start_subheadline || "",
     start_cta_text: quiz.start_cta_text || "",
-    questions: questions.map((q, i) => ({
-      topic: c.topics?.[i] || "",
+    calculator: hasCalc && c.calculator ? JSON.stringify(c.calculator) : "",
+    questions: questions.filter((q) => q.question_type !== "calculator").map((q, i) => ({
+      topic: c.topics?.[i + offset] || "",
       question_text: q.question_text,
       wtp_signal: !!q.wtp_signal,
       options: q.options.map((o) => ({
