@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA } from "@/lib/paystack";
+import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA, tierPriceFloor, tierPriceFor } from "@/lib/paystack";
 import { editsForNaira } from "@/lib/credits";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { track } from "@/lib/track";
@@ -83,14 +83,14 @@ export async function POST(request: Request) {
       meta.purpose === "leadscoreai_subscription" &&
       orgId &&
       TIERS[tier] &&
-      amountNaira >= TIERS[tier].naira - discount &&
+      amountNaira >= tierPriceFloor(tier) - discount &&
       d.status === "success"
     ) {
       try {
         const supabase = createServiceClient();
         const { data: org } = await supabase
           .from("organizations")
-          .select("id, name, slug, email, self_serve, current_period_end, paystack_ref")
+          .select("id, name, slug, email, self_serve, signup_date, current_period_end, paystack_ref")
           .eq("id", orgId)
           .single();
         // Paystack retries webhooks: never extend the period twice for one payment.
@@ -165,6 +165,7 @@ export async function POST(request: Request) {
               periodEnd: end.toISOString(),
               amountPaid: amountNaira,
               quizLive: typeof meta.publish_quiz_id === "string" && !!meta.publish_quiz_id,
+              price: tierPriceFor(tier, org),
             },
             String(d.reference ?? end.toISOString())
           );

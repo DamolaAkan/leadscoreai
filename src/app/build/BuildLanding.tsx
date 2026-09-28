@@ -104,7 +104,7 @@ const FAQS = [
   },
   {
     q: "Do I need to pay to try it?",
-    a: "No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ₦53,750 a month on Pro. Go live within 48 hours of building your first quiz and your first month is ₦43,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
+    a: "No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ₦59,750 a month on Pro. Go live within 48 hours of building your first quiz and your first month is ₦49,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
   },
   {
     q: "What if I need something the builder can't do?",
@@ -117,7 +117,7 @@ const SUPPORT_URL = "mailto:stella@leadscoreai.com";
 const PLAN = {
   name: "Pro",
   blurb: "Everything you need to find your buyers.",
-  price: 53750,
+  price: 59750,
   earlyDiscount: 10000,
   features: [
     "2,000 leads a month",

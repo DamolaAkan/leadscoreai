@@ -5,6 +5,7 @@ import {
   isPaid,
   computeAccess,
   TIERS,
+  tierPriceFor,
   paystackConfigured,
   OrgBilling,
   plansFor,
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
     paid: isPaid(b),
     prices: { core: TIERS.core.naira, pro: TIERS.pro.naira },
     // The plans this org can buy (self-serve: Starter/Business; done-for-you: Core/Pro).
-    plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, naira: TIERS[t].naira })),
+    plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, naira: tierPriceFor(t, b) })),
     trialDays: trialDaysFor(b),
     // Self-serve go-live offer: ₦10,000 off the first payment, 48h after the first quiz.
     offer: goLiveOffer(b, firstQuizAt),

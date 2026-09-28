@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
-import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling } from "@/lib/paystack";
+import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling, tierPriceFor } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
+import { lagosNow, sendTeamAlert } from "@/lib/builder-emails";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { data: org } = await supabase
     .from("organizations")
-    .select("id, slug, email, self_serve, signup_date, last_paid_at")
+    .select("id, name, slug, email, self_serve, signup_date, last_paid_at")
     .eq("id", user.organizationId)
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
@@ -69,14 +70,16 @@ export async function POST(request: Request) {
   const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success${publishQuizId ? "&tab=builder" : ""}`;
 
   let init;
-  let amountNaira: number = TIERS[tier].naira;
+  const priceNaira = tierPriceFor(tier, org);
+  let amountNaira: number = priceNaira;
   try {
     const firstQuizAt = org.self_serve ? await firstBuilderQuizAt(org.id) : null;
     const offer = goLiveOffer(org as OrgBilling, firstQuizAt);
-    amountNaira = TIERS[tier].naira - offer.discount;
+    amountNaira = priceNaira - offer.discount;
     init = await initTransaction({
       email,
       tier,
+      priceNaira,
       orgId: org.id,
       callbackUrl,
       discountNaira: offer.discount,
@@ -98,6 +101,20 @@ export async function POST(request: Request) {
     props: { tier, amount_naira: amountNaira, reference, fbp, fbc },
     request,
   });
+
+  // Heads-up for the team on every self-serve checkout, paid or not, so Stella
+  // can follow up if no payment alert comes after it.
+  if (org.self_serve) {
+    await sendTeamAlert(`🛒 Checkout opened: ${org.name ?? email}`, [
+      ["Business", org.name ?? ""],
+      ["Email", email],
+      ["Amount", `₦${amountNaira.toLocaleString("en-NG")}${amountNaira < priceNaira ? ` (₦${(priceNaira - amountNaira).toLocaleString("en-NG")} go-live discount)` : ""}`],
+      ["Going live with", publishQuizId ? "A quiz is waiting to publish" : "No quiz picked"],
+      ["Reference", reference],
+      ["When", lagosNow()],
+      ["Next", "Not paid yet. If no 💰 payment alert follows, reach out."],
+    ]);
+  }
 
   // Meta (Siteflipmarket dataset): InitiateCheckout for self-serve owners, with
   // the same event id the browser pixel fires so Meta counts it once.

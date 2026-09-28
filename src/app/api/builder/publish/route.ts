@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
-import { canPublish, goLiveOffer, OrgBilling, TIERS } from "@/lib/paystack";
+import { canPublish, goLiveOffer, OrgBilling, tierPriceFor } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "payment_required",
-          price: TIERS.builder.naira,
+          price: tierPriceFor("builder", org),
           offer: goLiveOffer(org as OrgBilling, firstQuizAt),
         },
         { status: 402 }

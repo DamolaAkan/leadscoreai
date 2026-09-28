@@ -213,7 +213,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       .then((b) =>
         setBilling({
           canPublish: b.canPublish !== false,
-          price: b.plans?.[0]?.naira ?? 53750,
+          price: b.plans?.[0]?.naira ?? 59750,
           offer: b.offer ?? { eligible: false, discount: 0, endsAt: null },
         })
       )
@@ -452,7 +452,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       const data = await res.json().catch(() => ({}));
       if (res.status === 402) {
         // Not on a paid plan yet: show the go-live sheet instead of an error.
-        setBilling({ canPublish: false, price: data.price ?? 53750, offer: data.offer ?? { eligible: false, discount: 0, endsAt: null } });
+        setBilling({ canPublish: false, price: data.price ?? 59750, offer: data.offer ?? { eligible: false, discount: 0, endsAt: null } });
         setPaywall(true);
         return;
       }

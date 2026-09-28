@@ -9,9 +9,28 @@ export const TIERS = {
   core: { label: "Core", naira: 130000 },
   pro: { label: "Pro", naira: 250000 },
   // Self-serve quiz builder: one plan, sold as "Pro".
-  builder: { label: "Pro", naira: 53750 },
+  builder: { label: "Pro", naira: 59750 },
 } as const;
 export type Tier = keyof typeof TIERS;
+
+// Pro went from ₦53,750 to ₦59,750. Self-serve owners who signed up before the
+// change were quoted the old price (emails, checkout), so they keep it.
+export const PRICE_CHANGE_AT = "2026-09-28T09:00:00Z";
+export const LEGACY_BUILDER_NAIRA = 53750;
+
+export function isLegacyPrice(org: { signup_date?: string | null } | null | undefined): boolean {
+  return !!org?.signup_date && new Date(org.signup_date) < new Date(PRICE_CHANGE_AT);
+}
+
+// What this org pays per month for a tier.
+export function tierPriceFor(tier: Tier, org: { signup_date?: string | null } | null | undefined): number {
+  return tier === "builder" && isLegacyPrice(org) ? LEGACY_BUILDER_NAIRA : TIERS[tier].naira;
+}
+
+// Lowest monthly price anyone can legitimately pay for a tier (webhook sanity floor).
+export function tierPriceFloor(tier: Tier): number {
+  return tier === "builder" ? Math.min(LEGACY_BUILDER_NAIRA, TIERS.builder.naira) : TIERS[tier].naira;
+}
 
 // Which plans an org can buy: self-serve builder accounts get the one Pro plan,
 // done-for-you clients keep Core/Pro.
@@ -24,7 +43,7 @@ export function plansFor(selfServe: boolean): Tier[] {
 // created before this switch keep the 7-day free trial they signed up under.
 export const PAY_TO_PUBLISH_FROM = "2026-09-26T18:00:00Z";
 
-// Go-live offer: ₦10,000 off the FIRST payment (₦43,750 instead of ₦53,750),
+// Go-live offer: ₦10,000 off the FIRST payment (₦49,750 instead of ₦59,750),
 // for 48 hours after the owner builds their first quiz.
 export const GO_LIVE_DISCOUNT_NAIRA = 10000;
 export const GO_LIVE_OFFER_HOURS = 48;
@@ -170,6 +189,7 @@ export function computeAccess(
 export async function initTransaction(opts: {
   email: string;
   tier: Tier;
+  priceNaira: number; // tierPriceFor(tier, org)
   orgId: string;
   callbackUrl: string;
   discountNaira?: number; // go-live offer, first payment only
@@ -182,7 +202,7 @@ export async function initTransaction(opts: {
     headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       email: opts.email,
-      amount: (TIERS[opts.tier].naira - discount) * 100, // kobo
+      amount: (opts.priceNaira - discount) * 100, // kobo
       currency: "NGN",
       callback_url: opts.callbackUrl,
       metadata: {

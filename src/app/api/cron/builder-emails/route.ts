@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { PAY_TO_PUBLISH_FROM, goLiveOffer, isPaid, type OrgBilling } from "@/lib/paystack";
+import { PAY_TO_PUBLISH_FROM, goLiveOffer, isPaid, tierPriceFor, type OrgBilling } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { sendOwnerEmailOnce, type OwnerEmailKind } from "@/lib/builder-emails";
 
@@ -54,6 +54,7 @@ export async function GET(request: Request) {
     const paid = isPaid(org);
     const periodEnd = org.current_period_end ? new Date(org.current_period_end).getTime() : null;
     const emailOrg = { id: org.id, name: org.name, slug: org.slug, email: org.email };
+    const price = tierPriceFor("builder", org);
 
     // 1. The 7-day series: never-paid owners on the pay-to-publish model. Each
     //    email goes on its day, or the day after if a run was missed.
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
         const firstQuizAt = await firstBuilderQuizAt(org.id);
         const offer = goLiveOffer(org, firstQuizAt);
         const kind = `nudge_d${due}` as OwnerEmailKind;
-        if (await send(kind, emailOrg, { hasQuiz: !!firstQuizAt, offerEndsAt: offer.endsAt })) bump(kind);
+        if (await send(kind, emailOrg, { hasQuiz: !!firstQuizAt, offerEndsAt: offer.endsAt, price })) bump(kind);
       }
     }
 
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
       const ok = await send(
         "renewal_due",
         emailOrg,
-        { hasQuiz: true, offerEndsAt: null, periodEnd: org.current_period_end },
+        { hasQuiz: true, offerEndsAt: null, periodEnd: org.current_period_end, price },
         org.current_period_end ?? ""
       );
       if (ok) bump("renewal_due");
@@ -84,7 +85,7 @@ export async function GET(request: Request) {
       const ok = await send(
         "lapsed",
         emailOrg,
-        { hasQuiz: true, offerEndsAt: null, periodEnd: org.current_period_end },
+        { hasQuiz: true, offerEndsAt: null, periodEnd: org.current_period_end, price },
         org.current_period_end ?? ""
       );
       if (ok) bump("lapsed");

@@ -12,7 +12,6 @@ const FROM = { fromEmail: "hello@leadscoreai.com", fromName: "LeadScoreAI" };
 const SUPPORT = "stella@leadscoreai.com";
 export const TEAM_ALERTS = ["akanbi@leadscoreai.com", "stella@leadscoreai.com"];
 
-const PRO = TIERS.builder.naira;
 const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -69,9 +68,11 @@ export interface EmailContext {
   periodEnd?: string | null; // Pro: paid until
   amountPaid?: number;
   quizLive?: boolean;
+  price?: number; // this owner's Pro price (tierPriceFor); defaults to the current price
 }
 
 function offerLine(ctx: EmailContext): string {
+  const PRO = ctx.price ?? TIERS.builder.naira;
   return ctx.offerEndsAt
     ? `Go live before <b>${day(ctx.offerEndsAt)}</b> and your first month is <b>${naira(PRO - GO_LIVE_DISCOUNT_NAIRA)}</b> instead of ${naira(PRO)}.`
     : `Go live on Pro for ${naira(PRO)} a month. Build your first quiz and go live within 48 hours to save ${naira(GO_LIVE_DISCOUNT_NAIRA)} on your first month.`;
@@ -79,6 +80,7 @@ function offerLine(ctx: EmailContext): string {
 
 export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext): { subject: string; html: string } {
   const name = esc(o.name);
+  const PRO = ctx.price ?? TIERS.builder.naira;
   switch (kind) {
     case "welcome":
       return {
