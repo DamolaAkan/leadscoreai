@@ -228,6 +228,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           </a>
           <div className="hidden md:flex items-center gap-1 mx-auto text-[15px] text-slate-600">
             {[
+              ["Who it's for", "/who-its-for"],
               ["How it works", "#how"],
               ["Industries", "#industries"],
               ["Pricing", "#pricing"],
@@ -570,6 +571,24 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             </div>
           </figcaption>
         </figure>
+      </section>
+
+      {/* Who it's for: what people enrol in (also a nav tab; this one shows on phones) */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Before you sign up</p>
+        <h2 className="mt-3 text-[26px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-[1.1]">
+          LeadScoreAI is not for every business.
+        </h2>
+        <p className="mt-3 text-[17px] text-slate-600">
+          It is for owners who value their time, their team&apos;s time and qualified leads. Read who it&apos;s for, and who it
+          isn&apos;t.
+        </p>
+        <a
+          href="/who-its-for"
+          className="mt-6 inline-block rounded-full bg-white border border-slate-200 text-slate-800 font-semibold text-[16px] px-7 py-4 hover:bg-slate-50"
+        >
+          Who it&apos;s for →
+        </a>
       </section>
 
       {/* Pricing */}

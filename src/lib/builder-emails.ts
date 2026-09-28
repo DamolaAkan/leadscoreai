@@ -6,6 +6,7 @@ import { createServiceClient } from "./supabase";
 import { getResendKey } from "./builder-server";
 import { sendSequenceEmail } from "./email";
 import { GO_LIVE_DISCOUNT_NAIRA, TIERS } from "./paystack";
+import { WHO_ITS_FOR, WHO_ITS_FOR_INTRO, WHO_ITS_FOR_TITLE, type Block } from "./who-its-for";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.leadscoreai.com";
 const FROM = { fromEmail: "hello@leadscoreai.com", fromName: "LeadScoreAI" };
@@ -59,6 +60,7 @@ export type OwnerEmailKind =
   | "nudge_d5"
   | "nudge_d7"
   | "pro_welcome"
+  | "who_its_for"
   | "renewal_due"
   | "lapsed";
 
@@ -69,6 +71,21 @@ export interface EmailContext {
   amountPaid?: number;
   quizLive?: boolean;
   price?: number; // this owner's Pro price (tierPriceFor); defaults to the current price
+}
+
+// The "Who it's for" statement as email paragraphs (same words as /who-its-for).
+function whoItsForHtml(): string[] {
+  const lead = (l: string | undefined, t: string) => `${l ? `<b>${esc(l)}</b>` : ""}${esc(t)}`;
+  const block = (b: Block): string =>
+    b.kind === "h3"
+      ? `<b>${esc(b.text)}</b>`
+      : b.kind === "list"
+        ? b.items.map((it) => `• ${lead(it.lead, it.text)}`).join("<br>")
+        : lead(b.lead, b.text);
+  return WHO_ITS_FOR.flatMap((s) => [
+    `<span style="display:block;margin-top:10px;font-size:18px;font-weight:800;color:#16202e;">${esc(s.heading)}</span>`,
+    ...s.blocks.map(block),
+  ]);
 }
 
 function offerLine(ctx: EmailContext): string {
@@ -91,9 +108,20 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
             `Welcome, ${name}. Describe your business in the chat and LeadScoreAI builds a quiz that tells you what each customer wants and whether they're ready to pay.`,
             `You have <b>30 free AI edits</b> to build and try it. Every quiz includes a few willingness-to-pay questions, so every lead comes in with a score from 0 to 100.`,
             `When you're happy with it, go live on Pro for ${naira(PRO)} a month. Go live within 48 hours of building your first quiz and your first month is ${naira(PRO - GO_LIVE_DISCOUNT_NAIRA)}.`,
+            `LeadScoreAI isn't for every business. <a href="${APP_URL}/who-its-for" style="color:#6d28d9;">Read who it's for</a> before you start.`,
           ],
           cta: { label: "Build my first quiz", href: builderUrl(o) },
           ps: "Tip: start with one sentence like “I sell hair extensions in Lagos and want to know who's ready to buy.”",
+        }),
+      };
+    case "who_its_for":
+      return {
+        subject: "Who LeadScoreAI is for (and who it isn't)",
+        html: layout({
+          heading: esc(WHO_ITS_FOR_TITLE),
+          body: [esc(WHO_ITS_FOR_INTRO), ...whoItsForHtml(), `<span style="color:#667085;">Damola Akanbi, founder of LeadScoreAI</span>`],
+          cta: { label: ctx.hasQuiz ? "Open my builder" : "Build my first quiz", href: builderUrl(o) },
+          ps: `Want to print it or share it? It's on our website: <a href="${APP_URL}/who-its-for" style="color:#6d28d9;">${APP_URL.replace(/^https?:\/\//, "")}/who-its-for</a>`,
         }),
       };
     case "nudge_d1":

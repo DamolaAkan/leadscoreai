@@ -10,6 +10,9 @@ export const maxDuration = 60;
 const DAY = 24 * 3600 * 1000;
 // 7-day series for self-serve owners who haven't paid (welcome is sent at sign-up).
 const NUDGE_DAYS = [1, 3, 5, 7] as const;
+// "Who it's for" goes out on day 2 to owners who signed up after it launched.
+const WHO_ITS_FOR_DAY = 2;
+const WHO_ITS_FOR_FROM = "2026-09-28T11:30:00Z";
 const RENEWAL_NOTICE_DAYS = 3;
 const LAPSED_WINDOW_DAYS = 7;
 
@@ -66,6 +69,15 @@ export async function GET(request: Request) {
         const offer = goLiveOffer(org, firstQuizAt);
         const kind = `nudge_d${due}` as OwnerEmailKind;
         if (await send(kind, emailOrg, { hasQuiz: !!firstQuizAt, offerEndsAt: offer.endsAt, price })) bump(kind);
+      }
+    }
+
+    // 1b. "Who it's for": what they've enrolled in, paid or not, once.
+    if (org.signup_date && org.signup_date >= WHO_ITS_FOR_FROM) {
+      const daysIn = Math.floor((now - new Date(org.signup_date).getTime()) / DAY);
+      if (daysIn >= WHO_ITS_FOR_DAY && daysIn <= WHO_ITS_FOR_DAY + 7) {
+        const hasQuiz = !!(await firstBuilderQuizAt(org.id));
+        if (await send("who_its_for", emailOrg, { hasQuiz, offerEndsAt: null, price })) bump("who_its_for");
       }
     }
 
