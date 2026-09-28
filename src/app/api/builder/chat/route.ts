@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
 import { addUsage, costUsd, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
 import { track } from "@/lib/track";
+import { describeAnswers, sanitizeAnswers } from "@/lib/signup-scorecard";
 import {
   BUILDER_MODEL,
   BUILDER_SYSTEM_PROMPT,
@@ -135,7 +136,23 @@ export async function POST(request: Request) {
     const last = messages[messages.length - 1];
     last.content = `<current_quiz>\n${JSON.stringify(draft)}\n</current_quiz>\n\n${last.content as string}`;
   }
-  const businessContext = `The business owner's account is named "${user.orgName}".`;
+  // What they told us in the sign-up scorecard, so the first questions skip it.
+  const { data: signup } = await supabase
+    .from("builder_events")
+    .select("props")
+    .eq("organization_id", user.organizationId)
+    .eq("event", "signed_up")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const scorecard = sanitizeAnswers((signup?.props as { scorecard?: unknown } | null)?.scorecard);
+  const businessContext =
+    `The business owner's account is named "${user.orgName}".` +
+    (scorecard
+      ? `\n\nBefore signing up they answered a short scorecard:\n- ${describeAnswers(scorecard).join("\n- ")}\n` +
+        `Use these answers: don't ask again for anything answered here, match the quiz to their industry, ` +
+        `and design it for where their enquiries come from (a WhatsApp link, an Instagram bio link or a website embed).`
+      : "");
 
   let turn: BuilderTurn | null = null;
   let normalized: NormalizedQuiz | null = null;

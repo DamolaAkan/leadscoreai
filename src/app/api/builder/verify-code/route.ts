@@ -7,14 +7,18 @@ import { EMAIL_RE, escapeLike, normalizeWhatsApp, uniqueOrgSlug, waLink } from "
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { attributeVisitor, describeFirstTouch, sanitizeFirstTouch, track } from "@/lib/track";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
+import { describeAnswers, sanitizeAnswers, scoreAnswers } from "@/lib/signup-scorecard";
 
 export const dynamic = "force-dynamic";
 
 // Quiz builder step 2: verify the code, then sign in to the business that owns
 // this email, or create a new one (on the free trial) if there isn't one.
 export async function POST(request: Request) {
-  const { email, code, businessName, whatsapp, loginOnly, visitorId, firstTouch } = await request.json().catch(() => ({}));
+  const { email, code, businessName, whatsapp, loginOnly, visitorId, firstTouch, onboarding } = await request.json().catch(() => ({}));
   const phone = normalizeWhatsApp(whatsapp);
+  // Sign-up scorecard answers (six taps before the details), if they took it.
+  const scorecard = sanitizeAnswers(onboarding);
+  const fit = scorecard ? scoreAnswers(scorecard) : null;
   const ft = sanitizeFirstTouch(firstTouch);
   const norm = String(email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(norm) || !code) {
@@ -116,6 +120,7 @@ export async function POST(request: Request) {
       via: loginOnly ? "login" : "builder",
       ...(isNewAccount ? { fbp, fbc } : {}),
       ...(isNewAccount && ft ? { first_touch: ft } : {}),
+      ...(isNewAccount && scorecard && fit ? { scorecard, fit_score: fit.score, fit_band: fit.band } : {}),
     },
     request,
   });
@@ -150,6 +155,8 @@ export async function POST(request: Request) {
         ["WhatsApp", phone ? waLink(phone) : "Not given"],
         ["Signed up", lagosNow()],
         ["Came from", describeFirstTouch(ft)],
+        ["Scorecard", fit ? `${fit.band} · ${fit.score}/100` : "Skipped"],
+        ...(scorecard ? describeAnswers(scorecard).map((line): [string, string] => ["Answer", line]) : []),
         ["Dashboard slug", org.slug],
       ]),
     ]);

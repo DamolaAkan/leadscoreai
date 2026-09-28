@@ -7,6 +7,8 @@ import { captureFirstTouch, getFirstTouch, getVisitorId, trackClient } from "@/l
 import MetaPixel, { trackLead } from "@/components/MetaPixel";
 import { COACH_BRANCHES, COACH_HERO_DEMOS, showsLatseminary } from "@/lib/coach-pages";
 import { LatseminaryProof } from "./landing-proof";
+import SignupScorecard from "./SignupScorecard";
+import { industryFromAnswers, scoreAnswers, starterFromAnswers, type Answers } from "@/lib/signup-scorecard";
 import {
   ChatVisual,
   LeadsVisual,
@@ -137,6 +139,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const router = useRouter();
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [sheetSignIn, setSheetSignIn] = useState(false);
   const [starter, setStarter] = useState(page.starter);
   // Coaches & consultants: one page with specialty tabs instead of industry tabs.
   const isCoach = page.slug === "coaches";
@@ -210,6 +213,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     if (signedIn) return goToStudio(idea);
     trackClient("signup_sheet_open", { where, page: page.slug || "home" });
     setStarter(idea);
+    setSheetSignIn(where === "nav_signin");
     setSheet(true);
   };
 
@@ -743,7 +747,15 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         </button>
       </div>
 
-      {sheet && <SignUpSheet page={page} onClose={() => setSheet(false)} onDone={() => goToStudio(starter)} />}
+      {sheet && (
+        <SignUpSheet
+          page={page}
+          signIn={sheetSignIn}
+          onClose={() => setSheet(false)}
+          // A specific example they tapped wins; otherwise the scorecard's own first message.
+          onDone={(personal) => goToStudio(starter && starter !== page.starter ? starter : personal || starter)}
+        />
+      )}
     </div>
   );
 }
@@ -763,8 +775,30 @@ function industryLabel(p: IndustryPage): string {
 }
 
 // Email → 6-digit code sign-up, as a bottom sheet on phones and a dialog on desktop.
-function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: () => void; onDone: () => void }) {
-  const [step, setStep] = useState<"email" | "code">("email");
+// New owners first tap through the sign-up scorecard; "Sign in" skips it.
+function SignUpSheet({
+  page,
+  signIn,
+  onClose,
+  onDone,
+}: {
+  page: IndustryPage;
+  signIn: boolean;
+  onClose: () => void;
+  onDone: (starter?: string) => void;
+}) {
+  const [step, setStep] = useState<"quiz" | "email" | "code">(signIn ? "email" : "quiz");
+  const [answers, setAnswers] = useState<Answers | null>(null);
+  const result = answers ? scoreAnswers(answers) : null;
+  // WhatsApp is required in Nigeria (a Lagos device clock, which a VPN doesn't
+  // change) and optional elsewhere, for people wary of sharing a number.
+  const [waRequired] = useState(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Lagos";
+    } catch {
+      return true;
+    }
+  });
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -786,8 +820,12 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
     e.preventDefault();
     setError("");
     const digits = whatsapp.replace(/\D/g, "");
-    if (digits.length < 10 || digits.length > 15) {
-      setError("Enter your WhatsApp number, e.g. 0811 000 0000.");
+    if ((waRequired || digits) && (digits.length < 10 || digits.length > 15)) {
+      setError(
+        waRequired
+          ? "Enter your WhatsApp number, e.g. 0811 000 0000."
+          : "Enter your WhatsApp number with its country code, or leave it blank."
+      );
       return;
     }
     setBusy(true);
@@ -815,14 +853,29 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
       const res = await fetch("/api/builder/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, businessName, whatsapp, visitorId: getVisitorId(), firstTouch: getFirstTouch() }),
+        body: JSON.stringify({
+          email,
+          code,
+          businessName,
+          whatsapp,
+          visitorId: getVisitorId(),
+          firstTouch: getFirstTouch(),
+          onboarding: answers,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid code");
       localStorage.setItem("lsai-session", data.session_id);
       // New account = the ad "Lead" on the Siteflipmarket dataset (same id as the server event).
       if (data.isNew && data.metaEventId) trackLead({ email, externalId: data.metaEventId });
-      onDone();
+      // The scorecard answers pick the builder's sample quizzes and its first message.
+      const industry = answers ? industryFromAnswers(answers) : null;
+      try {
+        if (industry) localStorage.setItem("lsai-industry", industry);
+      } catch {
+        /* ignore */
+      }
+      onDone(answers ? starterFromAnswers(answers) : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Try again.");
       setBusy(false);
@@ -835,7 +888,7 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" />
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
+      <div className="relative w-full sm:max-w-md max-h-[92dvh] overflow-y-auto overscroll-contain bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
         <span className="sm:hidden absolute left-1/2 top-2.5 -translate-x-1/2 h-1.5 w-10 rounded-full bg-slate-200" />
         <button
           onClick={onClose}
@@ -844,11 +897,45 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
         >
           ×
         </button>
-        {step === "email" ? (
+        {step === "quiz" ? (
+          <SignupScorecard
+            initial={answers ?? undefined}
+            onHaveAccount={() => setStep("email")}
+            onDone={(a) => {
+              setAnswers(a);
+              const r = scoreAnswers(a);
+              trackClient("scorecard_done", { page: page.slug || "home", score: r.score, band: r.band, ...a });
+              setStep("email");
+            }}
+          />
+        ) : step === "email" ? (
           <form onSubmit={sendCode} className="space-y-4">
+            {result ? (
+              <div className="rounded-2xl bg-violet-50 border border-violet-100 p-4">
+                <p className="text-[17px] font-bold leading-snug text-slate-900">{result.headline}</p>
+                {result.reasons.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[14px] leading-snug text-slate-600 list-disc pl-5">
+                    {result.reasons.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStep("quiz")}
+                  className="mt-2 text-[13px] text-violet-700 hover:underline"
+                >
+                  Change my answers
+                </button>
+              </div>
+            ) : null}
             <div>
-              <h2 className="text-2xl font-bold">Find your serious buyers</h2>
-              <p className="text-[15px] text-slate-500 mt-1">We&apos;ll email you a 6-digit code. No password needed.</p>
+              <h2 className="text-2xl font-bold">{result ? "Start building free" : "Find your serious buyers"}</h2>
+              <p className="text-[15px] text-slate-500 mt-1">
+                {result
+                  ? "Your builder is set up from your answers. We'll email you a 6-digit code. No password needed."
+                  : "We'll email you a 6-digit code. No password needed."}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Business name</label>
@@ -873,16 +960,18 @@ function SignUpSheet({ page, onClose, onDone }: { page: IndustryPage; onClose: (
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">WhatsApp number</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                WhatsApp number{!waRequired && <span className="font-normal text-slate-400"> (optional)</span>}
+              </label>
               <input
                 className={input}
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
-                required
+                required={waRequired}
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="0811 000 0000"
+                placeholder={waRequired ? "0811 000 0000" : "+1 555 000 0000"}
                 maxLength={20}
               />
             </div>

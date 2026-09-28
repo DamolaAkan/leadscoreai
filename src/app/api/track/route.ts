@@ -11,6 +11,7 @@ const CLIENT_EVENTS = new Set([
   "landing_view",
   "cta_click",
   "signup_sheet_open",
+  "scorecard_done",
   "industry_tab",
   "studio_open",
   "preview_opened",
