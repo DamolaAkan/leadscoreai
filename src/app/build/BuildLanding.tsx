@@ -8,6 +8,7 @@ import MetaPixel, { trackLead } from "@/components/MetaPixel";
 import { COACH_BRANCHES, COACH_HERO_DEMOS, showsLatseminary } from "@/lib/coach-pages";
 import { LatseminaryProof } from "./landing-proof";
 import SignupScorecard from "./SignupScorecard";
+import HeroVideo from "./HeroVideo";
 import { industryFromAnswers, scoreAnswers, starterFromAnswers, type Answers } from "@/lib/signup-scorecard";
 import {
   ChatVisual,
@@ -295,15 +296,23 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           </div>
           <p className="mt-4 text-[13px] text-slate-500">30 free AI edits to build · Pay only when you go live · Works on your phone</p>
         </div>
-        <PhoneQuiz
-          demos={
-            !page.slug
-              ? INDUSTRY_PAGES.map((p) => p.demo)
-              : isCoach
-                ? COACH_HERO_DEMOS
-                : [page.demo]
-          }
-        />
+        {page.slug === "real-estate" ? (
+          <HeroVideo
+            src="/video/calculator-real-estate.mp4"
+            poster="/video/calculator-real-estate-poster.jpg"
+            label="A mortgage calculator quiz: buyers see their monthly repayment, answer a few questions, and land in your dashboard scored"
+          />
+        ) : (
+          <PhoneQuiz
+            demos={
+              !page.slug
+                ? INDUSTRY_PAGES.map((p) => p.demo)
+                : isCoach
+                  ? COACH_HERO_DEMOS
+                  : [page.demo]
+            }
+          />
+        )}
       </header>
 
       {/* Willingness to pay: the LeadScoreAI difference */}
