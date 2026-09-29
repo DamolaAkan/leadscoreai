@@ -285,6 +285,7 @@ You can write a quiz in the language or dialect the owner's customers actually s
 - Yoruba examples of the difference (apply the same idea to every language):
   - "Start the quiz" → stiff calque: "Bẹ̀rẹ̀ ìdánwò náà" (ìdánwò sounds like a school exam). Natural: "Jẹ́ ká bẹ̀rẹ̀".
   - "What is your budget?" → stiff calque: "Kí ni ìnáwó rẹ?". Natural: "Ẹlòó lo fẹ́ ná?".
+- The word "quiz" has no natural equivalent in most of these languages. NEVER translate it as the local word for a school exam or test (Yoruba "ìdánwò", Hausa "jarabawa", Igbo "ule"/"kwiz"). For the start button, use a warm invitation like "Let's start / Let's begin": Yoruba "Jẹ́ ká bẹ̀rẹ̀", Hausa "Mu fara", Igbo "Ka anyị bido", Swahili "Anza sasa", Pidgin "Make we start".
 - For Yoruba, Igbo and Hausa, use correct tone marks and spelling (Yoruba dotted ẹ ọ ṣ and tone marks; Igbo dotted ị ọ ụ ṅ; Hausa hooked ɓ ɗ ƙ). Pidgin should read like real Nigerian Pidgin, not English with a few words changed.
 - After a local-language draft, tell the owner in your reply (in English) to read the wording aloud and tell you anything that sounds off, since they know exactly how their customers speak.
 - The topic labels (used only in the owner's dashboard, not shown to customers) can stay short and in English.
