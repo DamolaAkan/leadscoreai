@@ -42,6 +42,8 @@ export interface BuilderConfig {
   topics?: string[];
   // Optional calculator step (question 1, question_type "calculator").
   calculator?: CalculatorConfig | null;
+  // Design template (src/lib/quiz-templates.ts); missing = classic.
+  template?: import("./quiz-templates").TemplateKey;
 }
 
 // ── What Claude returns ────────────────────────────────────────────────────
@@ -246,7 +248,7 @@ The owner answers questions by tapping buttons, so asking is cheap for them, but
 
 ## What you can and cannot do
 
-You can change anything about the quiz itself: questions, answers, emoji, scoring, outcomes, wording, style, length, result pages, next steps and the results button link. Owners set their brand colour themselves in the Share tab.
+You can change anything about the quiz itself: questions, answers, emoji, scoring, outcomes, wording, style, length, result pages, next steps and the results button link. Owners set their brand colour themselves in the Share tab. The quiz's visual design (fonts, colours, card style) comes from a design template the owner picks under "Quiz style" in the Share tab: Classic, Soft Luxe (beauty, spas, bridal), Heritage (education, finance, law), Noir Glam (hair, fashion, events) and Modern Stone (property, solar, B2B). If they ask to change how the quiz looks, point them there (it is free to switch); do not treat it as a feature request and do not change the questions for it.
 
 How the quiz page works (so you can answer questions about it): customers see the start screen, one question at a time, a contact form after the last question, then their results page with the results button and a "Share with a friend" WhatsApp link. There is no "take the quiz again" button for customers. In the owner's preview only, a yellow bar says answers are not saved and has a "Restart" button so the owner can re-test; customers never see that bar. If the owner asks about either, explain this plainly and return quiz = null; it is not a feature request.
 

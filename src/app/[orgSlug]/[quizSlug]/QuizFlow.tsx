@@ -25,6 +25,7 @@ import {
 import { computeMatchOutcome, type BuilderOutcome } from "@/lib/builder";
 import { calcPoints, computeCalc, defaultInputs, describeCalc, formatMoney, type CalcInputs } from "@/lib/calculator";
 import CalculatorStep from "./CalculatorStep";
+import { themeFor } from "@/lib/quiz-templates";
 
 const SUPPORTED_COUNTRIES: Country[] = [
   "US", "GB", "CA", "NG", "AE", "SA", "QA", "ZA", "GH", "AU",
@@ -97,9 +98,23 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   const [percentage, setPercentage] = useState(0);
   const [qualification, setQualification] = useState<Qualification | null>(null);
 
+  // Design template (builder quizzes only; everything else stays Classic).
+  // Classic is driven by the brand colour; other templates use curated palettes.
+  const theme = themeFor(builder?.template);
+  const themed = theme.key !== "classic";
+  const tx = <T extends object>(style: T): T | Record<string, never> => (themed ? style : {});
   // Client brand color drives the scorecard (design system default, per-client override).
-  const accent = org.primary_color;
+  const accent = theme.accent ?? org.primary_color;
+  const btn = theme.button ?? accent;
+  const btnStyle = tx({ color: theme.buttonInk, borderRadius: theme.pill ? 999 : 8 });
   const heroGradient = heroGradientFor(org);
+  const fontLink = themed ? (
+    <>
+      {theme.fonts && <link rel="stylesheet" href={theme.fonts} />}
+      {/* The phone field's inner input follows the template (dark templates too). */}
+      <style>{`.phone-input-wrapper input{background:transparent;color:inherit;outline:none;border:0}`}</style>
+    </>
+  ) : null;
 
   // Detect user's country for phone input default
   useEffect(() => {
@@ -391,7 +406,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
     e.target.style.boxShadow = `0 0 0 3px ${accent}22`;
   };
   const inputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#cbd5e1";
+    e.target.style.borderColor = theme.inputBorder;
     e.target.style.boxShadow = "none";
   };
 
@@ -407,7 +422,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
     ) : (
       <div
         className="rounded-xl flex items-center justify-center text-white font-bold"
-        style={{ width: size, height: size, backgroundColor: accent, fontSize: size / 2.4 }}
+        style={{ width: size, height: size, backgroundColor: themed ? btn : accent, fontSize: size / 2.4 }}
       >
         {org.name[0]}
       </div>
@@ -450,33 +465,43 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   if (step === "start") {
     return (
       <div ref={rootRef}>
+      {fontLink}
       {previewBanner}
       <div
         className={`${embed ? "min-h-[560px]" : "min-h-screen"} flex flex-col items-center justify-center px-5 py-12 text-center`}
         style={{
-          background: heroGradient,
-          fontFamily: "var(--font-inter)",
+          background: theme.startBg ?? heroGradient,
+          fontFamily: theme.bodyFont,
         }}
       >
         <div className="w-full max-w-2xl">
           {org.slug !== "loandoctor" && (
-            <div className="mx-auto mb-10 w-20 h-20">
+            <div className={`mx-auto ${themed ? "mb-6" : "mb-10"} w-20 h-20`}>
               <Logo size={80} />
             </div>
+          )}
+          {themed && (
+            <p className="mb-6 text-[12px] font-semibold uppercase tracking-[0.22em]" style={{ color: theme.eyebrow }}>
+              {org.name}
+            </p>
           )}
           <h1
             className="font-extrabold text-white mb-5"
             style={{
-              fontSize:
-                quiz.start_headline.length > 70
+              fontSize: themed
+                ? quiz.start_headline.length > 70
+                  ? "clamp(30px, 5.4vw, 46px)"
+                  : "clamp(40px, 7.4vw, 64px)"
+                : quiz.start_headline.length > 70
                   ? "clamp(24px, 4.4vw, 38px)"
                   : "clamp(34px, 6vw, 52px)",
-              lineHeight: 1.18,
+              lineHeight: themed ? 1.06 : 1.18,
+              ...tx({ color: theme.startInk, fontFamily: theme.headFont, fontWeight: theme.headWeight ?? 800, letterSpacing: "-0.01em" }),
             }}
           >
             {quiz.start_headline}
           </h1>
-          <p className="text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: "#cbd5e1" }}>
+          <p className="text-lg leading-relaxed mb-10 max-w-xl mx-auto" style={{ color: theme.startSub }}>
             {quiz.start_subheadline.split(/(Loan Doctor)/g).map((part, i) =>
               part === "Loan Doctor" ? (
                 <strong key={i} style={{ color: "#FBBF24", fontWeight: 700 }}>
@@ -491,11 +516,11 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
             onClick={handleStart}
             disabled={isSubmitting}
             className="inline-block px-14 py-4 rounded-lg text-white font-semibold text-base transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-            style={{ backgroundColor: accent }}
+            style={{ backgroundColor: themed ? btn : accent, ...btnStyle }}
           >
             {isSubmitting ? "Loading…" : quiz.start_cta_text}
           </button>
-          <p className="mt-6 text-sm" style={{ color: "#94a3b8" }}>
+          <p className="mt-6 text-sm" style={{ color: theme.startNote }}>
             ✓ {questions.length} questions &nbsp;·&nbsp; ✓ Takes about 2 minutes &nbsp;·&nbsp; ✓ Free
           </p>
         </div>
@@ -510,32 +535,33 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       ref={rootRef}
       className={`${embed ? "" : "min-h-screen"} flex flex-col`}
       style={{
-        background: "linear-gradient(135deg, #f8f9fa 0%, #eef2f5 100%)",
-        fontFamily: "var(--font-inter)",
+        background: theme.pageBg,
+        fontFamily: theme.bodyFont,
       }}
     >
+      {fontLink}
       {previewBanner}
       {/* Header */}
-      <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+      <header className="bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]" style={tx({ background: theme.headerBg, boxShadow: theme.headerShadow })}>
         <div className="max-w-2xl mx-auto px-5 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <Logo size={32} />
-              <span className="font-bold" style={{ color: "#1e293b" }}>
+              <span className="font-bold" style={{ color: theme.headerInk }}>
                 {org.name}
               </span>
             </div>
             {step === "questions" && (
-              <span className="text-sm" style={{ color: "#64748b" }}>
+              <span className="text-sm" style={{ color: theme.headerMuted }}>
                 Step {currentQ + 1} of {questions.length}
               </span>
             )}
           </div>
           {(step === "questions" || step === "contact") && (
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#e2e8f0" }}>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: themed ? (theme.dark || theme.headerBg.startsWith("#1") ? "rgba(255,255,255,0.18)" : theme.track) : "#e2e8f0" }}>
               <div
                 className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${progress}%`, backgroundColor: accent }}
+                style={{ width: `${progress}%`, backgroundColor: themed ? btn : accent }}
               />
             </div>
           )}
@@ -546,10 +572,15 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
         <div className="max-w-2xl mx-auto">
           {/* QUESTIONS */}
           {step === "questions" && (
-            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
+            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]" style={tx({ background: theme.cardBg, boxShadow: theme.cardShadow, borderRadius: theme.cardRadius, border: `1px solid ${theme.cardBorder}` })}>
               <h2
                 className="font-semibold mb-8"
-                style={{ fontSize: "clamp(21px, 4vw, 28px)", lineHeight: 1.3, color: "#1a1a2e" }}
+                style={{
+                  fontSize: theme.qSize,
+                  lineHeight: themed ? 1.12 : 1.3,
+                  color: theme.title,
+                  ...tx({ fontFamily: theme.headFont, fontWeight: theme.headWeight ?? 600 }),
+                }}
               >
                 {questions[currentQ].question_text}
               </h2>
@@ -569,14 +600,20 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                         className={`rounded-xl border-2 px-3 py-5 flex ${
                           questions[currentQ].options.length === 3 ? "flex-row sm:flex-col" : "flex-col"
                         } items-center gap-3 text-center transition-transform active:scale-[0.98]`}
-                        style={
-                          isSel
-                            ? { borderColor: accent, backgroundColor: accent + "12" }
-                            : { borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }
-                        }
+                        style={{
+                          ...(isSel
+                            ? themed && theme.optFill
+                              ? { borderColor: accent, backgroundColor: accent }
+                              : { borderColor: accent, backgroundColor: accent + "12" }
+                            : { borderColor: theme.optBorder, backgroundColor: theme.optBg }),
+                          ...tx({ borderRadius: theme.optRadius }),
+                        }}
                       >
                         <span className="text-4xl leading-none">{option.emoji}</span>
-                        <span className="text-[14.5px] font-medium leading-snug" style={{ color: "#1e293b" }}>
+                        <span
+                          className="text-[14.5px] font-medium leading-snug"
+                          style={{ color: isSel && themed && theme.optFill ? "#ffffff" : theme.text }}
+                        >
                           {option.text}
                         </span>
                       </button>
@@ -592,22 +629,28 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                       key={option.value}
                       onClick={() => setSelectedOption(option.value)}
                       className="w-full text-left flex items-center p-4 rounded-lg border-2 transition-colors"
-                      style={
-                        isSel
-                          ? { borderColor: accent, backgroundColor: accent + "12" }
-                          : { borderColor: "#e2e8f0", backgroundColor: "#f8fafc" }
-                      }
+                      style={{
+                        ...(isSel
+                          ? themed && theme.optFill
+                            ? { borderColor: accent, backgroundColor: accent }
+                            : { borderColor: accent, backgroundColor: accent + "12" }
+                          : { borderColor: theme.optBorder, backgroundColor: theme.optBg }),
+                        ...tx({ borderRadius: theme.optRadius }),
+                      }}
                     >
                       <span
                         className="w-5 h-5 rounded-full border-2 mr-3 flex-shrink-0 flex items-center justify-center"
-                        style={{ borderColor: isSel ? accent : "#cbd5e1" }}
+                        style={{ borderColor: isSel ? (themed && theme.optFill ? "#ffffff" : accent) : theme.inputBorder }}
                       >
                         {isSel && (
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accent }} />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: themed && theme.optFill ? "#ffffff" : accent }} />
                         )}
                       </span>
                       {option.emoji && <span className="text-xl mr-2.5 leading-none">{option.emoji}</span>}
-                      <span className="text-[15px] font-medium" style={{ color: "#1e293b" }}>
+                      <span
+                        className="text-[15px] font-medium"
+                        style={{ color: isSel && themed && theme.optFill ? "#ffffff" : theme.text }}
+                      >
                         {option.text}
                       </span>
                     </button>
@@ -621,7 +664,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   onClick={handleBack}
                   disabled={isSubmitting}
                   className="px-6 py-3 rounded-lg text-sm font-semibold disabled:opacity-50"
-                  style={{ backgroundColor: "#e2e8f0", color: "#1e293b" }}
+                  style={{ backgroundColor: theme.backBg, color: theme.backInk, ...tx({ borderRadius: theme.pill ? 999 : 8 }) }}
                 >
                   ← Back
                 </button>
@@ -629,7 +672,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   onClick={handleAnswer}
                   disabled={(!selectedOption && questions[currentQ].question_type !== "calculator") || isSubmitting}
                   className="px-7 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-                  style={{ backgroundColor: accent }}
+                  style={{ backgroundColor: themed ? btn : accent, ...btnStyle }}
                 >
                   {isSubmitting ? "Saving…" : currentQ < questions.length - 1 ? "Next →" : "Continue →"}
                 </button>
@@ -643,10 +686,10 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     className="w-7 h-7 rounded-full text-xs font-semibold flex items-center justify-center"
                     style={
                       i === currentQ
-                        ? { backgroundColor: accent, color: "white" }
+                        ? { backgroundColor: themed ? btn : accent, color: "white" }
                         : i < currentQ
-                        ? { backgroundColor: accent + "22", color: accent }
-                        : { backgroundColor: "#e2e8f0", color: "#94a3b8" }
+                        ? { backgroundColor: (themed ? btn : accent) + "22", color: themed ? btn : accent }
+                        : { backgroundColor: theme.track, color: theme.faint }
                     }
                   >
                     {i + 1}
@@ -658,17 +701,20 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
 
           {/* CONTACT FORM */}
           {step === "contact" && (
-            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-              <h2 className="text-2xl font-bold text-center mb-2" style={{ color: "#1a1a2e" }}>
+            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]" style={tx({ background: theme.cardBg, boxShadow: theme.cardShadow, borderRadius: theme.cardRadius, border: `1px solid ${theme.cardBorder}` })}>
+              <h2
+                className="text-2xl font-bold text-center mb-2"
+                style={{ color: theme.title, ...tx({ fontFamily: theme.headFont, fontWeight: theme.headWeight ?? 700, fontSize: 34 }) }}
+              >
                 Almost there!
               </h2>
-              <p className="text-center mb-7 text-sm" style={{ color: "#64748b" }}>
+              <p className="text-center mb-7 text-sm" style={{ color: theme.muted }}>
                 Enter your details to see your personalised results.
               </p>
 
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
                     Full Name
                   </label>
                   <input
@@ -677,7 +723,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                    style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
                     onFocus={inputFocus}
                     onBlur={inputBlur}
                     placeholder="John Smith"
@@ -685,7 +731,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
                     Email Address
                   </label>
                   <input
@@ -694,7 +740,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                    style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
                     onFocus={inputFocus}
                     onBlur={inputBlur}
                     placeholder="john@example.com"
@@ -704,7 +750,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 {quiz.collect_company && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
                         Company Name
                       </label>
                       <input
@@ -713,7 +759,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                         value={contactCompany}
                         onChange={(e) => setContactCompany(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                        style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
                         onFocus={inputFocus}
                         onBlur={inputBlur}
                         placeholder="Your microfinance bank or company"
@@ -721,7 +767,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
                         Website <span style={{ color: "#94a3b8" }}>(optional)</span>
                       </label>
                       <input
@@ -729,7 +775,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                         value={contactWebsite}
                         onChange={(e) => setContactWebsite(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                        style={{ borderColor: "#cbd5e1", color: "#1e293b" }}
+                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
                         onFocus={inputFocus}
                         onBlur={inputBlur}
                         placeholder="www.yourcompany.com"
@@ -739,7 +785,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "#475569" }}>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
                     Phone Number
                   </label>
                   <PhoneInput
@@ -749,7 +795,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     value={contactPhone}
                     onChange={(val) => setContactPhone(val || "")}
                     className="phone-input-wrapper w-full px-4 py-2.5 rounded-lg border text-[15px]"
-                    style={{ borderColor: "#cbd5e1", "--PhoneInputCountryFlag-height": "1em" } as React.CSSProperties}
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }), "--PhoneInputCountryFlag-height": "1em" } as unknown as React.CSSProperties}
                   />
                 </div>
 
@@ -757,7 +803,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full py-3.5 rounded-lg text-white font-semibold text-base disabled:opacity-60 mt-2"
-                  style={{ backgroundColor: accent }}
+                  style={{ backgroundColor: themed ? btn : accent, ...btnStyle }}
                 >
                   {isSubmitting ? "Calculating…" : "See my results →"}
                 </button>
@@ -856,15 +902,24 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 Share with a friend
               </a>
             ) : null;
+            // A WhatsApp link gets a proper green WhatsApp button.
+            const isWa = !!quiz.cta_url && /(wa\.me|whatsapp\.com)/i.test(quiz.cta_url);
+            const waIcon = (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.2.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.7-.1 1.2Z" />
+              </svg>
+            );
+            const ctaLabel = builder.cta_text || (isWa ? "Chat on WhatsApp" : "Get in touch");
             const cta = quiz.cta_url ? (
               <a
                 href={quiz.cta_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block px-8 py-3 rounded-lg text-white font-semibold text-base"
-                style={{ backgroundColor: accent }}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg text-white font-semibold text-base"
+                style={{ backgroundColor: isWa ? "#25D366" : accent }}
               >
-                {builder.cta_text || "Get in touch"}
+                {isWa && waIcon}
+                {ctaLabel}
               </a>
             ) : null;
             // Their calculator figures, recomputed from what they entered.
@@ -874,8 +929,11 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     const r = computeCalc(calc, calcInputs);
                     const reverse = calc.type === "loan" && calcInputs.mode === "budget";
                     return (
-                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                        <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
+                      <div
+                        className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center"
+                        style={tx({ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: theme.cardRadius, boxShadow: theme.cardShadow })}
+                      >
+                        <h3 className="text-base font-semibold" style={{ color: theme.text }}>
                           Your estimate
                         </h3>
                         <p className="font-extrabold mt-2" style={{ fontSize: "clamp(24px, 5vw, 32px)", color: accent }}>
@@ -883,16 +941,224 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                             ? `Up to ${formatMoney(r.maxPrice ?? 0, calc.currency)}`
                             : `${formatMoney(r.monthly, calc.currency)} a month`}
                         </p>
-                        <p className="text-sm mt-2 leading-relaxed" style={{ color: "#475569" }}>
+                        <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.body }}>
                           {describeCalc(calc, calcInputs, r)}
                         </p>
-                        <p className="text-xs mt-3" style={{ color: "#94a3b8" }}>
+                        <p className="text-xs mt-3" style={{ color: theme.faint }}>
                           An estimate to guide you, not a loan offer. {org.name} will confirm your exact terms.
                         </p>
                       </div>
                     );
                   })()
                 : null;
+
+            // ── Template results: an elegant hero card with the WhatsApp CTA inside ──
+            if (themed) {
+              const cardS: React.CSSProperties = {
+                background: theme.cardBg,
+                border: `1px solid ${theme.cardBorder}`,
+                borderRadius: theme.cardRadius,
+                boxShadow: theme.cardShadow,
+              };
+              const heading: React.CSSProperties = {
+                fontFamily: theme.headFont,
+                fontWeight: theme.headWeight ?? 700,
+                color: theme.title,
+                letterSpacing: "-0.01em",
+              };
+              const emphasis = theme.key === "soft-luxe" ? "#C98B7A" : btn;
+              const styledTitle = (text: string) => {
+                const words = text.trim().split(/\s+/);
+                const last = words.pop();
+                return (
+                  <>
+                    {words.join(" ")} <em style={{ fontStyle: "italic", color: emphasis }}>{last}</em>
+                  </>
+                );
+              };
+              const eyebrowS: React.CSSProperties = { color: theme.eyebrow };
+              const bigCta = quiz.cta_url ? (
+                <a
+                  href={quiz.cta_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 w-full px-6 py-4 font-semibold text-[16px] leading-snug text-center transition-transform active:scale-[0.99]"
+                  style={{
+                    background: isWa ? "#25D366" : btn,
+                    color: "#ffffff",
+                    borderRadius: theme.pill ? 999 : 12,
+                    boxShadow: isWa ? "0 14px 30px -14px rgba(37,211,102,0.8)" : `0 14px 30px -14px ${btn}`,
+                  }}
+                >
+                  {isWa && <span className="flex-shrink-0">{waIcon}</span>}
+                  <span>{isWa ? ctaLabel : `${ctaLabel} →`}</span>
+                </a>
+              ) : null;
+              const rowsT = (rows: typeof picks) =>
+                rows
+                  .filter((r) => r.o.insight)
+                  .map((r) => (
+                    <div key={r.q.id} className="flex gap-3 py-3.5 border-t first:border-t-0" style={{ borderColor: theme.line }}>
+                      <span
+                        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={
+                          r.level === "none"
+                            ? { backgroundColor: btn + "22", color: theme.dark ? "#ffffff" : btn }
+                            : { backgroundColor: marker[r.level].bg, color: marker[r.level].color }
+                        }
+                      >
+                        {marker[r.level].icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold" style={{ color: theme.text }}>
+                          {r.topic}
+                          <span className="font-normal" style={{ color: theme.faint }}>
+                            {" "}· {r.o.emoji ? `${r.o.emoji} ` : ""}
+                            {r.o.text}
+                          </span>
+                        </p>
+                        <p className="text-sm mt-1 leading-relaxed" style={{ color: theme.body }}>
+                          {r.o.insight}
+                        </p>
+                      </div>
+                    </div>
+                  ));
+              const section = (title: string, children: React.ReactNode) => (
+                <div className="p-7 md:p-8" style={cardS}>
+                  <h3 className="mb-2" style={{ ...heading, fontSize: 26 }}>
+                    {title}
+                  </h3>
+                  {children}
+                </div>
+              );
+              const nextT = band.next_steps?.length
+                ? section(
+                    "Your next steps",
+                    <ol className="space-y-3 mt-3">
+                      {band.next_steps.map((st, i) => (
+                        <li key={i} className="flex gap-3 items-start">
+                          <span
+                            className="flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
+                            style={{ backgroundColor: btn, color: theme.buttonInk }}
+                          >
+                            {i + 1}
+                          </span>
+                          <span className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
+                            {st}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )
+                : null;
+              const shareT = !preview && shareUrl ? (
+                <div className="text-center">
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Try this quick quiz: ${shareUrl}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm border-2"
+                    style={{ borderColor: "#25D366", color: theme.dark ? "#25D366" : "#128C7E", borderRadius: 999 }}
+                  >
+                    {waIcon}
+                    Share with a friend
+                  </a>
+                </div>
+              ) : null;
+              const note = (
+                <p className="text-center text-sm" style={{ color: theme.faint }}>
+                  {org.name} will be in touch at {contactEmail || "the details you shared"}.
+                </p>
+              );
+
+              if (builder.kind === "match" && matchOutcome) {
+                const whyPicks = picks.filter((r) => r.o.outcome === matchOutcome.key && r.o.insight).slice(0, 4);
+                const why = rowsT(whyPicks);
+                // Only answers not already explained above.
+                const good = rowsT(picks.filter((r) => r.q.max_points > 0 && !whyPicks.includes(r)));
+                return (
+                  <div className="space-y-5">
+                    <div className="p-8 md:p-10" style={cardS}>
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.2em]" style={eyebrowS}>
+                        {firstName}, your perfect match
+                      </p>
+                      <h2 className="mt-3" style={{ ...heading, fontSize: "clamp(42px, 8.4vw, 60px)", lineHeight: 1.0 }}>
+                        {styledTitle(matchOutcome.title)}
+                      </h2>
+                      <p className="mt-4 text-[16px] leading-relaxed" style={{ color: theme.body }}>
+                        {matchOutcome.description}
+                      </p>
+                      {bigCta && <div className="mt-7">{bigCta}</div>}
+                    </div>
+                    {estimate}
+                    {why.length ? section("Why this fits you", why) : null}
+                    {matchOutcome.recommendation
+                      ? section(
+                          "Our recommendation",
+                          <p className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
+                            {matchOutcome.recommendation}
+                          </p>
+                        )
+                      : null}
+                    {good.length ? section("Good to know", good) : null}
+                    {nextT}
+                    {shareT}
+                    {note}
+                  </div>
+                );
+              }
+
+              const rows = rowsT(picks);
+              const ring = 2 * Math.PI * 42;
+              return (
+                <div className="space-y-5">
+                  <div className="p-8 md:p-10" style={cardS}>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.2em]" style={eyebrowS}>
+                      {firstName}, your result
+                    </p>
+                    <div className="mt-5 flex items-center gap-5">
+                      <div className="relative w-[96px] h-[96px] flex-shrink-0">
+                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                          <circle cx="50" cy="50" r="42" fill="none" stroke={theme.track} strokeWidth="8" />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke={btn}
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray={ring}
+                            strokeDashoffset={ring * (1 - percentage / 100)}
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-[21px] font-bold" style={{ color: theme.title }}>
+                          {percentage}%
+                        </span>
+                      </div>
+                      <span
+                        className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
+                        style={{ backgroundColor: TIER_COLORS[qualification] + "22", color: theme.dark ? "#ffffff" : TIER_COLORS[qualification] }}
+                      >
+                        {band.label}
+                      </span>
+                    </div>
+                    <h2 className="mt-6" style={{ ...heading, fontSize: "clamp(30px, 6vw, 46px)", lineHeight: 1.06 }}>
+                      {styledTitle(band.headline)}
+                    </h2>
+                    <p className="mt-4 text-[16px] leading-relaxed" style={{ color: theme.body }}>
+                      {band.body}
+                    </p>
+                    {bigCta && <div className="mt-7">{bigCta}</div>}
+                  </div>
+                  {estimate}
+                  {rows.length ? section("Your answers, analysed", rows) : null}
+                  {nextT}
+                  {shareT}
+                  {note}
+                </div>
+              );
+            }
 
             if (builder.kind === "match" && matchOutcome) {
               return (
@@ -1306,7 +1572,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
         </div>
       </main>
 
-      <footer className="py-5 text-center text-xs" style={{ color: "#94a3b8" }}>
+      <footer className="py-5 text-center text-xs" style={{ color: theme.faint }}>
         All responses are confidential
         {!hideBranding(org) && " · Powered by LeadScoreAI"}
       </footer>

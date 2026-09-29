@@ -50,6 +50,7 @@ export async function GET(request: Request) {
       is_active: !!q.is_active,
       kind: q.builder_config?.kind ?? null,
       builder: !!q.builder_config,
+      template: q.builder_config?.template ?? "classic",
       leads: counts.get(q.id) || 0,
       updated_at: q.updated_at,
     })),

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase";
 import { Organization, Quiz, QuizQuestion } from "@/lib/types";
 import QuizFlow from "@/app/[orgSlug]/[quizSlug]/QuizFlow";
+import { isTemplateKey } from "@/lib/quiz-templates";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -11,7 +12,13 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 // Live preview of a builder quiz, draft or published. Runs entirely in the
 // browser (preview mode): no lead is created and nobody is emailed.
-export default async function BuilderPreviewPage({ params }: { params: { quizId: string } }) {
+export default async function BuilderPreviewPage({
+  params,
+  searchParams,
+}: {
+  params: { quizId: string };
+  searchParams?: { template?: string };
+}) {
   if (!UUID_RE.test(params.quizId)) notFound();
   const supabase = createServiceClient();
 
@@ -34,5 +41,8 @@ export default async function BuilderPreviewPage({ params }: { params: { quizId:
   ]);
   if (!org || !questions?.length) notFound();
 
-  return <QuizFlow org={org} quiz={quiz} questions={questions} preview />;
+  // ?template=… previews another design without saving it.
+  const t = searchParams?.template;
+  const shown = isTemplateKey(t) && quiz.builder_config ? { ...quiz, builder_config: { ...quiz.builder_config, template: t } } : quiz;
+  return <QuizFlow org={org} quiz={shown} questions={questions} preview />;
 }

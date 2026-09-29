@@ -7,6 +7,7 @@ import { INDUSTRY_PAGES } from "@/lib/builder-industries";
 import { COACH_BRANCHES } from "@/lib/coach-pages";
 import { trackClient } from "@/lib/track-client";
 import { checkoutStartedPixel } from "@/components/MetaPixel";
+import { TEMPLATES, TEMPLATE_KEYS, type TemplateKey } from "@/lib/quiz-templates";
 
 interface Org {
   id: string;
@@ -26,6 +27,7 @@ interface QuizSummary {
   kind: "qualify" | "match" | null;
   builder: boolean;
   leads: number;
+  template?: TemplateKey;
 }
 
 interface TapQuestion {
@@ -541,6 +543,18 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     }
   };
 
+  // Quiz style: switching templates is instant and never costs an AI edit.
+  const saveTemplate = async (key: TemplateKey) => {
+    if (!current) return;
+    setQuizzes((qs) => qs.map((q) => (q.id === current.id ? { ...q, template: key } : q)));
+    try {
+      await api("/api/builder/template", { method: "PATCH", body: JSON.stringify({ quizId: current.id, template: key }) });
+      setPreviewVersion((v) => v + 1);
+    } catch {
+      /* the style just won't persist */
+    }
+  };
+
   const saveColor = async (value: string) => {
     setColor(value);
     try {
@@ -904,6 +918,46 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       ) : (
         <div className="rounded-2xl bg-[#1C2333] border border-[#2B3245] p-5 text-center text-sm text-[#9DA2A6]">
           Build a quiz in the chat first, then publish and share it here.
+        </div>
+      )}
+
+      {current && (
+        <div className="rounded-2xl bg-[#1C2333] border border-[#2B3245] p-4">
+          {/* Each template's own fonts, so the thumbnails show the real look. */}
+          {TEMPLATE_KEYS.map((k) => (TEMPLATES[k].fonts ? <link key={k} rel="stylesheet" href={TEMPLATES[k].fonts!} /> : null))}
+          <p className="text-[14px] text-[#F5F9FC]">Quiz style</p>
+          <p className="text-[12.5px] text-[#9DA2A6] mt-0.5">Changes the whole quiz, including the results page. Free to switch.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
+            {TEMPLATE_KEYS.map((k) => {
+              const t = TEMPLATES[k];
+              const on = (current.template ?? "classic") === k;
+              const swatchBtn = t.button ?? color;
+              return (
+                <button
+                  key={k}
+                  onClick={() => saveTemplate(k)}
+                  className={`text-left rounded-xl overflow-hidden ring-2 transition ${on ? "ring-violet-400" : "ring-transparent hover:ring-[#3B4459]"}`}
+                  aria-pressed={on}
+                >
+                  <div
+                    className="h-[74px] px-3 py-2.5 flex flex-col justify-between"
+                    style={{ background: t.startBg ?? `linear-gradient(135deg, #0f172a, ${color})` }}
+                  >
+                    <span style={{ fontFamily: t.headFont, color: t.startInk, fontSize: 24, lineHeight: 1, fontWeight: t.headWeight ?? 800 }}>
+                      Aa
+                    </span>
+                    <span className="self-start h-2.5 w-12 rounded-full" style={{ backgroundColor: swatchBtn }} />
+                  </div>
+                  <div className="bg-[#0E1525] px-3 py-2">
+                    <p className="text-[12.5px] font-semibold text-[#F5F9FC]">
+                      {t.name} {on && <span className="text-violet-300">✓</span>}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[12px] text-[#9DA2A6] mt-2.5">{TEMPLATES[current.template ?? "classic"].blurb}</p>
         </div>
       )}
 

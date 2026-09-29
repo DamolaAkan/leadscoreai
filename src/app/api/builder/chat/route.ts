@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
 import { addUsage, costUsd, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
 import { track } from "@/lib/track";
+import { isTemplateKey, pickTemplate } from "@/lib/quiz-templates";
 import { describeAnswers, sanitizeAnswers } from "@/lib/signup-scorecard";
 import {
   BUILDER_MODEL,
@@ -294,6 +295,20 @@ export async function POST(request: Request) {
     });
   }
 
+  // Design template: an edit keeps the quiz's current look; a brand-new quiz
+  // gets the template that suits the business (Classic when nothing matches).
+  const template = isTemplateKey(current?.builder_config?.template)
+    ? current!.builder_config.template
+    : pickTemplate(
+        [
+          scorecard ? describeAnswers(scorecard).join(" ") : "",
+          user.orgName,
+          normalized.name,
+          normalized.start_headline,
+          history.find((m) => m.role === "user")?.content || "",
+        ].join(" ")
+      );
+
   const quizRow = {
     name: normalized.name,
     start_headline: normalized.start_headline,
@@ -301,7 +316,7 @@ export async function POST(request: Request) {
     start_cta_text: normalized.start_cta_text,
     max_score: normalized.max_score,
     cta_url: normalized.cta_url,
-    builder_config: normalized.builder_config,
+    builder_config: { ...normalized.builder_config, template },
     result_mode: "lead",
     collect_company: false,
     updated_at: new Date().toISOString(),
