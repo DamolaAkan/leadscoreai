@@ -21,7 +21,9 @@ import {
 } from "@/lib/builder";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+// 300s (Vercel Pro max): local-language quizzes with heavy tone marks (Yoruba,
+// Igbo, Hausa) generate more slowly and were hitting the old 120s cap.
+export const maxDuration = 300;
 
 interface ChatMessage {
   role: "user" | "assistant";
