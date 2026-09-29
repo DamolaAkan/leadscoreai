@@ -181,7 +181,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           heading: `Ready when you are, ${name}`,
           body: [
             `It's been a week since you joined. Your quiz and your free AI edits are still waiting for you.`,
-            `Pro is ${naira(PRO)} a month and includes 2,000 leads a month, 10 live quizzes, 150 AI edits a month and a willingness-to-pay score on every lead.`,
+            `Pro is ${naira(PRO)} a month and includes 1,000 leads a month, 3 live quizzes, 150 AI edits a month and a willingness-to-pay score on every lead.`,
             `Stuck, or need something the builder can't do? Reply to this email and our support team will help.`,
           ],
           cta: { label: "Open my builder", href: builderUrl(o) },
@@ -197,7 +197,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
             ctx.quizLive
               ? `Your quiz is now <b>live</b>. Share it on WhatsApp from the builder and watch your leads come in.`
               : `You can now publish your quizzes. Open the builder, tap Publish, and share it on WhatsApp.`,
-            `Your plan includes 2,000 leads a month, 10 live quizzes and 150 AI edits a month. We'll remind you a few days before it's time to renew.`,
+            `Your plan includes 1,000 leads a month, 3 live quizzes and 150 AI edits a month. We'll remind you a few days before it's time to renew.`,
           ],
           cta: { label: "Open my dashboard", href: builderUrl(o) },
         }),

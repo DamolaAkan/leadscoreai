@@ -123,8 +123,8 @@ const PLAN = {
   price: 59750,
   earlyDiscount: 10000,
   features: [
-    "2,000 leads a month",
-    "10 live quizzes",
+    "1,000 leads a month",
+    "3 live quizzes",
     "150 AI edits a month, top up any time you run out (₦10,000 = 45 edits)",
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
