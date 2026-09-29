@@ -143,6 +143,24 @@ export async function POST(request: Request) {
       fbc,
     });
   }
+  // A Hot/Warm sign-up (from the sign-up scorecard) also fires a QualifiedLead
+  // event, so we can tell Meta to optimise our ads toward buyers who qualify,
+  // not just anyone who signs up. Server-only; carries the ad click id (fbc).
+  if (isNewAccount && fit && (fit.band === "Hot" || fit.band === "Warm")) {
+    const sig = clientSignals(request);
+    await sendMetaEvent({
+      eventName: "QualifiedLead",
+      eventId: `qlead_${org.id}`,
+      email: norm,
+      externalId: org.id,
+      contentName: `quiz_builder_qualified_${fit.band.toLowerCase()}`,
+      eventSourceUrl: sig.eventSourceUrl,
+      clientIp: sig.clientIp,
+      userAgent: sig.userAgent,
+      fbp,
+      fbc,
+    });
+  }
   await attributeVisitor(visitorId, org.id);
 
   // New self-serve account: welcome the owner, tell the team.

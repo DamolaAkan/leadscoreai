@@ -100,7 +100,7 @@ export function clientSignals(request: Request): { clientIp?: string; userAgent?
 // ── Any standard event (quiz builder funnel: Lead / InitiateCheckout / Purchase) ──
 
 export interface MetaEventInput {
-  eventName: "Lead" | "InitiateCheckout" | "Purchase" | "CompleteRegistration";
+  eventName: "Lead" | "QualifiedLead" | "InitiateCheckout" | "Purchase" | "CompleteRegistration";
   eventId: string; // same id the browser pixel uses, so Meta counts it once
   email?: string | null;
   externalId?: string | null; // our account id: ties sign-up → checkout → purchase together
