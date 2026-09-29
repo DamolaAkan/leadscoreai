@@ -161,6 +161,19 @@ export async function POST(request: Request) {
   let normalized: NormalizedQuiz | null = null;
   let errorsForRetry: string[] = [];
 
+  // A local-language quiz (Yoruba, Igbo, Hausa, etc.) with full tone marks
+  // generates far more slowly and was timing out at Cloudflare's ~100s limit.
+  // Drop to "low" effort for those so the request finishes; the owner edits the
+  // wording anyway. Normal English quizzes stay at "medium".
+  const convoText = history.map((m) => m.content).join(" ").toLowerCase();
+  const LANG_HINTS = [
+    "yoruba", "yorùbá", "igbo", "ibo", "hausa", "pidgin", "swahili", "kiswahili",
+    "french", "français", "francais", "twi", "zulu", "xhosa", "amharic", "arabic",
+    "wolof", "lingala", "local language", "local dialect", "dialect", "mother tongue",
+    "our language", "native language",
+  ];
+  const effort: "low" | "medium" = LANG_HINTS.some((w) => convoText.includes(w)) ? "low" : "medium";
+
   // Full schema (with the calculator field). If the API ever rejects it as too
   // large, fall back to the basic schema so the builder keeps working.
   const fullSchema = BUILDER_TURN_SCHEMA as unknown as Record<string, unknown>;
@@ -185,7 +198,7 @@ export async function POST(request: Request) {
           model: BUILDER_MODEL,
           max_tokens: 16000,
           output_config: {
-            effort: "medium",
+            effort,
             format: { type: "json_schema", schema: turnSchema },
           },
           system: [
