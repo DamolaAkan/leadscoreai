@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { stripeConfigured } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import {
@@ -6,6 +7,7 @@ import {
   computeAccess,
   TIERS,
   tierPriceFor,
+  currencyFor,
   paystackConfigured,
   OrgBilling,
   plansFor,
@@ -62,13 +64,16 @@ export async function GET(request: Request) {
     paid: isPaid(b),
     prices: { core: TIERS.core.naira, pro: TIERS.pro.naira },
     // The plans this org can buy (self-serve: Starter/Business; done-for-you: Core/Pro).
-    plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, naira: tierPriceFor(t, b) })),
+    plans: plansFor(!!b.self_serve).map((t) => ({ tier: t, label: TIERS[t].label, amount: tierPriceFor(t, b) })),
+    // NGN = Paystack, USD = Stripe (card subscription, managed in Stripe's portal).
+    currency: currencyFor(b),
+    stripeManaged: !!(org as { stripe_customer_id?: string | null } | null)?.stripe_customer_id,
     trialDays: trialDaysFor(b),
     // Self-serve go-live offer: ₦10,000 off the first payment, 48h after the first quiz.
     offer: goLiveOffer(b, firstQuizAt),
     // Self-serve: free to build, pay to publish.
     canPublish: canPublish(b),
-    configured: paystackConfigured(),
+    configured: currencyFor(b) === "USD" ? stripeConfigured() : paystackConfigured(),
     // Trial / lock state
     locked: access.locked,
     reason: access.reason,

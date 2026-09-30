@@ -122,7 +122,7 @@ export async function loadOrgForCredits(orgId: string): Promise<OrgForCredits | 
   const supabase = createServiceClient();
   const { data } = await supabase
     .from("organizations")
-    .select("id, billing_tier, billing_status, current_period_end, signup_date, self_serve, last_paid_at")
+    .select("id, billing_tier, billing_status, current_period_end, signup_date, self_serve, last_paid_at, billing_currency")
     .eq("id", orgId)
     .maybeSingle();
   return (data as OrgForCredits) || null;

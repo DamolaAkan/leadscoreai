@@ -7,6 +7,7 @@ import { INDUSTRY_PAGES } from "@/lib/builder-industries";
 import { COACH_BRANCHES } from "@/lib/coach-pages";
 import { trackClient } from "@/lib/track-client";
 import { checkoutStartedPixel } from "@/components/MetaPixel";
+import { PRICING, asCurrency, editsFor, money, type Currency } from "@/lib/money";
 import { TEMPLATES, TEMPLATE_KEYS, type TemplateKey } from "@/lib/quiz-templates";
 
 interface Org {
@@ -56,6 +57,7 @@ type Tab = "chat" | "preview" | "share";
 interface GoLiveInfo {
   canPublish: boolean;
   price: number;
+  currency: Currency; // NGN (Paystack) or USD (Stripe)
   offer: { eligible: boolean; discount: number; endsAt: string | null };
 }
 
@@ -70,10 +72,8 @@ interface Credits {
   canTopUp: boolean;
 }
 
-// Mirrors src/lib/credits.ts: top-ups in ₦10,000 steps of 45 edits.
-const TOPUP_STEP_NAIRA = 10000;
-const EDITS_PER_STEP = 45;
-const TOPUP_MIN_NAIRA = TOPUP_STEP_NAIRA;
+// Top-ups come in whole steps: ₦10,000 = 45 edits, or $10 = 70 edits (src/lib/money.ts).
+const TOPUP_MAX = { NGN: 500000, USD: 500 } as const;
 
 function hoursLeft(endsAt: string | null): number {
   if (!endsAt) return 0;
@@ -163,12 +163,17 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const [freshDraft, setFreshDraft] = useState(false);
   // Free to build, pay to publish: billing state + the go-live sheet.
   const [billing, setBilling] = useState<GoLiveInfo | null>(null);
+  const cur: Currency = billing?.currency ?? "NGN";
+  const price = PRICING[cur];
+  const fmt = (n: number) => money(n, cur);
   const [paywall, setPaywall] = useState(false);
   const [paying, setPaying] = useState(false);
   // AI edits meter + top-ups.
   const [credits, setCredits] = useState<Credits | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
-  const [topupAmount, setTopupAmount] = useState(String(TOPUP_MIN_NAIRA));
+  const [topupAmount, setTopupAmount] = useState(String(PRICING.NGN.topupStep));
+  // Top-up steps follow the account's currency once billing has loaded.
+  useEffect(() => setTopupAmount(String(PRICING[cur].topupStep)), [cur]);
   const [toppingUp, setToppingUp] = useState(false);
   const [creditsMsg, setCreditsMsg] = useState("");
   // First-quiz celebration: confetti the first time the owner opens its preview.
@@ -215,7 +220,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       .then((b) =>
         setBilling({
           canPublish: b.canPublish !== false,
-          price: b.plans?.[0]?.naira ?? 59750,
+          price: b.plans?.[0]?.amount ?? PRICING[asCurrency(b.currency)].pro,
+          currency: asCurrency(b.currency),
           offer: b.offer ?? { eligible: false, discount: 0, endsAt: null },
         })
       )
@@ -454,7 +460,12 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       const data = await res.json().catch(() => ({}));
       if (res.status === 402) {
         // Not on a paid plan yet: show the go-live sheet instead of an error.
-        setBilling({ canPublish: false, price: data.price ?? 59750, offer: data.offer ?? { eligible: false, discount: 0, endsAt: null } });
+        setBilling({
+          canPublish: false,
+          price: data.price ?? PRICING[asCurrency(data.currency)].pro,
+          currency: asCurrency(data.currency),
+          offer: data.offer ?? { eligible: false, discount: 0, endsAt: null },
+        });
         setPaywall(true);
         return;
       }
@@ -515,22 +526,22 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     }
   };
 
-  const topupNaira = Math.floor(Number(topupAmount.replace(/[^0-9]/g, "")) || 0);
-  const topupEdits = Math.floor(topupNaira / TOPUP_STEP_NAIRA) * EDITS_PER_STEP;
+  const topupAmt = Math.floor(Number(topupAmount.replace(/[^0-9]/g, "")) || 0);
+  const topupEdits = editsFor(topupAmt, cur);
   const stepTopup = (dir: 1 | -1) =>
-    setTopupAmount(String(Math.min(500000, Math.max(TOPUP_MIN_NAIRA, topupNaira + dir * TOPUP_STEP_NAIRA))));
+    setTopupAmount(String(Math.min(TOPUP_MAX[cur], Math.max(price.topupStep, topupAmt + dir * price.topupStep))));
   const topUp = async () => {
-    if (topupNaira < TOPUP_MIN_NAIRA) {
-      setCreditsMsg(`The minimum top-up is ₦${TOPUP_MIN_NAIRA.toLocaleString()}.`);
+    if (topupAmt < price.topupStep) {
+      setCreditsMsg(`The minimum top-up is ${fmt(price.topupStep)}.`);
       return;
     }
-    trackClient("topup_clicked", { amount_naira: topupNaira });
+    trackClient("topup_clicked", { amount: topupAmt, currency: cur });
     setToppingUp(true);
     setCreditsMsg("");
     try {
       const data = await api("/api/dashboard/billing/topup", {
         method: "POST",
-        body: JSON.stringify({ amountNaira: topupNaira }),
+        body: JSON.stringify({ amount: topupAmt }),
       });
       if (data.authorization_url) {
         window.location.href = data.authorization_url;
@@ -740,7 +751,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               {!credits.paid
                 ? "Go Pro for 150 edits a month."
                 : credits.canTopUp
-                  ? `Top up: ₦10,000 = 45 edits.`
+                  ? `Top up: ${fmt(price.topupStep)} = ${price.editsPerStep} edits.`
                   : credits.resetsAt
                     ? `Renews ${new Date(credits.resetsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.`
                     : ""}
@@ -850,8 +861,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             {!current.is_active && billing && !billing.canPublish && (
               <p className="mt-2 text-[11.5px] text-[#9DA2A6] text-center">
                 {billing.offer.eligible
-                  ? `Go live for ₦${(billing.price - billing.offer.discount).toLocaleString()} your first month · offer ends in ${hoursLeft(billing.offer.endsAt)}h`
-                  : `Building is free · ₦${billing.price.toLocaleString()}/month to go live`}
+                  ? `Go live for ${fmt(billing.price - billing.offer.discount)} your first month · offer ends in ${hoursLeft(billing.offer.endsAt)}h`
+                  : `Building is free · ${fmt(billing.price)}/month to go live`}
               </p>
             )}
           </div>
@@ -1248,17 +1259,19 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             {credits.paid && credits.canTopUp && (
               <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
                 <p className="text-[14px] font-semibold text-[#F5F9FC]">Top up</p>
-                <p className="text-[12.5px] text-[#9DA2A6]">₦10,000 = 45 edits, in ₦10,000 steps. Top-ups never expire.</p>
+                <p className="text-[12.5px] text-[#9DA2A6]">
+                  {fmt(price.topupStep)} = {price.editsPerStep} edits, in {fmt(price.topupStep)} steps. Top-ups never expire.
+                </p>
                 <div className="mt-3 flex gap-2">
-                  {[10000, 20000, 30000].map((n) => (
+                  {[1, 2, 3].map((k) => k * price.topupStep).map((n) => (
                     <button
                       key={n}
                       onClick={() => setTopupAmount(String(n))}
                       className={`flex-1 rounded-xl py-2 text-[13px] font-semibold ring-1 ${
-                        topupNaira === n ? "bg-violet-500/20 text-violet-100 ring-violet-400" : "text-[#C2C8CC] ring-[#2B3245]"
+                        topupAmt === n ? "bg-violet-500/20 text-violet-100 ring-violet-400" : "text-[#C2C8CC] ring-[#2B3245]"
                       }`}
                     >
-                      ₦{n.toLocaleString()}
+                      {fmt(n)}
                     </button>
                   ))}
                 </div>
@@ -1266,20 +1279,20 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                   <button
                     type="button"
                     onClick={() => stepTopup(-1)}
-                    disabled={topupNaira <= TOPUP_MIN_NAIRA}
-                    aria-label="₦10,000 less"
+                    disabled={topupAmt <= price.topupStep}
+                    aria-label={`${fmt(price.topupStep)} less`}
                     className="w-10 h-10 rounded-lg text-[20px] text-[#F5F9FC] disabled:opacity-30"
                   >
                     −
                   </button>
                   <span className="flex-1 text-center py-3 text-[16px] font-semibold text-[#F5F9FC]">
-                    ₦{topupNaira.toLocaleString()}
+                    {fmt(topupAmt)}
                   </span>
                   <button
                     type="button"
                     onClick={() => stepTopup(1)}
-                    disabled={topupNaira >= 500000}
-                    aria-label="₦10,000 more"
+                    disabled={topupAmt >= TOPUP_MAX[cur]}
+                    aria-label={`${fmt(price.topupStep)} more`}
                     className="w-10 h-10 rounded-lg text-[20px] text-[#F5F9FC] disabled:opacity-30"
                   >
                     +
@@ -1288,10 +1301,10 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                 </div>
                 <button
                   onClick={topUp}
-                  disabled={toppingUp || topupNaira < TOPUP_MIN_NAIRA}
+                  disabled={toppingUp || topupAmt < price.topupStep}
                   className="mt-3 w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[15px] font-bold disabled:opacity-50"
                 >
-                  {toppingUp ? "Opening secure checkout…" : `Pay ₦${topupNaira.toLocaleString()} →`}
+                  {toppingUp ? "Opening secure checkout…" : `Pay ${fmt(topupAmt)} →`}
                 </button>
               </div>
             )}
@@ -1339,25 +1352,26 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                 <>
                   <div className="flex items-baseline gap-2.5">
                     <span className="text-[28px] font-extrabold text-[#F5F9FC]">
-                      ₦{(billing.price - billing.offer.discount).toLocaleString()}
+                      {fmt(billing.price - billing.offer.discount)}
                     </span>
-                    <s className="text-[15px] text-[#9DA2A6]">₦{billing.price.toLocaleString()}</s>
+                    <s className="text-[15px] text-[#9DA2A6]">{fmt(billing.price)}</s>
                   </div>
                   <p className="text-[13px] text-[#C2C8CC]">
-                    for your first month, then ₦{billing.price.toLocaleString()}/month
+                    for your first month, then {fmt(billing.price)}/month
                   </p>
                   <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 text-amber-300 text-[12px] font-semibold px-3 py-1">
-                    🎁 ₦{billing.offer.discount.toLocaleString()} off · ends in {hoursLeft(billing.offer.endsAt)}h
+                    🎁 {fmt(billing.offer.discount)} off · ends in {hoursLeft(billing.offer.endsAt)}h
                   </p>
                 </>
               ) : (
                 <>
-                  <span className="text-[28px] font-extrabold text-[#F5F9FC]">₦{billing.price.toLocaleString()}</span>
+                  <span className="text-[28px] font-extrabold text-[#F5F9FC]">{fmt(billing.price)}</span>
                   <span className="text-[14px] text-[#9DA2A6]"> /month</span>
                 </>
               )}
               <p className="mt-3 text-[12px] text-[#9DA2A6]">
-                Includes 150 AI edits a month. Pay by bank transfer, card or USSD. Cancel anytime.
+                Includes 150 AI edits a month.{" "}
+                {cur === "USD" ? "Pay by card, renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD. Cancel anytime."}
               </p>
             </div>
 

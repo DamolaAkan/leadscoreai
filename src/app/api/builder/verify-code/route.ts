@@ -8,13 +8,14 @@ import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-email
 import { attributeVisitor, describeFirstTouch, sanitizeFirstTouch, track } from "@/lib/track";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { describeAnswers, sanitizeAnswers, scoreAnswers } from "@/lib/signup-scorecard";
+import { decideRegion, regionSignals } from "@/lib/region";
 
 export const dynamic = "force-dynamic";
 
 // Quiz builder step 2: verify the code, then sign in to the business that owns
 // this email, or create a new one (on the free trial) if there isn't one.
 export async function POST(request: Request) {
-  const { email, code, businessName, whatsapp, loginOnly, visitorId, firstTouch, onboarding } = await request.json().catch(() => ({}));
+  const { email, code, businessName, whatsapp, timezone, loginOnly, visitorId, firstTouch, onboarding } = await request.json().catch(() => ({}));
   const phone = normalizeWhatsApp(whatsapp);
   // Sign-up scorecard answers (six taps before the details), if they took it.
   const scorecard = sanitizeAnswers(onboarding);
@@ -68,6 +69,9 @@ export async function POST(request: Request) {
   }
 
   let isNewAccount = false;
+  // New accounts: naira (Paystack) for Nigeria, USD (Stripe) for everyone else.
+  const signals = regionSignals({ phone, timezone, request, firstTouch: ft });
+  const region = decideRegion(signals);
   if (!org) {
     isNewAccount = true;
     const name = String(businessName || "").trim().slice(0, 80) || norm.split("@")[0];
@@ -85,6 +89,9 @@ export async function POST(request: Request) {
         signup_source: "builder",
         self_serve: true,
         phone,
+        billing_currency: region.currency,
+        country: region.country,
+        region_signals: signals,
       })
       .select("id, name, slug, phone")
       .single();
@@ -166,11 +173,12 @@ export async function POST(request: Request) {
   // New self-serve account: welcome the owner, tell the team.
   if (isNewAccount) {
     await Promise.all([
-      sendOwnerEmailOnce("welcome", { id: org.id, name: org.name, slug: org.slug, email: norm }, { hasQuiz: false, offerEndsAt: null }),
+      sendOwnerEmailOnce("welcome", { id: org.id, name: org.name, slug: org.slug, email: norm }, { hasQuiz: false, offerEndsAt: null, currency: region.currency }),
       sendTeamAlert(`🆕 New self-serve sign-up: ${org.name}`, [
         ["Business", org.name],
         ["Email", norm],
         ["WhatsApp", phone ? waLink(phone) : "Not given"],
+        ["Pays in", region.currency === "USD" ? `USD via Stripe${region.country ? ` (${region.country})` : ""}` : "Naira via Paystack"],
         ["Signed up", lagosNow()],
         ["Came from", describeFirstTouch(ft)],
         ["Scorecard", fit ? `${fit.band} · ${fit.score}/100` : "Skipped"],

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { checkoutStartedPixel } from "@/components/MetaPixel";
 import { AuthUser } from "@/lib/dashboard-types";
+import { money, type Currency } from "@/lib/money";
 
 interface QuizInfo {
   id: string;
@@ -47,8 +48,10 @@ export default function SettingsTab({
   const [billing, setBilling] = useState<{
     tier: string | null; status: string | null; currentPeriodEnd: string | null;
     paid: boolean; prices: { core: number; pro: number }; configured: boolean;
-    plans?: { tier: string; label: string; naira: number }[];
+    plans?: { tier: string; label: string; amount: number }[];
     offer?: { eligible: boolean; discount: number };
+    currency?: Currency;
+    stripeManaged?: boolean;
     reason?: string;
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
@@ -78,6 +81,9 @@ export default function SettingsTab({
     setLoading(false);
   }, [getAuthHeaders]);
 
+  const usd = billing?.currency === "USD";
+  const fmt = (n: number) => money(n, billing?.currency);
+
   const handleSubscribe = async (tier: string) => {
     setSubBusy(tier);
     setSubMsg("");
@@ -90,13 +96,31 @@ export default function SettingsTab({
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.authorization_url) {
         checkoutStartedPixel(data);
-        setTimeout(() => (window.location.href = data.authorization_url), 300); // → Paystack checkout
+        setTimeout(() => (window.location.href = data.authorization_url), 300); // → Paystack / Stripe checkout
       } else {
         setSubMsg(data.error || "Could not start checkout.");
         setSubBusy(null);
       }
     } catch {
       setSubMsg("Could not start checkout.");
+      setSubBusy(null);
+    }
+  };
+
+  // USD accounts: Stripe's portal to update the card, see invoices or cancel.
+  const handleManageBilling = async () => {
+    setSubBusy("portal");
+    setSubMsg("");
+    try {
+      const res = await fetch("/api/dashboard/billing/portal", { method: "POST", headers: getAuthHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) window.location.href = data.url;
+      else {
+        setSubMsg(data.error || "Could not open billing.");
+        setSubBusy(null);
+      }
+    } catch {
+      setSubMsg("Could not open billing.");
       setSubBusy(null);
     }
   };
@@ -344,7 +368,7 @@ export default function SettingsTab({
             <p className="text-sm text-gray-600">
               Renews on{" "}
               <b>{new Date(billing.currentPeriodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</b>.
-              Pay again before then to keep your dashboard active.
+              {usd ? " Your card is charged automatically." : " Pay again before then to keep your dashboard active."}
             </p>
           )}
           {billing && !billing.configured && (
@@ -373,14 +397,28 @@ export default function SettingsTab({
                 {emailBusy ? "Saving…" : "Save"}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Your Paystack receipts and renewals go here.</p>
+            <p className="text-xs text-gray-400 mt-1">Your {usd ? "" : "Paystack "}receipts and renewals go here.</p>
             {emailMsg && (
               <p className={`text-sm mt-1 ${emailMsg === "Saved." ? "text-green-600" : "text-red-600"}`}>{emailMsg}</p>
             )}
           </div>
 
+          {usd && billing?.stripeManaged ? (
+            <button
+              onClick={handleManageBilling}
+              disabled={!!subBusy}
+              className="w-full rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
+              style={{ borderColor: accent }}
+            >
+              <div className="font-bold text-gray-900">Manage my plan</div>
+              <div className="text-sm text-gray-600">Update your card, download invoices or cancel.</div>
+              <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
+                {subBusy === "portal" ? "Opening…" : "Open billing →"}
+              </div>
+            </button>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(billing?.plans ?? []).map(({ tier: t, label, naira: price }) => {
+            {(billing?.plans ?? []).map(({ tier: t, label, amount: price }) => {
               const isCurrent = billing?.paid && billing?.tier === t;
               return (
                 <button
@@ -394,11 +432,11 @@ export default function SettingsTab({
                   <div className="text-sm text-gray-600">
                     {billing?.offer?.eligible ? (
                       <>
-                        <s className="text-gray-400">₦{price.toLocaleString()}</s> ₦
-                        {(price - billing.offer.discount).toLocaleString()} first month, then ₦{price.toLocaleString()}/month
+                        <s className="text-gray-400">{fmt(price)}</s> {fmt(price - billing.offer.discount)} first month,
+                        then {fmt(price)}/month
                       </>
                     ) : (
-                      <>₦{price.toLocaleString()}/month</>
+                      <>{fmt(price)}/month</>
                     )}
                   </div>
                   <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
@@ -408,7 +446,10 @@ export default function SettingsTab({
               );
             })}
           </div>
-          <p className="text-xs text-gray-400">Pay by card, bank transfer or USSD via Paystack.</p>
+          )}
+          <p className="text-xs text-gray-400">
+            {usd ? "Pay by card via Stripe. Renews monthly, cancel anytime." : "Pay by card, bank transfer or USSD via Paystack."}
+          </p>
           {subMsg && <p className="text-sm text-red-600">{subMsg}</p>}
         </div>
       </div>

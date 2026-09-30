@@ -5,7 +5,7 @@
 import { createServiceClient } from "./supabase";
 import { getResendKey } from "./builder-server";
 import { sendSequenceEmail } from "./email";
-import { GO_LIVE_DISCOUNT_NAIRA, TIERS } from "./paystack";
+import { PRICING, money, type Currency } from "./money";
 import { WHO_ITS_FOR, WHO_ITS_FOR_INTRO, WHO_ITS_FOR_TITLE, type Block } from "./who-its-for";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.leadscoreai.com";
@@ -13,7 +13,6 @@ const FROM = { fromEmail: "hello@leadscoreai.com", fromName: "LeadScoreAI" };
 const SUPPORT = "stella@leadscoreai.com";
 export const TEAM_ALERTS = ["akanbi@leadscoreai.com", "stella@leadscoreai.com"];
 
-const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const day = (iso: string) =>
@@ -71,6 +70,18 @@ export interface EmailContext {
   amountPaid?: number;
   quizLive?: boolean;
   price?: number; // this owner's Pro price (tierPriceFor); defaults to the current price
+  currency?: Currency; // NGN (Paystack) or USD (Stripe); defaults to NGN
+}
+
+// Prices in the owner's billing currency.
+function pricing(ctx: EmailContext) {
+  const cur = ctx.currency ?? "NGN";
+  return {
+    usd: cur === "USD",
+    fmt: (n: number) => money(n, cur),
+    PRO: ctx.price ?? PRICING[cur].pro,
+    OFF: PRICING[cur].goLiveDiscount,
+  };
 }
 
 // The "Who it's for" statement as email paragraphs (same words as /who-its-for).
@@ -89,15 +100,15 @@ function whoItsForHtml(): string[] {
 }
 
 function offerLine(ctx: EmailContext): string {
-  const PRO = ctx.price ?? TIERS.builder.naira;
+  const { fmt, PRO, OFF } = pricing(ctx);
   return ctx.offerEndsAt
-    ? `Go live before <b>${day(ctx.offerEndsAt)}</b> and your first month is <b>${naira(PRO - GO_LIVE_DISCOUNT_NAIRA)}</b> instead of ${naira(PRO)}.`
-    : `Go live on Pro for ${naira(PRO)} a month. Build your first quiz and go live within 48 hours to save ${naira(GO_LIVE_DISCOUNT_NAIRA)} on your first month.`;
+    ? `Go live before <b>${day(ctx.offerEndsAt)}</b> and your first month is <b>${fmt(PRO - OFF)}</b> instead of ${fmt(PRO)}.`
+    : `Go live on Pro for ${fmt(PRO)} a month. Build your first quiz and go live within 48 hours to save ${fmt(OFF)} on your first month.`;
 }
 
 export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext): { subject: string; html: string } {
   const name = esc(o.name);
-  const PRO = ctx.price ?? TIERS.builder.naira;
+  const { usd, fmt, PRO, OFF } = pricing(ctx);
   switch (kind) {
     case "welcome":
       return {
@@ -107,11 +118,11 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           body: [
             `Welcome, ${name}. Describe your business in the chat and LeadScoreAI builds a quiz that tells you what each customer wants and whether they're ready to pay.`,
             `You have <b>30 free AI edits</b> to build and try it. Every quiz includes a few willingness-to-pay questions, so every lead comes in with a score from 0 to 100.`,
-            `When you're happy with it, go live on Pro for ${naira(PRO)} a month. Go live within 48 hours of building your first quiz and your first month is ${naira(PRO - GO_LIVE_DISCOUNT_NAIRA)}.`,
+            `When you're happy with it, go live on Pro for ${fmt(PRO)} a month. Go live within 48 hours of building your first quiz and your first month is ${fmt(PRO - OFF)}.`,
             `LeadScoreAI isn't for every business. <a href="${APP_URL}/who-its-for" style="color:#6d28d9;">Read who it's for</a> before you start.`,
           ],
           cta: { label: "Build my first quiz", href: builderUrl(o) },
-          ps: "Tip: start with one sentence like “I sell hair extensions in Lagos and want to know who's ready to buy.”",
+          ps: `Tip: start with one sentence like “I sell hair extensions${usd ? "" : " in Lagos"} and want to know who's ready to buy.”`,
         }),
       };
     case "who_its_for":
@@ -143,7 +154,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
               heading: "Build your first quiz in one chat",
               body: [
                 `Hi ${name}, you haven't built your first quiz yet. It takes about a minute: tell the builder what you sell and who your customers are, and it drafts everything.`,
-                `Try one of these:<br>• “I install solar in Abuja. Tell me which homes can afford it.”<br>• “I run a clinic. Help people find the right health check.”<br>• “I sell wigs. Match customers to the perfect hair.”`,
+                `Try one of these:<br>• “I install solar${usd ? "" : " in Abuja"}. Tell me which homes can afford it.”<br>• “I run a clinic. Help people find the right health check.”<br>• “I sell wigs. Match customers to the perfect hair.”`,
               ],
               cta: { label: "Start building", href: builderUrl(o) },
             }),
@@ -181,7 +192,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           heading: `Ready when you are, ${name}`,
           body: [
             `It's been a week since you joined. Your quiz and your free AI edits are still waiting for you.`,
-            `Pro is ${naira(PRO)} a month and includes 1,000 leads a month, 3 live quizzes, 150 AI edits a month and a willingness-to-pay score on every lead.`,
+            `Pro is ${fmt(PRO)} a month and includes 1,000 leads a month, 3 live quizzes, 150 AI edits a month and a willingness-to-pay score on every lead.`,
             `Stuck, or need something the builder can't do? Reply to this email and our support team will help.`,
           ],
           cta: { label: "Open my builder", href: builderUrl(o) },
@@ -193,11 +204,11 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
         html: layout({
           heading: "Congratulations, you're on Pro 🎉",
           body: [
-            `Thanks, ${name}. ${ctx.amountPaid ? `We've received your payment of <b>${naira(ctx.amountPaid)}</b> and ` : ""}Pro is active${ctx.periodEnd ? ` until <b>${day(ctx.periodEnd)}</b>` : ""}.`,
+            `Thanks, ${name}. ${ctx.amountPaid ? `We've received your payment of <b>${fmt(ctx.amountPaid)}</b> and ` : ""}Pro is active${ctx.periodEnd ? ` until <b>${day(ctx.periodEnd)}</b>` : ""}.`,
             ctx.quizLive
               ? `Your quiz is now <b>live</b>. Share it on WhatsApp from the builder and watch your leads come in.`
               : `You can now publish your quizzes. Open the builder, tap Publish, and share it on WhatsApp.`,
-            `Your plan includes 1,000 leads a month, 3 live quizzes and 150 AI edits a month. We'll remind you a few days before it's time to renew.`,
+            `Your plan includes 1,000 leads a month, 3 live quizzes and 150 AI edits a month. ${usd ? "It renews automatically each month, and you can update your card or cancel any time in Settings." : "We'll remind you a few days before it's time to renew."}`,
           ],
           cta: { label: "Open my dashboard", href: builderUrl(o) },
         }),
@@ -209,9 +220,11 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           heading: "Your Pro plan is due for renewal",
           body: [
             `Hi ${name}, your LeadScoreAI Pro plan runs until <b>${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}</b>.`,
-            `Renew for ${naira(PRO)} to keep your quizzes live and your leads coming in. Pay by bank transfer, card or USSD in Settings.`,
+            usd
+              ? `It renews automatically for ${fmt(PRO)} on your card, so there's nothing to do. To update your card or cancel, go to Settings.`
+              : `Renew for ${fmt(PRO)} to keep your quizzes live and your leads coming in. Pay by bank transfer, card or USSD in Settings.`,
           ],
-          cta: { label: "Renew my plan", href: settingsUrl(o) },
+          cta: { label: usd ? "Manage my plan" : "Renew my plan", href: settingsUrl(o) },
         }),
       };
     case "lapsed":
@@ -221,7 +234,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           heading: "We didn't receive your renewal",
           body: [
             `Hi ${name}, your LeadScoreAI Pro plan ended${ctx.periodEnd ? ` on <b>${day(ctx.periodEnd)}</b>` : ""} and we didn't receive a renewal payment, so your quizzes are paused and aren't taking new answers.`,
-            `Everything is saved. Renew for ${naira(PRO)} and your quizzes go straight back to work.`,
+            `Everything is saved. Renew for ${fmt(PRO)} and your quizzes go straight back to work.`,
             `If you paid and still see this, reply to this email and we'll sort it out.`,
           ],
           cta: { label: "Renew my plan", href: settingsUrl(o) },

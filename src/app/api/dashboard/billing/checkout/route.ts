@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
-import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling, tierPriceFor } from "@/lib/paystack";
+import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling, tierPriceFor, currencyFor } from "@/lib/paystack";
+import { money } from "@/lib/money";
+import { createSubscriptionCheckout, stripeConfigured } from "@/lib/stripe";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 import { lagosNow, sendTeamAlert } from "@/lib/builder-emails";
@@ -10,8 +12,9 @@ import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
 
-// Starts a Paystack checkout for the chosen plan. Only a superadmin of the org
-// can subscribe. Returns the authorization_url for the client to redirect to.
+// Starts a checkout for the chosen plan: Paystack (naira) for Nigerian accounts,
+// a Stripe subscription (USD) for everyone else. Only a superadmin of the org can
+// subscribe. Returns the authorization_url for the client to redirect to.
 export async function POST(request: Request) {
   const sessionId = getSessionIdFromRequest(request);
   if (!sessionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,10 +22,6 @@ export async function POST(request: Request) {
   if (!user || !hasRole(user, "superadmin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (!paystackConfigured()) {
-    return NextResponse.json({ error: "Billing isn't set up yet." }, { status: 503 });
-  }
-
   const body = await request.json().catch(() => ({}));
   const tier = body.tier as Tier;
   if (!TIERS[tier] || !plansFor(user.selfServe).includes(tier)) {
@@ -32,10 +31,15 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { data: org } = await supabase
     .from("organizations")
-    .select("id, name, slug, email, phone, self_serve, signup_date, last_paid_at")
+    .select("id, name, slug, email, phone, self_serve, signup_date, last_paid_at, billing_currency, stripe_customer_id")
     .eq("id", user.organizationId)
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+  const currency = currencyFor(org);
+  const usd = currency === "USD" && tier === "builder";
+  if (usd ? !stripeConfigured() : !paystackConfigured()) {
+    return NextResponse.json({ error: "Billing isn't set up yet." }, { status: 503 });
+  }
 
   // Paystack rejects placeholder/demo domains, so pick the first genuinely valid
   // email: the org's billing email, else the logged-in user's.
@@ -70,36 +74,60 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const callbackUrl = `${origin}/dashboard/${org.slug}?billing=success${publishQuizId ? "&tab=builder" : ""}`;
 
-  let init;
-  const priceNaira = tierPriceFor(tier, org);
-  let amountNaira: number = priceNaira;
+  // Price in the account's billing currency (NGN or USD), minus any go-live offer.
+  const price = tierPriceFor(tier, org);
+  let amount = price;
+  let reference = "";
+  let authorizationUrl = "";
   try {
     const firstQuizAt = org.self_serve ? await firstBuilderQuizAt(org.id) : null;
     const offer = goLiveOffer(org as OrgBilling, firstQuizAt);
-    amountNaira = priceNaira - offer.discount;
-    init = await initTransaction({
-      email,
-      tier,
-      priceNaira,
-      orgId: org.id,
-      callbackUrl,
-      discountNaira: offer.discount,
-      publishQuizId,
-    });
+    amount = price - offer.discount;
+    if (usd) {
+      // Stripe fills {CHECKOUT_SESSION_ID}; ?reference= matches Paystack's return
+      // so the Purchase pixel fires the same way.
+      const session = await createSubscriptionCheckout({
+        orgId: org.id,
+        email,
+        customerId: org.stripe_customer_id,
+        priceUsd: price,
+        discountUsd: offer.discount,
+        publishQuizId,
+        successUrl: `${callbackUrl}&reference={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/dashboard/${org.slug}${publishQuizId ? "?tab=builder" : ""}`,
+      });
+      if (!session.ok || !session.data.url) {
+        console.error("[billing/checkout] stripe session failed:", session.data.error?.message);
+        return NextResponse.json({ error: "Could not start checkout." }, { status: 502 });
+      }
+      reference = session.data.id;
+      authorizationUrl = session.data.url;
+    } else {
+      const init = await initTransaction({
+        email,
+        tier,
+        priceNaira: price,
+        orgId: org.id,
+        callbackUrl,
+        discountNaira: offer.discount,
+        publishQuizId,
+      });
+      if (!init?.status || !init?.data?.authorization_url) {
+        console.error("[billing/checkout] paystack init failed:", init?.message);
+        return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
+      }
+      reference = init.data.reference || "";
+      authorizationUrl = init.data.authorization_url;
+    }
   } catch (e) {
-    console.error("[billing/checkout] paystack unreachable:", e);
+    console.error("[billing/checkout] payment provider unreachable:", e);
     return NextResponse.json({ error: "Payment provider unreachable — please try again." }, { status: 502 });
   }
-  if (!init?.status || !init?.data?.authorization_url) {
-    console.error("[billing/checkout] paystack init failed:", init?.message);
-    return NextResponse.json({ error: init?.message || "Could not start checkout." }, { status: 502 });
-  }
-  const reference: string = init.data.reference || "";
   const { fbp, fbc } = metaCookies(request);
   await track("checkout_started", {
     orgId: org.id,
     quizId: publishQuizId,
-    props: { tier, amount_naira: amountNaira, reference, fbp, fbc },
+    props: { tier, currency, amount, ...(usd ? {} : { amount_naira: amount }), reference, fbp, fbc },
     request,
   });
 
@@ -110,7 +138,7 @@ export async function POST(request: Request) {
       ["Business", org.name ?? ""],
       ["Email", email],
       ["WhatsApp", org.phone ? waLink(org.phone) : "Not given"],
-      ["Amount", `₦${amountNaira.toLocaleString("en-NG")}${amountNaira < priceNaira ? ` (₦${(priceNaira - amountNaira).toLocaleString("en-NG")} go-live discount)` : ""}`],
+      ["Amount", `${money(amount, currency)}${amount < price ? ` (${money(price - amount, currency)} go-live discount)` : ""}${usd ? " via Stripe" : ""}`],
       ["Going live with", publishQuizId ? "A quiz is waiting to publish" : "No quiz picked"],
       ["Reference", reference],
       ["When", lagosNow()],
@@ -128,8 +156,8 @@ export async function POST(request: Request) {
       eventId: metaEventId,
       email,
       externalId: org.id,
-      value: amountNaira,
-      currency: "NGN",
+      value: amount,
+      currency: usd ? "USD" : "NGN",
       eventSourceUrl: sig.eventSourceUrl,
       clientIp: sig.clientIp,
       userAgent: sig.userAgent,
@@ -137,5 +165,12 @@ export async function POST(request: Request) {
       fbc,
     });
   }
-  return NextResponse.json({ authorization_url: init.data.authorization_url, reference, amountNaira, metaEventId });
+  return NextResponse.json({
+    authorization_url: authorizationUrl,
+    reference,
+    amount,
+    currency: usd ? "USD" : "NGN",
+    amountNaira: usd ? undefined : amount,
+    metaEventId,
+  });
 }

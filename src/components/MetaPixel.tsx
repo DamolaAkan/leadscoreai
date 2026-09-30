@@ -61,27 +61,35 @@ export function trackPixelEvent(event: string, params: Record<string, unknown> =
 // so Purchase can be recorded (same id as the server) when Paystack sends them back.
 const PENDING_KEY = "lsai-pending-purchase";
 
-export function checkoutStartedPixel(d: { reference?: string; amountNaira?: number; metaEventId?: string }): void {
+export function checkoutStartedPixel(d: {
+  reference?: string;
+  amountNaira?: number;
+  amount?: number;
+  currency?: string;
+  metaEventId?: string;
+}): void {
   if (!d.reference) return;
-  trackPixelEvent("InitiateCheckout", { value: d.amountNaira, currency: "NGN" }, d.metaEventId);
+  const value = d.amount ?? d.amountNaira;
+  const currency = d.currency ?? "NGN";
+  trackPixelEvent("InitiateCheckout", { value, currency }, d.metaEventId);
   try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: d.reference, amountNaira: d.amountNaira, at: Date.now() }));
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ reference: d.reference, amountNaira: value, currency, at: Date.now() }));
   } catch {
     /* ignore */
   }
 }
 
-// Back from Paystack (?reference=…): record the Purchase once.
+// Back from Paystack or Stripe (?reference=…): record the Purchase once.
 export function purchaseReturnPixel(): void {
   try {
     const ref = new URLSearchParams(window.location.search).get("reference");
     const raw = localStorage.getItem(PENDING_KEY);
     if (!ref || !raw) return;
-    const p = JSON.parse(raw) as { reference: string; amountNaira?: number };
+    const p = JSON.parse(raw) as { reference: string; amountNaira?: number; currency?: string };
     if (p.reference !== ref) return;
     localStorage.removeItem(PENDING_KEY);
     // Give the pixel script a moment to load on this page before firing.
-    setTimeout(() => trackPixelEvent("Purchase", { value: p.amountNaira, currency: "NGN" }, `purchase_${ref}`), 1500);
+    setTimeout(() => trackPixelEvent("Purchase", { value: p.amountNaira, currency: p.currency ?? "NGN" }, `purchase_${ref}`), 1500);
   } catch {
     /* ignore */
   }

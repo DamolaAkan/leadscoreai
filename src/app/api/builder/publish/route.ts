@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
-import { canPublish, goLiveOffer, OrgBilling, tierPriceFor } from "@/lib/paystack";
+import { canPublish, currencyFor, goLiveOffer, OrgBilling, tierPriceFor } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     // Free to build, pay to publish: self-serve accounts need the Pro plan to go live.
     const { data: org } = await supabase
       .from("organizations")
-      .select("self_serve, signup_date, billing_tier, billing_status, current_period_end, last_paid_at")
+      .select("self_serve, signup_date, billing_tier, billing_status, current_period_end, last_paid_at, billing_currency")
       .eq("id", user.organizationId)
       .single();
     if (!canPublish(org as OrgBilling)) {
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
         {
           error: "payment_required",
           price: tierPriceFor("builder", org),
+          currency: currencyFor(org),
           offer: goLiveOffer(org as OrgBilling, firstQuizAt),
         },
         { status: 402 }

@@ -21,6 +21,11 @@ export async function sendSequenceEmail({
   replyTo?: string;
   cc?: string | string[];
 }): Promise<{ id: string | null; error: string | null }> {
+  // Local testing against the real database: log instead of emailing anyone.
+  if (process.env.DISABLE_OUTBOUND_EMAIL === "1" && process.env.NODE_ENV !== "production") {
+    console.log(`[email] (disabled) to=${Array.isArray(to) ? to.join(",") : to} subject=${subject}`);
+    return { id: null, error: null };
+  }
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
     from: `${fromName} <${fromEmail}>`,

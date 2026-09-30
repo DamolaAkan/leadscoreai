@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/builder-emails",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/stripe-emails",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/stripe-sync",
+      "schedule": "0 6 * * *"
     }
   ]
 }

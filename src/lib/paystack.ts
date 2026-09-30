@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { PRICING, asCurrency, type Currency } from "./money";
 
 // Paystack subscription billing for LeadScoreAI dashboards. One-off transactions
 // per renewal (so clients can pay by card OR bank transfer / USSD — Paystack
@@ -18,12 +19,20 @@ export type Tier = keyof typeof TIERS;
 export const PRICE_CHANGE_AT = "2026-09-28T09:00:00Z";
 export const LEGACY_BUILDER_NAIRA = 53750;
 
-export function isLegacyPrice(org: { signup_date?: string | null } | null | undefined): boolean {
-  return !!org?.signup_date && new Date(org.signup_date) < new Date(PRICE_CHANGE_AT);
+type PricedOrg = { signup_date?: string | null; billing_currency?: string | null } | null | undefined;
+
+// NGN (Paystack) or USD (Stripe). Done-for-you clients are always NGN.
+export function currencyFor(org: PricedOrg): Currency {
+  return asCurrency(org?.billing_currency);
 }
 
-// What this org pays per month for a tier.
-export function tierPriceFor(tier: Tier, org: { signup_date?: string | null } | null | undefined): number {
+export function isLegacyPrice(org: PricedOrg): boolean {
+  return currencyFor(org) === "NGN" && !!org?.signup_date && new Date(org.signup_date) < new Date(PRICE_CHANGE_AT);
+}
+
+// What this org pays per month for a tier, in its billing currency.
+export function tierPriceFor(tier: Tier, org: PricedOrg): number {
+  if (tier === "builder" && currencyFor(org) === "USD") return PRICING.USD.pro;
   return tier === "builder" && isLegacyPrice(org) ? LEGACY_BUILDER_NAIRA : TIERS[tier].naira;
 }
 
@@ -59,7 +68,7 @@ export function goLiveOffer(org: OrgBilling | null | undefined, firstQuizAt: str
   if (!org?.self_serve || org.last_paid_at || !firstQuizAt) return none;
   const endsAt = new Date(new Date(firstQuizAt).getTime() + GO_LIVE_OFFER_HOURS * 3600 * 1000);
   if (Date.now() >= endsAt.getTime()) return none;
-  return { eligible: true, discount: GO_LIVE_DISCOUNT_NAIRA, endsAt: endsAt.toISOString() };
+  return { eligible: true, discount: PRICING[currencyFor(org)].goLiveDiscount, endsAt: endsAt.toISOString() };
 }
 
 // Signed up before pay-to-publish: still on the old 7-day free trial.
@@ -96,6 +105,7 @@ export interface OrgBilling {
   // Self-serve builder sign-ups get a shorter trial (SELF_SERVE_TRIAL_DAYS).
   self_serve?: boolean | null;
   last_paid_at?: string | null;
+  billing_currency?: string | null; // "NGN" (Paystack) | "USD" (Stripe)
 }
 
 // Free-trial offer: full dashboard access until the client hits this many REAL

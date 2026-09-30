@@ -14,6 +14,7 @@ import StartHereTab from "@/components/dashboard/StartHereTab";
 import BuilderStudio from "@/components/builder/BuilderStudio";
 import MetaPixel, { checkoutStartedPixel, purchaseReturnPixel } from "@/components/MetaPixel";
 import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
+import { money, type Currency } from "@/lib/money";
 
 export type DashboardTab =
   | "start"
@@ -34,14 +35,15 @@ interface AccessInfo {
   leadLimit?: number;
   trialEndsAt?: string | null;
   prices?: { core: number; pro: number };
-  plans?: { tier: string; label: string; naira: number }[];
+  plans?: { tier: string; label: string; amount: number }[];
+  currency?: Currency;
   trialDays?: number;
   configured?: boolean;
   paid?: boolean;
   offer?: { eligible: boolean; discount: number; endsAt: string | null };
 }
 
-// Paystack checkout for a plan; resolves with an error message if it couldn't start.
+// Checkout for a plan (Paystack for naira, Stripe for USD); resolves with an error message if it couldn't start.
 async function startCheckout(tier: string, getAuthHeaders: () => Record<string, string>): Promise<string> {
   try {
     const res = await fetch("/api/dashboard/billing/checkout", {
@@ -52,7 +54,7 @@ async function startCheckout(tier: string, getAuthHeaders: () => Record<string, 
     const d = await res.json().catch(() => ({}));
     if (res.ok && d.authorization_url) {
       checkoutStartedPixel(d);
-      setTimeout(() => (window.location.href = d.authorization_url), 300); // → Paystack (after the pixel sends)
+      setTimeout(() => (window.location.href = d.authorization_url), 300); // → Paystack / Stripe (after the pixel sends)
       return "";
     }
     return d.error || "Could not start checkout.";
@@ -61,7 +63,7 @@ async function startCheckout(tier: string, getAuthHeaders: () => Record<string, 
   }
 }
 
-// Self-serve go-live offer: "₦10,000 off your first month" strip above the dashboard,
+// Self-serve go-live offer: "₦10,000 / $10 off your first month" strip above the dashboard,
 // for 48 hours after the owner builds their first quiz.
 function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeaders: () => Record<string, string> }) {
   const [busy, setBusy] = useState(false);
@@ -70,15 +72,16 @@ function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeader
   if (!plan || !info.offer?.eligible || !info.offer.endsAt) return null;
   const msLeft = new Date(info.offer.endsAt).getTime() - Date.now();
   const hoursLeft = Math.max(1, Math.ceil(msLeft / 3600000));
-  const price = plan.naira - info.offer.discount;
+  const price = plan.amount - info.offer.discount;
+  const fmt = (n: number) => money(n, info.currency);
   return (
     <div className="shrink-0 bg-gradient-to-r from-violet-700 via-violet-600 to-fuchsia-600 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
         <span className="text-lg leading-none">🎁</span>
         <p className="flex-1 min-w-0 text-[13px] sm:text-sm leading-snug">
-          <b>Go live today: ₦{info.offer.discount.toLocaleString()} off your first month.</b> Pay{" "}
-          <b>₦{price.toLocaleString()}</b>
-          <span className="hidden sm:inline"> instead of ₦{plan.naira.toLocaleString()}</span>. Offer ends in{" "}
+          <b>Go live today: {fmt(info.offer.discount)} off your first month.</b> Pay{" "}
+          <b>{fmt(price)}</b>
+          <span className="hidden sm:inline"> instead of {fmt(plan.amount)}</span>. Offer ends in{" "}
           {hoursLeft}h.
           {err && <span className="block text-amber-200">{err}</span>}
         </p>
@@ -131,6 +134,7 @@ function LockScreen({
     }
   };
   const discount = info.offer?.eligible ? info.offer.discount : 0;
+  const fmt = (n: number) => money(n, info.currency);
 
   const limit = info.leadLimit ?? 10;
   const headline =
@@ -138,8 +142,8 @@ function LockScreen({
       ? `Your ${info.trialDays ?? 30}-day free trial has ended`
       : `You've used all ${limit} of your free leads`;
   const plans = info.plans ?? [
-    { tier: "core", label: "Core", naira: info.prices?.core ?? 130000 },
-    { tier: "pro", label: "Pro", naira: info.prices?.pro ?? 250000 },
+    { tier: "core", label: "Core", amount: info.prices?.core ?? 130000 },
+    { tier: "pro", label: "Pro", amount: info.prices?.pro ?? 250000 },
   ];
 
   return (
@@ -168,11 +172,11 @@ function LockScreen({
 
         {discount > 0 && (
           <p className="mb-4 text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
-            🎁 Launch offer: ₦{discount.toLocaleString()} off your first month.
+            🎁 Launch offer: {fmt(discount)} off your first month.
           </p>
         )}
         <div className={`grid grid-cols-1 ${plans.length > 1 ? "sm:grid-cols-2" : ""} gap-3 text-left`}>
-          {plans.map(({ tier: t, label, naira: price }) => (
+          {plans.map(({ tier: t, label, amount: price }) => (
             <button
               key={t}
               onClick={() => subscribe(t)}
@@ -184,11 +188,11 @@ function LockScreen({
               <div className="text-sm text-gray-600">
                 {discount > 0 ? (
                   <>
-                    <s className="text-gray-400">₦{price.toLocaleString()}</s> ₦{(price - discount).toLocaleString()} first
-                    month, then ₦{price.toLocaleString()}/month
+                    <s className="text-gray-400">{fmt(price)}</s> {fmt(price - discount)} first
+                    month, then {fmt(price)}/month
                   </>
                 ) : (
-                  <>₦{price.toLocaleString()}/month</>
+                  <>{fmt(price)}/month</>
                 )}
               </div>
               <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
@@ -206,7 +210,9 @@ function LockScreen({
         {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
 
         <p className="mt-6 text-xs text-gray-400">
-          Pay by card, bank transfer or USSD via Paystack. Cancel anytime.
+          {info.currency === "USD"
+            ? "Pay by card via Stripe. Renews monthly, cancel anytime."
+            : "Pay by card, bank transfer or USSD via Paystack. Cancel anytime."}
         </p>
         <button onClick={onLogout} className="mt-4 text-sm text-gray-500 hover:text-gray-700 underline">
           Log out

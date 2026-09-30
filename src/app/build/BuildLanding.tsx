@@ -10,6 +10,8 @@ import { LatseminaryProof } from "./landing-proof";
 import SignupScorecard from "./SignupScorecard";
 import HeroVideo from "./HeroVideo";
 import { industryFromAnswers, scoreAnswers, starterFromAnswers, type Answers } from "@/lib/signup-scorecard";
+import { PRICING, money, type Currency } from "@/lib/money";
+import { useVisitorCurrency } from "@/lib/visitor-currency";
 import {
   ChatVisual,
   LeadsVisual,
@@ -80,6 +82,10 @@ const WTP_SIGNALS = [
   { icon: "🤝", title: "Commitment", body: "How serious they are, and who decides" },
 ];
 
+// Placeholders swapped for the visitor's own prices at render time.
+const PAY_ANSWER = "__pay_answer__";
+const TOPUP_FEATURE = "__topup_feature__";
+
 const FAQS = [
   {
     q: "What is an AI edit?",
@@ -107,7 +113,7 @@ const FAQS = [
   },
   {
     q: "Do I need to pay to try it?",
-    a: "No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ₦59,750 a month on Pro. Go live within 48 hours of building your first quiz and your first month is ₦49,750. Pay by bank transfer, card or USSD through Paystack. Cancel anytime.",
+    a: PAY_ANSWER,
   },
   {
     q: "What if I need something the builder can't do?",
@@ -117,15 +123,30 @@ const FAQS = [
 
 const SUPPORT_URL = "mailto:stella@leadscoreai.com";
 
+// Prices follow the visitor: naira for Nigeria (Paystack), USD everywhere else (Stripe).
+function planFor(cur: Currency) {
+  const p = PRICING[cur];
+  const fmt = (n: number) => money(n, cur);
+  return {
+    price: fmt(p.pro),
+    firstMonth: fmt(p.pro - p.goLiveDiscount),
+    discount: fmt(p.goLiveDiscount),
+    topup: `${fmt(p.topupStep)} = ${p.editsPerStep} edits`,
+    payWith: cur === "USD" ? "Pay by card · Renews monthly" : "Bank transfer, card or USSD",
+    payAnswer:
+      `No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.pro)} a month on Pro. ` +
+      `Go live within 48 hours of building your first quiz and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
+      (cur === "USD" ? "Pay by card; it renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD through Paystack. Cancel anytime."),
+  };
+}
+
 const PLAN = {
   name: "Pro",
   blurb: "Everything you need to find your buyers.",
-  price: 59750,
-  earlyDiscount: 10000,
   features: [
     "1,000 leads a month",
     "3 live quizzes",
-    "150 AI edits a month, top up any time you run out (₦10,000 = 45 edits)",
+    TOPUP_FEATURE,
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
     "WhatsApp sharing and website embed",
@@ -137,6 +158,7 @@ const PLAN = {
 // Shared by /build and every /build/<industry> page; only the hero copy and
 // the starting industry tab differ.
 export default function BuildLanding({ page }: { page: IndustryPage }) {
+  const plan = planFor(useVisitorCurrency());
   const router = useRouter();
   const [signedIn, setSignedIn] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -603,8 +625,8 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               One plan. Everything included.
             </h2>
             <p className="mt-4 text-[17px] text-slate-600">
-              Build and preview free. Pay only when you publish, and save ₦{PLAN.earlyDiscount.toLocaleString()} when
-              you go live within 48 hours.
+              Build and preview free. Pay only when you publish, and save {plan.discount} when you go live within 48
+              hours.
             </p>
           </div>
           <div className="mt-14 max-w-lg mx-auto rounded-[2rem] bg-slate-50 p-3 sm:p-4">
@@ -612,18 +634,18 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               <p className="text-[22px] font-bold">{PLAN.name}</p>
               <p className="text-[15px] text-slate-500">{PLAN.blurb}</p>
               <p className="mt-6">
-                <span className="text-[48px] font-extrabold tracking-[-0.03em]">₦{PLAN.price.toLocaleString()}</span>
+                <span className="text-[48px] font-extrabold tracking-[-0.03em]">{plan.price}</span>
                 <span className="text-slate-500">/month</span>
               </p>
               <div className="mt-4 rounded-2xl bg-violet-50 border border-violet-200 px-4 py-3 text-[15px] text-violet-900">
                 🎁 Go live within 48 hours of building your first quiz and your first month is{" "}
-                <b>₦{(PLAN.price - PLAN.earlyDiscount).toLocaleString()}</b>. Save ₦{PLAN.earlyDiscount.toLocaleString()}.
+                <b>{plan.firstMonth}</b>. Save {plan.discount}.
               </div>
               <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px]">
                 {PLAN.features.map((f) => (
                   <li key={f} className="flex gap-2.5">
                     <span className="text-violet-600">✓</span>
-                    {f}
+                    {f === TOPUP_FEATURE ? `150 AI edits a month, top up any time you run out (${plan.topup})` : f}
                   </li>
                 ))}
               </ul>
@@ -634,7 +656,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 {signedIn ? "Open my studio" : CTA}
               </button>
               <p className="mt-3 text-center text-[13px] text-slate-500">
-                No card needed to start · Bank transfer, card or USSD · Cancel anytime
+                No card needed to start · {plan.payWith} · Cancel anytime
               </p>
             </div>
           </div>
@@ -662,7 +684,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 {f.q}
                 <span className="shrink-0 text-slate-400 transition group-open:rotate-180">⌄</span>
               </summary>
-              <p className="mt-3 text-[16px] leading-relaxed text-slate-600">{f.a}</p>
+              <p className="mt-3 text-[16px] leading-relaxed text-slate-600">{f.a === PAY_ANSWER ? plan.payAnswer : f.a}</p>
             </details>
           ))}
         </div>
@@ -683,7 +705,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         >
           {signedIn ? "Open my studio" : CTA}
         </button>
-        <p className="mt-4 text-[13px] text-slate-500">Free to build · ₦10,000 off when you go live within 48 hours</p>
+        <p className="mt-4 text-[13px] text-slate-500">Free to build · {plan.discount} off when you go live within 48 hours</p>
       </section>
 
       {/* Footer */}
@@ -854,6 +876,7 @@ function SignUpSheet({
           code,
           businessName,
           whatsapp,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           visitorId: getVisitorId(),
           firstTouch: getFirstTouch(),
           onboarding: answers,
