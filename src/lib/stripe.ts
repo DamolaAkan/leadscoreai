@@ -6,8 +6,8 @@ import { PRICING } from "./money";
 // metadata app=leadscoreai + lsai_org_id so PI's webhook ignores ours and ours
 // ignores PI's. Env names mirror PI (STRIPE_MODE picks _LIVE/_TEST keys).
 
-// "live" (any case, stray spaces ignored) switches to the live keys.
-const isLive = () => (process.env.STRIPE_MODE || "").trim().toLowerCase() === "live";
+// "live" (any case; stray spaces or quotes ignored) switches to the live keys.
+const isLive = () => (process.env.STRIPE_MODE || "").trim().replace(/^["']|["']$/g, "").trim().toLowerCase() === "live";
 
 function secretKey(): string | undefined {
   return (
