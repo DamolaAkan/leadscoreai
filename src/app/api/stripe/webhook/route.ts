@@ -3,7 +3,6 @@ import { createServiceClient } from "@/lib/supabase";
 import {
   STRIPE_APP,
   billingStatusFor,
-  getSubscription,
   periodEndOf,
   stripeWebhookSecret,
   verifyStripeSignature,
