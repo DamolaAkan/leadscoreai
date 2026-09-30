@@ -98,6 +98,18 @@ export async function POST(request: Request) {
       });
       if (!session.ok || !session.data.url) {
         console.error("[billing/checkout] stripe session failed:", session.data.error?.message);
+        // Stripe's own error text (never a key) so config problems are visible in the activity log.
+        await track("checkout_failed", {
+          orgId: org.id,
+          props: {
+            provider: "stripe",
+            stripe: stripeDiagnostics(),
+            status: session.status,
+            code: session.data.error?.code ?? null,
+            message: (session.data.error?.message || "").replace(/(sk|rk|pk)_(live|test)_[A-Za-z0-9*]+/g, "$1_$2_…").slice(0, 300),
+          },
+          request,
+        });
         return NextResponse.json({ error: "Could not start checkout." }, { status: 502 });
       }
       reference = session.data.id;
@@ -121,6 +133,11 @@ export async function POST(request: Request) {
     }
   } catch (e) {
     console.error("[billing/checkout] payment provider unreachable:", e);
+    await track("checkout_failed", {
+      orgId: org.id,
+      props: { provider: usd ? "stripe" : "paystack", ...(usd ? { stripe: stripeDiagnostics() } : {}), message: String(e instanceof Error ? e.message : e).slice(0, 300) },
+      request,
+    });
     return NextResponse.json({ error: "Payment provider unreachable — please try again." }, { status: 502 });
   }
   const { fbp, fbc } = metaCookies(request);
