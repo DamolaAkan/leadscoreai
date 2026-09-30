@@ -942,7 +942,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             {TEMPLATE_KEYS.map((k) => {
               const t = TEMPLATES[k];
               const on = (current.template ?? "classic") === k;
-              const swatchBtn = t.button ?? color;
+              // Thumbnails show the owner's brand colour once they've set one.
+              const swatchBtn = color.toUpperCase() !== "#7C3AED" ? color : t.button ?? color;
               return (
                 <button
                   key={k}

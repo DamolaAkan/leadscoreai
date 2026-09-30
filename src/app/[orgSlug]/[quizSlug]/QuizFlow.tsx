@@ -104,9 +104,16 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   const themed = theme.key !== "classic";
   const tx = <T extends object>(style: T): T | Record<string, never> => (themed ? style : {});
   // Client brand color drives the scorecard (design system default, per-client override).
-  const accent = theme.accent ?? org.primary_color;
-  const btn = theme.button ?? accent;
-  const btnStyle = tx({ color: theme.buttonInk, borderRadius: theme.pill ? 999 : 8 });
+  // The owner's brand colour drives buttons, selections and highlights in every
+  // template; a template's own colours apply only while the brand colour is
+  // still the LeadScoreAI default purple.
+  const brand = org.primary_color || "";
+  const customBrand = /^#[0-9a-f]{6}$/i.test(brand) && brand.toUpperCase() !== "#7C3AED";
+  const accent = themed && customBrand ? brand : theme.accent ?? org.primary_color;
+  const btn = themed && customBrand ? brand : theme.button ?? accent;
+  const btnInk = themed ? inkOn(btn) : theme.buttonInk;
+  const selInk = themed ? inkOn(accent) : "#ffffff";
+  const btnStyle = tx({ color: btnInk, borderRadius: theme.pill ? 999 : 8 });
   const heroGradient = heroGradientFor(org);
   const fontLink = themed ? (
     <>
@@ -612,7 +619,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                         <span className="text-4xl leading-none">{option.emoji}</span>
                         <span
                           className="text-[14.5px] font-medium leading-snug"
-                          style={{ color: isSel && themed && theme.optFill ? "#ffffff" : theme.text }}
+                          style={{ color: isSel && themed && theme.optFill ? selInk : theme.text }}
                         >
                           {option.text}
                         </span>
@@ -640,16 +647,16 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                     >
                       <span
                         className="w-5 h-5 rounded-full border-2 mr-3 flex-shrink-0 flex items-center justify-center"
-                        style={{ borderColor: isSel ? (themed && theme.optFill ? "#ffffff" : accent) : theme.inputBorder }}
+                        style={{ borderColor: isSel ? (themed && theme.optFill ? selInk : accent) : theme.inputBorder }}
                       >
                         {isSel && (
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: themed && theme.optFill ? "#ffffff" : accent }} />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: themed && theme.optFill ? selInk : accent }} />
                         )}
                       </span>
                       {option.emoji && <span className="text-xl mr-2.5 leading-none">{option.emoji}</span>}
                       <span
                         className="text-[15px] font-medium"
-                        style={{ color: isSel && themed && theme.optFill ? "#ffffff" : theme.text }}
+                        style={{ color: isSel && themed && theme.optFill ? selInk : theme.text }}
                       >
                         {option.text}
                       </span>
@@ -966,7 +973,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                 color: theme.title,
                 letterSpacing: "-0.01em",
               };
-              const emphasis = theme.key === "soft-luxe" ? "#C98B7A" : btn;
+              const emphasis = theme.key === "soft-luxe" && !customBrand ? "#C98B7A" : btn;
               const styledTitle = (text: string) => {
                 const words = text.trim().split(/\s+/);
                 const last = words.pop();
@@ -985,7 +992,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                   className="flex items-center justify-center gap-2.5 w-full px-6 py-4 font-semibold text-[16px] leading-snug text-center transition-transform active:scale-[0.99]"
                   style={{
                     background: isWa ? "#25D366" : btn,
-                    color: "#ffffff",
+                    color: isWa ? "#ffffff" : btnInk,
                     borderRadius: theme.pill ? 999 : 12,
                     boxShadow: isWa ? "0 14px 30px -14px rgba(37,211,102,0.8)" : `0 14px 30px -14px ${btn}`,
                   }}
@@ -1039,7 +1046,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
                         <li key={i} className="flex gap-3 items-start">
                           <span
                             className="flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
-                            style={{ backgroundColor: btn, color: theme.buttonInk }}
+                            style={{ backgroundColor: btn, color: btnInk }}
                           >
                             {i + 1}
                           </span>
@@ -1578,6 +1585,13 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       </footer>
     </div>
   );
+}
+
+// Readable text on a coloured button: dark ink on light colours, white otherwise.
+function inkOn(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.68 ? "#1a1a1a" : "#ffffff";
 }
 
 // Paid self-serve Pro accounts (in date) drop the LeadScoreAI credit.
