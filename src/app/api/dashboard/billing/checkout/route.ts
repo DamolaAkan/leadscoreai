@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
 import { initTransaction, paystackConfigured, TIERS, Tier, plansFor, goLiveOffer, OrgBilling, tierPriceFor, currencyFor } from "@/lib/paystack";
 import { money } from "@/lib/money";
-import { createSubscriptionCheckout, stripeConfigured } from "@/lib/stripe";
+import { createSubscriptionCheckout, stripeConfigured, stripeDiagnostics } from "@/lib/stripe";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 import { lagosNow, sendTeamAlert } from "@/lib/builder-emails";
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
   await track("checkout_started", {
     orgId: org.id,
     quizId: publishQuizId,
-    props: { tier, currency, amount, ...(usd ? {} : { amount_naira: amount }), reference, fbp, fbc },
+    props: { tier, currency, amount, ...(usd ? { stripe: stripeDiagnostics() } : { amount_naira: amount }), reference, fbp, fbc },
     request,
   });
 

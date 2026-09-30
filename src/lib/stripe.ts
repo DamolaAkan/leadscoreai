@@ -23,6 +23,14 @@ export function stripeWebhookSecret(): string | undefined {
   );
 }
 
+// Non-secret facts for debugging config: which mode was read and what kind of
+// key is in use (only the "sk_live"/"sk_test" style prefix, never the key).
+export function stripeDiagnostics(): { mode: "live" | "test"; key: "live" | "test" | "none" | "unknown" } {
+  const k = secretKey() || "";
+  const key = !k ? "none" : /^(sk|rk)_live_/.test(k) ? "live" : /^(sk|rk)_test_/.test(k) ? "test" : "unknown";
+  return { mode: isLive() ? "live" : "test", key };
+}
+
 export function stripeConfigured(): boolean {
   return !!secretKey();
 }
