@@ -163,7 +163,7 @@ function LockScreen({
         </div>
         <h1 className="text-2xl font-bold text-[#16202e] mb-2">{headline}</h1>
         <p className="text-[#667085] leading-relaxed mb-1 max-w-md mx-auto">
-          {orgName}&apos;s quiz is still live and collecting leads, but your dashboard is
+          {orgName}&apos;s Buyer Scorecard is still live and collecting leads, but your dashboard is
           locked until you subscribe.
         </p>
         <p className="text-sm text-[#98a2b3] mb-6">

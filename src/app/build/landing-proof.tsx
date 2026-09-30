@@ -14,10 +14,10 @@ export function LatseminaryProof() {
       <div>
         <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Case study · a ministry</p>
         <h2 className="mt-3 text-[32px] sm:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.08]">
-          How Latseminary filled a Women &amp; Marriage webinar with one quiz.
+          How Latseminary filled a Women &amp; Marriage webinar with one Buyer Scorecard.
         </h2>
         <p className="mt-6 text-[17px] leading-relaxed text-slate-600">
-          Latseminary ran a 2-week Instagram campaign to a simple relationship quiz:{" "}
+          Latseminary ran a 2-week Instagram campaign to a simple relationship scorecard:{" "}
           <b className="text-slate-900">“Rate your communication skills in your relationships.”</b> People were curious
           about their own relationships, so they took it, left their email for a detailed report, and were invited to the
           webinar and the Latseminary community.

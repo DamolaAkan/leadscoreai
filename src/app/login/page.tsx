@@ -182,7 +182,7 @@ export default function LoginPage() {
           </div>
 
           <div className="left-foot">
-            &copy; 2026 LeadScoreAI &middot; Interactive quizzes that find your buyers
+            &copy; 2026 LeadScoreAI &middot; Buyer Scorecards that find your buyers
           </div>
         </section>
 

@@ -350,7 +350,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             </h2>
             <p className="mt-5 text-[17px] sm:text-[18px] leading-relaxed text-slate-300">
               Anyone can make a form. LeadScoreAI builds <b className="text-white">willingness-to-pay</b> questions into
-              every one, asked in your brand&apos;s voice so they feel natural, even in fun personality quizzes. Every lead
+              every one, asked in your brand&apos;s voice so they feel natural, even in fun personality checks. Every lead
               then gets a willingness-to-pay score from 0 to 100, so you know who can actually buy before you reply.
             </p>
             <div className="mt-8 grid sm:grid-cols-3 gap-3 [&>*]:min-w-0">
@@ -638,7 +638,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 <span className="text-slate-500">/month</span>
               </p>
               <div className="mt-4 rounded-2xl bg-violet-50 border border-violet-200 px-4 py-3 text-[15px] text-violet-900">
-                🎁 Go live within 48 hours of building your first quiz and your first month is{" "}
+                🎁 Go live within 48 hours of building your first Buyer Scorecard and your first month is{" "}
                 <b>{plan.firstMonth}</b>. Save {plan.discount}.
               </div>
               <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px]">

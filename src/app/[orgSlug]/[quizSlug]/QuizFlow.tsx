@@ -897,7 +897,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
               typeof window !== "undefined" ? `${window.location.origin}/${org.slug}/${quiz.slug}` : "";
             const shareFriend = !preview && shareUrl ? (
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Try this quick quiz: ${shareUrl}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Take this quick 2-minute check: ${shareUrl}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm border-2"
@@ -1061,7 +1061,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
               const shareT = !preview && shareUrl ? (
                 <div className="text-center">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Try this quick quiz: ${shareUrl}`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Take this quick 2-minute check: ${shareUrl}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm border-2"
