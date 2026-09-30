@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         customerId: org.stripe_customer_id,
         amountUsd: amount,
         credits: edits,
-        successUrl,
+        successUrl: `${successUrl}&reference={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/dashboard/${org.slug}?tab=builder`,
       });
     } catch (e) {

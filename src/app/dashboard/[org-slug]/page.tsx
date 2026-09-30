@@ -257,7 +257,18 @@ export default function DashboardPage() {
   // Trial / lock state drives whether the whole dashboard is accessible.
   useEffect(() => {
     if (!user) return;
-    fetch("/api/dashboard/billing", { headers: getAuthHeaders() })
+    // Back from Stripe Checkout: confirm the payment with Stripe first, so Pro is
+    // on before the dashboard loads (the webhook may still be on its way).
+    const ref = new URLSearchParams(window.location.search).get("reference") || "";
+    const confirm = ref.startsWith("cs_")
+      ? fetch("/api/dashboard/billing/stripe-confirm", {
+          method: "POST",
+          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ reference: ref }),
+        }).catch(() => null)
+      : Promise.resolve(null);
+    confirm
+      .then(() => fetch("/api/dashboard/billing", { headers: getAuthHeaders() }))
       .then((r) => r.json())
       .then((d) => setAccess(d ?? { locked: false }))
       .catch(() => setAccess({ locked: false })); // fail open — never lock on an error
