@@ -323,7 +323,13 @@ const RULES: [TemplateKey, RegExp][] = [
   ["stone", /\b(real estate|property|propert|home|house|land|apartment|rent|interior|architect|solar|inverter|energy|car|auto|logistic|b2b|construction|furniture)/i],
 ];
 
-export function pickTemplate(text: string): TemplateKey {
-  for (const [key, re] of RULES) if (re.test(text)) return key;
+// Texts are tried in order (most specific first), so the quiz's own words win
+// over the business name: a "Glow Skincare" account building a study-abroad
+// quiz gets Heritage, not Soft Luxe.
+export function pickTemplate(...texts: string[]): TemplateKey {
+  for (const text of texts) {
+    if (!text) continue;
+    for (const [key, re] of RULES) if (re.test(text)) return key;
+  }
   return "classic";
 }

@@ -300,13 +300,10 @@ export async function POST(request: Request) {
   const template = isTemplateKey(current?.builder_config?.template)
     ? current!.builder_config.template
     : pickTemplate(
-        [
-          scorecard ? describeAnswers(scorecard).join(" ") : "",
-          user.orgName,
-          normalized.name,
-          normalized.start_headline,
-          history.find((m) => m.role === "user")?.content || "",
-        ].join(" ")
+        `${normalized.name} ${normalized.start_headline}`,
+        history.find((m) => m.role === "user")?.content || "",
+        scorecard ? describeAnswers(scorecard).join(" ") : "",
+        user.orgName
       );
 
   const quizRow = {
