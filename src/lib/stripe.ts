@@ -6,17 +6,20 @@ import { PRICING } from "./money";
 // metadata app=leadscoreai + lsai_org_id so PI's webhook ignores ours and ours
 // ignores PI's. Env names mirror PI (STRIPE_MODE picks _LIVE/_TEST keys).
 
+// "live" (any case, stray spaces ignored) switches to the live keys.
+const isLive = () => (process.env.STRIPE_MODE || "").trim().toLowerCase() === "live";
+
 function secretKey(): string | undefined {
   return (
-    process.env.STRIPE_SECRET_KEY ||
-    (process.env.STRIPE_MODE === "live" ? process.env.STRIPE_SECRET_KEY_LIVE : process.env.STRIPE_SECRET_KEY_TEST)
+    process.env.STRIPE_SECRET_KEY?.trim() ||
+    (isLive() ? process.env.STRIPE_SECRET_KEY_LIVE : process.env.STRIPE_SECRET_KEY_TEST)?.trim()
   );
 }
 
 export function stripeWebhookSecret(): string | undefined {
   return (
-    process.env.STRIPE_WEBHOOK_SECRET ||
-    (process.env.STRIPE_MODE === "live" ? process.env.STRIPE_WEBHOOK_SECRET_LIVE : process.env.STRIPE_WEBHOOK_SECRET_TEST)
+    process.env.STRIPE_WEBHOOK_SECRET?.trim() ||
+    (isLive() ? process.env.STRIPE_WEBHOOK_SECRET_LIVE : process.env.STRIPE_WEBHOOK_SECRET_TEST)?.trim()
   );
 }
 
