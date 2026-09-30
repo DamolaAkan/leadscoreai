@@ -15,7 +15,7 @@ export function generateMetadata({ params }: { params: { industry: string } }): 
   if (!page) return {};
   const title = `${page.headline} ${page.highlight}`;
   return {
-    title: { absolute: `${title} | LeadScoreAI Quiz Builder` },
+    title: { absolute: `${title} | LeadScoreAI Buyer Scorecard Builder` },
     description: page.sub,
     openGraph: { title, description: page.sub, siteName: "LeadScoreAI" },
   };

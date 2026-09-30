@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       .eq("is_active", true)
       .single();
     if (!quiz) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return NextResponse.json({ error: "Scorecard not found" }, { status: 404 });
     }
 
     // Self-serve quizzes only take answers while the account can publish.
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       .eq("id", organizationId)
       .single();
     if (!canPublish(org as OrgBilling)) {
-      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      return NextResponse.json({ error: "Scorecard not found" }, { status: 404 });
     }
 
     const { data, error } = await supabase

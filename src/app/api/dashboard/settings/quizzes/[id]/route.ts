@@ -32,7 +32,7 @@ export async function PUT(
     .single();
 
   if (!quiz) {
-    return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    return NextResponse.json({ error: "Scorecard not found" }, { status: 404 });
   }
 
   const { error } = await supabase
@@ -42,7 +42,7 @@ export async function PUT(
 
   if (error) {
     return NextResponse.json(
-      { error: "Failed to update quiz" },
+      { error: "Failed to update scorecard" },
       { status: 500 }
     );
   }

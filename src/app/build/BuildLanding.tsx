@@ -30,14 +30,14 @@ const outcomesFor = (set: VisualSet) => [
   {
     icon: "💬",
     title: "Describe it in plain words.",
-    body: "No forms, no templates, no design skills. Say what you sell and who you sell to. The builder asks a few tap-to-answer questions, then drafts the whole quiz while you watch. Want a change? Just ask.",
+    body: "No forms, no templates, no design skills. Say what you sell and who you sell to. The builder asks a few tap-to-answer questions, then drafts the whole scorecard while you watch. Want a change? Just ask.",
     caption: "Tap to answer · edit by chatting",
     visual: <ChatVisual set={set} />,
   },
   {
     icon: "📲",
     title: "Share it where your customers already are.",
-    body: "One tap sends your quiz to WhatsApp with a proper preview card. Put the link in your Instagram bio or status, or add it to your website with one line of code.",
+    body: "One tap sends your scorecard to WhatsApp with a proper preview card. Put the link in your Instagram bio or status, or add it to your website with one line of code.",
     caption: "WhatsApp · Instagram · your website",
     visual: <ShareVisual set={set} />,
   },
@@ -45,7 +45,7 @@ const outcomesFor = (set: VisualSet) => [
     icon: "🎯",
     title: "Every customer gets a real answer.",
     body: "Not a “thanks, we'll be in touch”. Each person gets a detailed results page in your brand colour: their match, why it fits them and what to do next, with a button straight back to you.",
-    caption: "Qualify quizzes and Match quizzes",
+    caption: "Qualify scorecards and Match scorecards",
     visual: <ResultVisual set={set} />,
   },
   {
@@ -60,7 +60,7 @@ const outcomesFor = (set: VisualSet) => [
 const STEPS = [
   { title: "Tell us about your business", body: "In plain words, or tap to answer a few quick questions." },
   {
-    title: "We build the whole quiz",
+    title: "We build the whole scorecard",
     body: "Questions, scoring, emoji picture cards and a detailed results page in your brand colour.",
   },
   {
@@ -89,27 +89,27 @@ const TOPUP_FEATURE = "__topup_feature__";
 const FAQS = [
   {
     q: "What is an AI edit?",
-    a: "Each time the builder creates or changes your quiz, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your quiz, Pro includes 150 a month, and Pro accounts that run out can top up in ₦10,000 steps (₦10,000 = 45 edits).",
+    a: "Each time the builder creates or changes your scorecard, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your scorecard, Pro includes 150 a month, and Pro accounts that run out can top up in ₦10,000 steps (₦10,000 = 45 edits).",
   },
   {
     q: "What is a willingness-to-pay score?",
-    a: "Every quiz includes a few questions about budget, timing and commitment, asked in your brand's voice. From those answers, each lead gets a score from 0 to 100 showing how able and ready they are to pay, right next to their quiz result. The builder suggests these questions for you, and you can change them in the chat.",
+    a: "Every scorecard includes a few questions about budget, timing and commitment, asked in your brand's voice. From those answers, each lead gets a score from 0 to 100 showing how able and ready they are to pay, right next to their scorecard result. The builder suggests these questions for you, and you can change them in the chat.",
   },
   {
     q: "Do I need a website?",
-    a: "No. Every quiz gets its own link you can share on WhatsApp, Instagram or anywhere else. If you do have a website, you can embed the quiz on it too.",
+    a: "No. Every scorecard gets its own link you can share on WhatsApp, Instagram or anywhere else. If you do have a website, you can embed the scorecard on it too.",
   },
   {
     q: "Can I build it on my phone?",
-    a: "Yes. The whole builder works on your phone: chat, preview your quiz and share it, all from one screen.",
+    a: "Yes. The whole builder works on your phone: chat, preview your scorecard and share it, all from one screen.",
   },
   {
-    q: "What kinds of quizzes can I make?",
-    a: "Two kinds. Qualify quizzes score each person so you know who is ready to buy (Hot, Warm or Cold), like a solar affordability check or a study-abroad eligibility check. Match quizzes recommend the right product, package or service for each person, like a hair-style quiz or a health check-up finder.",
+    q: "What kinds of scorecards can I make?",
+    a: "Two kinds. Qualify scorecards score each person so you know who is ready to buy (Hot, Warm or Cold), like a solar affordability check or a study-abroad eligibility check. Match scorecards recommend the right product, package or service for each person, like a hair-style scorecard or a health check-up finder.",
   },
   {
-    q: "Can I change my quiz after it's live?",
-    a: "Yes, just ask in the chat. If your quiz already has answers, we save the changes as a new version so no lead is lost.",
+    q: "Can I change my scorecard after it's live?",
+    a: "Yes, just ask in the chat. If your scorecard already has answers, we save the changes as a new version so no lead is lost.",
   },
   {
     q: "Do I need to pay to try it?",
@@ -134,8 +134,8 @@ function planFor(cur: Currency) {
     topup: `${fmt(p.topupStep)} = ${p.editsPerStep} edits`,
     payWith: cur === "USD" ? "Pay by card · Renews monthly" : "Bank transfer, card or USSD",
     payAnswer:
-      `No. Building and previewing your quiz is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.pro)} a month on Pro. ` +
-      `Go live within 48 hours of building your first quiz and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
+      `No. Building and previewing your scorecard is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.pro)} a month on Pro. ` +
+      `Go live within 48 hours of building your first scorecard and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
       (cur === "USD" ? "Pay by card; it renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD through Paystack. Cancel anytime."),
   };
 }
@@ -145,13 +145,13 @@ const PLAN = {
   blurb: "Everything you need to find your buyers.",
   features: [
     "1,000 leads a month",
-    "3 live quizzes",
+    "3 live scorecards",
     TOPUP_FEATURE,
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
     "WhatsApp sharing and website embed",
     "CSV export of your leads",
-    "No “Powered by LeadScoreAI” on your quizzes",
+    "No “Powered by LeadScoreAI” on your scorecards",
   ],
 };
 
@@ -322,7 +322,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <HeroVideo
             src="/video/calculator-real-estate.mp4"
             poster="/video/calculator-real-estate-poster.jpg"
-            label="A mortgage calculator quiz: buyers see their monthly repayment, answer a few questions, and land in your dashboard scored"
+            label="A mortgage calculator scorecard: buyers see their monthly repayment, answer a few questions, and land in your dashboard scored"
           />
         ) : (
           <PhoneQuiz
@@ -343,13 +343,13 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <div>
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-300">The LeadScoreAI difference</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
-              Not just a quiz.{" "}
+              Not just a form.{" "}
               <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-amber-200 bg-clip-text text-transparent">
-                A quiz that finds your buyer.
+                A scorecard that finds your buyer.
               </span>
             </h2>
             <p className="mt-5 text-[17px] sm:text-[18px] leading-relaxed text-slate-300">
-              Anyone can make a quiz. LeadScoreAI builds <b className="text-white">willingness-to-pay</b> questions into
+              Anyone can make a form. LeadScoreAI builds <b className="text-white">willingness-to-pay</b> questions into
               every one, asked in your brand&apos;s voice so they feel natural, even in fun personality quizzes. Every lead
               then gets a willingness-to-pay score from 0 to 100, so you know who can actually buy before you reply.
             </p>
@@ -363,7 +363,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               ))}
             </div>
             <p className="mt-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Built into Qualify and Match quizzes · suggested for you in the chat
+              Built into Qualify and Match scorecards · suggested for you in the chat
             </p>
           </div>
           <div className="w-full max-w-md mx-auto">
@@ -381,7 +381,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               Know what they want before you reply.
             </h2>
             <p className="mt-4 text-[17px] text-slate-600">
-              Four ways a quiz does the selling for you, while you get on with running the business.
+              Four ways a scorecard does the selling for you, while you get on with running the business.
             </p>
           </div>
 
@@ -408,7 +408,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
             <h2 className="text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
               Built for every kind of coach and consultant.
             </h2>
-            <p className="mt-4 text-[17px] text-slate-600">Pick your specialty and see the quizzes your clients would take.</p>
+            <p className="mt-4 text-[17px] text-slate-600">Pick your specialty and see the scorecards your clients would take.</p>
           </div>
           {(["coach", "consultant"] as const).map((group) => (
             <div key={group} className="mt-8">
@@ -445,7 +445,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 <span className="min-w-0">
                   <span className="block text-[17px] font-semibold leading-snug">{ex.text}</span>
                   <span className="mt-1 block text-[13px] text-violet-600 font-semibold opacity-80 group-hover:opacity-100">
-                    Build this quiz →
+                    Build this scorecard →
                   </span>
                 </span>
               </button>
@@ -459,7 +459,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <h2 className="text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
             Built for the way you actually sell.
           </h2>
-          <p className="mt-4 text-[17px] text-slate-600">Pick your industry and see the quizzes owners like you build.</p>
+          <p className="mt-4 text-[17px] text-slate-600">Pick your industry and see the scorecards owners like you build.</p>
         </div>
         <div className="mt-10 -mx-4 px-4 flex sm:justify-center gap-2 overflow-x-auto pb-2">
           {INDUSTRY_PAGES.map((p) => (
@@ -488,7 +488,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               <span className="min-w-0">
                 <span className="block text-[17px] font-semibold leading-snug">{ex.text}</span>
                 <span className="mt-1 block text-[13px] text-violet-600 font-semibold opacity-80 group-hover:opacity-100">
-                  Build this quiz →
+                  Build this scorecard →
                 </span>
               </span>
             </button>
@@ -509,7 +509,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <div>
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">● How it works</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
-              From idea to live quiz in one chat.
+              From idea to live scorecard in one chat.
             </h2>
             <ol className="mt-10 border-l-2 border-slate-200 pl-6 space-y-8">
               {STEPS.map((s, i) => (
@@ -550,7 +550,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               ))}
             </div>
             <p className="mt-4 text-[14px] text-slate-500">
-              Any business that answers the same customer questions every day. If you can describe it, you can quiz it.
+              Any business that answers the same customer questions every day. If you can describe it, you can score it.
             </p>
           </div>
         </div>
@@ -696,7 +696,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           className="font-extrabold tracking-[-0.04em] leading-[1.02] max-w-4xl mx-auto"
           style={{ fontSize: "clamp(40px, 8vw, 88px)" }}
         >
-          Your next customer is one quiz away.
+          Your next customer is one scorecard away.
         </h2>
         <p className="mt-5 text-[18px] text-slate-600">Build it in one chat. Share it on WhatsApp today.</p>
         <button
@@ -717,7 +717,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               <img src="/logo/favicon-64.png" alt="" className="w-8 h-8 rounded-lg" />
               <span className="font-bold text-lg">LeadScoreAI</span>
             </div>
-            <p className="mt-2 text-[14px] text-slate-500">Interactive quizzes that find your buyers.</p>
+            <p className="mt-2 text-[14px] text-slate-500">Buyer Scorecards that find your buyers.</p>
           </div>
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">For your industry</p>

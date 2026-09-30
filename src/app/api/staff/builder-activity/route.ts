@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     { step: "Clicked a call-to-action", count: distinct(of("cta_click"), (e) => e.visitor_id) },
     { step: "Requested a sign-up code", count: distinct(of("code_requested").filter((e) => e.props.purpose !== "login"), (e) => str(e.props.email)) },
     { step: "Signed up", count: of("signed_up").length },
-    { step: "Built a quiz", count: distinct(of("quiz_built"), (e) => e.organization_id) },
+    { step: "Built a scorecard", count: distinct(of("quiz_built"), (e) => e.organization_id) },
     { step: "Opened the preview", count: distinct(of("preview_opened"), (e) => e.organization_id) },
     { step: "Tried to go live", count: distinct(of("publish_blocked", "go_live_clicked", "paywall_shown"), (e) => e.organization_id) },
     { step: "Started checkout", count: distinct(of("checkout_started"), (e) => e.organization_id) },

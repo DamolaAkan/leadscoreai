@@ -87,7 +87,7 @@ export default function InstallAppPrompt() {
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-[#16202e] text-[15px]">Get the LeadScoreAI app</p>
           {mode === "android" ? (
-            <p className="text-[13px] text-[#667085] mt-0.5">Add it to your phone for one-tap access to your quizzes and leads.</p>
+            <p className="text-[13px] text-[#667085] mt-0.5">Add it to your phone for one-tap access to your scorecards and leads.</p>
           ) : (
             <p className="text-[13px] text-[#667085] mt-0.5 leading-relaxed">
               Tap the <b>Share</b> button{" "}

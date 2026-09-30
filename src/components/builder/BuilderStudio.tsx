@@ -81,9 +81,9 @@ function hoursLeft(endsAt: string | null): number {
 }
 
 const DEFAULT_STARTERS = [
-  { emoji: "🎓", text: "I run a study-abroad agency in Lagos. I want a quiz that tells students if they're eligible to study in the UK." },
-  { emoji: "✨", text: "I sell skincare online. I want a quiz that recommends the right routine for each customer's skin." },
-  { emoji: "🌍", text: "I'm a travel consultant. I want a fun quiz that matches people to the right holiday package." },
+  { emoji: "🎓", text: "I run a study-abroad agency in Lagos. I want a scorecard that tells students if they're eligible to study in the UK." },
+  { emoji: "✨", text: "I sell skincare online. I want a scorecard that recommends the right routine for each customer's skin." },
+  { emoji: "🌍", text: "I'm a travel consultant. I want a fun scorecard that matches people to the right holiday package." },
   { emoji: "☀️", text: "I install solar in Abuja. I want to find out which homes can actually afford it before I visit." },
 ];
 
@@ -91,7 +91,7 @@ const DEFAULT_STARTERS = [
 // the landing page as "lsai-industry"); the generic mix otherwise.
 function startersFor(industry: string | null): { emoji: string; text: string }[] {
   const intro = (starter: string) => starter.split(". ")[0].replace(/\.$/, "") + ".";
-  const ask = (i: string, title: string) => `${i} I want a "${title}" quiz that shows me who is serious and ready to pay.`;
+  const ask = (i: string, title: string) => `${i} I want a "${title}" scorecard that shows me who is serious and ready to pay.`;
   if (industry === "coaches") {
     return ["fitness", "relationship", "finance", "business-strategy"]
       .map((k) => COACH_BRANCHES.find((b) => b.key === k))
@@ -106,7 +106,7 @@ function startersFor(industry: string | null): { emoji: string; text: string }[]
 const WELCOME: ChatMessage = {
   role: "assistant",
   content:
-    "Hi! Tell me about your business: what you sell, who your customers are, and what the quiz should do (find out who's ready to buy, or recommend the right product). I'll draft the whole quiz for you, including a few willingness-to-pay questions so every lead gets a score showing who's ready to buy.",
+    "Hi! Tell me about your business: what you sell, who your customers are, and what the scorecard should do (find out who's ready to buy, or recommend the right product). I'll draft the whole scorecard for you, including a few willingness-to-pay questions so every lead gets a score showing who's ready to buy.",
 };
 
 const chatKey = (quizId: string | null) => `lsai-builder-chat-${quizId || "new"}`;
@@ -396,7 +396,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const current = quizzes.find((q) => q.id === quizId) || null;
   const publicUrl = org && current ? `${origin}/${org.slug}/${current.slug}` : "";
   const waText = current
-    ? `${current.headline || current.name}\n\nTake this free 2-minute quiz 👉 ${publicUrl}`
+    ? `${current.headline || current.name}\n\nTake this free 2-minute check 👉 ${publicUrl}`
     : "";
   const embedCode = current
     ? `<iframe src="${publicUrl}?embed=1" id="lsai-quiz-${current.id}" title="${current.name.replace(/"/g, "&quot;")}" style="width:100%;border:0;min-height:600px" loading="lazy"></iframe>
@@ -469,10 +469,10 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         setPaywall(true);
         return;
       }
-      if (!res.ok) throw new Error(data.error || "Could not update the quiz.");
+      if (!res.ok) throw new Error(data.error || "Could not update the scorecard.");
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update the quiz.");
+      setError(err instanceof Error ? err.message : "Could not update the scorecard.");
     } finally {
       setPublishing(false);
     }
@@ -687,7 +687,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                       }}
                       className="px-3.5 py-2 rounded-full bg-[#2B3245] text-[#F5F9FC] text-xs font-semibold"
                     >
-                      ▶ Try your quiz
+                      ▶ Try your scorecard
                     </button>
                     <button
                       onClick={() => {
@@ -712,7 +712,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce [animation-delay:-0.15s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" />
               </span>
-              Designing your quiz… up to a minute
+              Designing your scorecard… up to a minute
             </div>
           </div>
         )}
@@ -792,7 +792,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                 ? "Out of AI edits"
                 : current
                   ? "Ask for a change… e.g. make it shorter"
-                  : "Describe your business and quiz…"
+                  : "Describe your business…"
             }
             className="flex-1 resize-none bg-transparent text-[16px] lg:text-[14.5px] text-[#F5F9FC] placeholder:text-[#5F6B7A] outline-none py-1.5 max-h-40"
             disabled={thinking || (!!credits && credits.remaining <= 0)}
@@ -816,16 +816,16 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     <iframe
       key={`${current.id}-${previewVersion}`}
       src={`/build/preview/${current.id}?v=${previewVersion}`}
-      title="Quiz preview"
+      title="Scorecard preview"
       className="w-full h-full border-0 bg-white"
     />
   ) : (
     <div className="h-full flex items-center justify-center p-8 text-center">
       <div>
         <div className="text-4xl mb-3">🪄</div>
-        <p className="font-semibold text-[#F5F9FC]">Your quiz appears here</p>
+        <p className="font-semibold text-[#F5F9FC]">Your scorecard appears here</p>
         <p className="text-sm text-[#9DA2A6] mt-1 max-w-xs">
-          Describe your business in the chat. The AI drafts your quiz and you can try it right here.
+          Describe your business in the chat. The AI drafts your scorecard and you can try it right here.
         </p>
       </div>
     </div>
@@ -856,7 +856,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                   : "bg-violet-600 text-white hover:bg-violet-500"
               }`}
             >
-              {publishing ? "Saving…" : current.is_active ? "Unpublish" : "Publish my quiz"}
+              {publishing ? "Saving…" : current.is_active ? "Unpublish" : "Publish my scorecard"}
             </button>
             {!current.is_active && billing && !billing.canPublish && (
               <p className="mt-2 text-[11.5px] text-[#9DA2A6] text-center">
@@ -893,7 +893,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                   rel="noopener noreferrer"
                   className="py-3 rounded-xl bg-[#1C2333] border border-[#2B3245] text-[14px] font-semibold text-[#F5F9FC] text-center"
                 >
-                  Open quiz ↗
+                  Open scorecard ↗
                 </a>
               </div>
 
@@ -928,7 +928,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         </>
       ) : (
         <div className="rounded-2xl bg-[#1C2333] border border-[#2B3245] p-5 text-center text-sm text-[#9DA2A6]">
-          Build a quiz in the chat first, then publish and share it here.
+          Build a scorecard in the chat first, then publish and share it here.
         </div>
       )}
 
@@ -936,8 +936,8 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         <div className="rounded-2xl bg-[#1C2333] border border-[#2B3245] p-4">
           {/* Each template's own fonts, so the thumbnails show the real look. */}
           {TEMPLATE_KEYS.map((k) => (TEMPLATES[k].fonts ? <link key={k} rel="stylesheet" href={TEMPLATES[k].fonts!} /> : null))}
-          <p className="text-[14px] text-[#F5F9FC]">Quiz style</p>
-          <p className="text-[12.5px] text-[#9DA2A6] mt-0.5">Changes the whole quiz, including the results page. Free to switch.</p>
+          <p className="text-[14px] text-[#F5F9FC]">Scorecard style</p>
+          <p className="text-[12.5px] text-[#9DA2A6] mt-0.5">Changes the whole scorecard, including the results page. Free to switch.</p>
           <div className="mt-3 grid grid-cols-2 gap-2.5">
             {TEMPLATE_KEYS.map((k) => {
               const t = TEMPLATES[k];
@@ -1016,9 +1016,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         onClick={() => openQuiz(null)}
         className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold mb-2"
       >
-        + New quiz
+        + New scorecard
       </button>
-      {quizzes.length === 0 && <p className="text-xs text-[#9DA2A6] px-1 py-2">No quizzes yet.</p>}
+      {quizzes.length === 0 && <p className="text-xs text-[#9DA2A6] px-1 py-2">No scorecards yet.</p>}
       {quizzes.map((q) => (
         <button
           key={q.id}
@@ -1053,7 +1053,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           <span className="min-w-0">
             <span className="block text-[11px] text-[#9DA2A6] leading-none">{org.name}</span>
             <span className="block text-[14px] font-semibold truncate max-w-[52vw] lg:max-w-none leading-tight mt-0.5">
-              {current ? current.name : "New quiz"}
+              {current ? current.name : "New scorecard"}
             </span>
           </span>
           <span className="lg:hidden text-[#9DA2A6] text-xs">▾</span>
@@ -1108,7 +1108,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       {/* Desktop: quizzes | Chat | Preview / Share (same highlighted tabs as the phone) */}
       <div className="hidden lg:grid flex-1 min-h-0 grid-cols-[240px_minmax(0,1fr)_minmax(0,1.05fr)]">
         <aside className="border-r border-[#2B3245] p-3 overflow-y-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9DA2A6] px-1 mb-2">Your quizzes</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9DA2A6] px-1 mb-2">Your scorecards</p>
           {quizList}
         </aside>
         <section className="min-h-0 border-r border-[#2B3245] flex flex-col">
@@ -1204,7 +1204,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           <div className="fixed inset-x-0 top-20 z-[61] flex justify-center px-4 pointer-events-none">
             <div className="animate-[lsaiPop_0.45s_cubic-bezier(.2,1.4,.4,1)] rounded-2xl bg-[#1C2333]/95 border border-violet-500/50 shadow-2xl px-5 py-4 text-center max-w-sm backdrop-blur">
               <p className="text-[22px] leading-none">🎉</p>
-              <p className="mt-2 text-[16px] font-bold text-[#F5F9FC]">Your first quiz is ready!</p>
+              <p className="mt-2 text-[16px] font-bold text-[#F5F9FC]">Your first scorecard is ready!</p>
               <p className="mt-1 text-[13.5px] text-[#C2C8CC]">Take it like your customer would, then go live and share it.</p>
             </div>
           </div>
@@ -1243,7 +1243,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               {credits.topupRemaining > 0 && <p>Top-up: {credits.topupRemaining} left (never expire)</p>}
             </div>
             <p className="mt-4 text-[12.5px] leading-relaxed text-[#9DA2A6]">
-              Each change the builder makes to your quiz uses 1 edit. Answering its tap questions is free, and
+              Each change the builder makes to your scorecard uses 1 edit. Answering its tap questions is free, and
               previewing, sharing and publishing never use edits.
             </p>
 
@@ -1341,7 +1341,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#2B3245] sm:hidden" />
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-violet-300">Go live</p>
             <h3 className="mt-1.5 text-[21px] font-bold leading-snug text-[#F5F9FC]">
-              Your quiz is ready. Put it in front of real customers.
+              Your scorecard is ready. Put it in front of real customers.
             </h3>
             <p className="mt-2 text-[14px] leading-relaxed text-[#9DA2A6]">
               Publish it, share it on WhatsApp, put it on your website, and see every serious buyer scored Hot,

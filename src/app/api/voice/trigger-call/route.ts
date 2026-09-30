@@ -128,7 +128,7 @@ export async function POST(request: Request) {
           .join("\n");
       }
     } catch {
-      console.error("[voice] Failed to build quiz answers summary");
+      console.error("[voice] Failed to build scorecard answers summary");
     }
 
     const callId = await placeOutboundCall({

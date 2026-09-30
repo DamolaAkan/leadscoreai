@@ -77,7 +77,7 @@ export default function TopNav({
                   {user.orgName}
                 </h1>
                 <p className="text-xs font-medium" style={{ color: "#98a2b3" }}>
-                  {user.selfServe ? "Quiz dashboard" : "Lead scoring dashboard"}
+                  {user.selfServe ? "Scorecard dashboard" : "Lead scoring dashboard"}
                 </p>
               </div>
             </div>

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     .eq("organization_id", user.organizationId)
     .maybeSingle();
   if (!quiz || !quiz.builder_config) {
-    return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+    return NextResponse.json({ error: "Scorecard not found." }, { status: 404 });
   }
 
   if (publish) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       .from("quiz_questions")
       .select("id", { count: "exact", head: true })
       .eq("quiz_id", quizId);
-    if (!count) return NextResponse.json({ error: "This quiz has no questions yet." }, { status: 400 });
+    if (!count) return NextResponse.json({ error: "This scorecard has no questions yet." }, { status: 400 });
 
     // Free to build, pay to publish: self-serve accounts need the Pro plan to go live.
     const { data: org } = await supabase
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     .from("quizzes")
     .update({ is_active: !!publish, updated_at: new Date().toISOString() })
     .eq("id", quizId);
-  if (error) return NextResponse.json({ error: "Could not update the quiz." }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Could not update the scorecard." }, { status: 500 });
   await track(publish ? "quiz_published" : "quiz_unpublished", { orgId: user.organizationId, quizId, request });
 
   return NextResponse.json({ ok: true, is_active: !!publish, path: `/${user.orgSlug}/${quiz.slug}` });

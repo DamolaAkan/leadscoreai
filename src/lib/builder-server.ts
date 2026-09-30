@@ -68,7 +68,7 @@ export async function uniqueOrgSlug(name: string): Promise<string> {
 
 export async function uniqueQuizSlug(orgId: string, name: string): Promise<string> {
   const supabase = createServiceClient();
-  const base = slugify(name, "quiz").slice(0, 40);
+  const base = slugify(name, "scorecard").slice(0, 40);
   for (let i = 0; i < 20; i++) {
     const candidate = i === 0 ? base : `${base}-${i + 1}`;
     const { data } = await supabase
@@ -109,7 +109,7 @@ export async function logFeatureRequest(r: {
     if (!apiKey) return;
     const html = `
 <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;color:#1f2533;font-size:15px;line-height:1.6;">
-  <p style="margin:0 0 12px;"><b>${escapeHtml(r.orgName)}</b> (${escapeHtml(r.ownerEmail)}) asked the quiz builder for something it can't do yet:</p>
+  <p style="margin:0 0 12px;"><b>${escapeHtml(r.orgName)}</b> (${escapeHtml(r.ownerEmail)}) asked the scorecard builder for something it can't do yet:</p>
   <p style="margin:0 0 12px;padding:12px 14px;background:#f7f5ff;border:1px solid #e6e0fb;border-radius:10px;"><b>${escapeHtml(r.request)}</b></p>
   <p style="margin:0 0 4px;color:#475467;">Their message:</p>
   <p style="margin:0;color:#475467;white-space:pre-wrap;">${escapeHtml(r.ownerMessage.slice(0, 2000))}</p>

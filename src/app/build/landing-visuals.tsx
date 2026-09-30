@@ -131,7 +131,7 @@ const SOLAR: Content = {
 
 const REAL_ESTATE: Content = {
   chat: {
-    msg: "I sell homes in Lekki. I want a quiz that shows which buyers have the budget and timeline to buy before I book viewings.",
+    msg: "I sell homes in Lekki. I want a scorecard that shows which buyers have the budget and timeline to buy before I book viewings.",
     qs: [
       { q: "Buyers, renters or both?", on: "Buyers only", off: "Both" },
       { q: CHECK_FIRST, on: "Budget", off: "Move-in date" },
@@ -178,7 +178,7 @@ const REAL_ESTATE: Content = {
 
 const HAIR: Content = {
   chat: {
-    msg: "I sell hair extensions and wigs in Lagos. I want a quiz that matches customers to the right hair and shows me who's ready to order.",
+    msg: "I sell hair extensions and wigs in Lagos. I want a scorecard that matches customers to the right hair and shows me who's ready to order.",
     qs: [
       { q: "Wigs, bundles or both?", on: "Both", off: "Wigs only" },
       { q: CHECK_FIRST, on: "Budget", off: "When they need it" },
@@ -189,7 +189,7 @@ const HAIR: Content = {
     title: "Find your perfect hair for December 👑",
     preview: "Find your perfect hair | Luxe Hair Lagos",
     previewSub: "Answer 6 quick questions and get your perfect look.",
-    message: "Hey babe! Take our 2-minute hair quiz and find the look made for you 💜",
+    message: "Hey babe! Take our 2-minute hair check and find the look made for you 💜",
   },
   result: {
     title: "Bone straight 24-inch wig 👑",
@@ -225,7 +225,7 @@ const HAIR: Content = {
 
 const CLINICS: Content = {
   chat: {
-    msg: "I run a private clinic in Ikeja. I want a quiz that points people to the right check-up and shows me who is ready to book.",
+    msg: "I run a private clinic in Ikeja. I want a scorecard that points people to the right check-up and shows me who is ready to book.",
     qs: [
       { q: "Walk-ins or appointments?", on: "Appointments", off: "Both" },
       { q: CHECK_FIRST, on: "How they'll pay", off: "How soon" },
@@ -272,7 +272,7 @@ const CLINICS: Content = {
 
 const STUDY_ABROAD: Content = {
   chat: {
-    msg: "I run a study-abroad agency. I want a quiz that shows which students have the grades, English test and funds to apply now.",
+    msg: "I run a study-abroad agency. I want a scorecard that shows which students have the grades, English test and funds to apply now.",
     qs: [
       { q: "UK, Canada or both?", on: "Both", off: "UK only" },
       { q: CHECK_FIRST, on: "Funding", off: "Intake date" },
@@ -319,7 +319,7 @@ const STUDY_ABROAD: Content = {
 
 const SKINCARE: Content = {
   chat: {
-    msg: "I sell skincare on Instagram. I want a quiz that recommends the right routine and shows me who is ready to buy.",
+    msg: "I sell skincare on Instagram. I want a scorecard that recommends the right routine and shows me who is ready to buy.",
     qs: [
       { q: "Full routines or single products?", on: "Full routines", off: "Both" },
       { q: CHECK_FIRST, on: "Skin type", off: "Monthly spend" },
@@ -328,9 +328,9 @@ const SKINCARE: Content = {
   share: {
     brand: "Glow Skincare",
     title: "Which routine fits your skin? ✨",
-    preview: "Skin quiz | Glow Skincare",
+    preview: "Skin check | Glow Skincare",
     previewSub: "Answer 6 quick questions and get your perfect routine.",
-    message: "Not sure what your skin needs? Take our 2-minute skin quiz and get your routine ✨",
+    message: "Not sure what your skin needs? Take our 2-minute skin check and get your routine ✨",
   },
   result: {
     title: "The Oil-Balance routine 🌗",
@@ -366,7 +366,7 @@ const SKINCARE: Content = {
 
 const TRAVEL: Content = {
   chat: {
-    msg: "I sell holiday packages from Lagos. I want a quiz that matches travellers to the right trip and shows me who has the budget to book.",
+    msg: "I sell holiday packages from Lagos. I want a scorecard that matches travellers to the right trip and shows me who has the budget to book.",
     qs: [
       { q: "Local, international or both?", on: "Both", off: "International" },
       { q: CHECK_FIRST, on: "Budget", off: "Travel dates" },
@@ -377,7 +377,7 @@ const TRAVEL: Content = {
     title: "Where should you go this December? 🌍",
     preview: "Trip finder | Wanderlust Travels",
     previewSub: "Answer 6 quick questions and get your perfect trip.",
-    message: "Planning your December getaway? Take our 2-minute trip quiz and find your perfect holiday 🏝️",
+    message: "Planning your December getaway? Take our 2-minute trip check and find your perfect holiday 🏝️",
   },
   result: {
     title: "Zanzibar beach escape 🏝️",
@@ -413,7 +413,7 @@ const TRAVEL: Content = {
 
 const COACHES: Content = {
   chat: {
-    msg: "I'm a business consultant in Lagos. I want a quiz that shows which companies have the budget to hire me before I book a discovery call.",
+    msg: "I'm a business consultant in Lagos. I want a scorecard that shows which companies have the budget to hire me before I book a discovery call.",
     qs: [
       { q: "Discovery call or webinar?", on: "Discovery call", off: "Webinar" },
       { q: CHECK_FIRST, on: "Budget to invest", off: "Start date" },

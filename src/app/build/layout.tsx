@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: { absolute: "Tired of time-wasting enquiries? Let our quiz find your buyers. | LeadScoreAI" },
+  title: { absolute: "Tired of time-wasting enquiries? Let our scorecard find your buyers. | LeadScoreAI" },
   description:
     "Describe your business in plain words. LeadScoreAI builds the questions, the results page and a WhatsApp link, so every customer tells you what they need before you reply. Build it free, pay only when you go live.",
 };

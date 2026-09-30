@@ -26,7 +26,7 @@ export async function PATCH(request: Request) {
     .eq("organization_id", user.organizationId)
     .not("builder_config", "is", null)
     .maybeSingle();
-  if (!quiz) return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+  if (!quiz) return NextResponse.json({ error: "Scorecard not found." }, { status: 404 });
 
   const { error } = await supabase
     .from("quizzes")

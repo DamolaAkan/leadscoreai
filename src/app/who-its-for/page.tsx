@@ -85,7 +85,7 @@ export default function WhoItsForPage() {
 
         <div className="print:hidden mt-12 rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 text-center">
           <p className="text-[20px] font-bold text-slate-900">Sounds like you?</p>
-          <p className="mt-2 text-slate-600">Build your first quiz free. You only pay when you put it live.</p>
+          <p className="mt-2 text-slate-600">Build your first scorecard free. You only pay when you put it live.</p>
           <a
             href="/"
             className="mt-5 inline-block rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[16px] px-7 py-4"

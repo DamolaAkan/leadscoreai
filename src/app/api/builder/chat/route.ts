@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   const { user } = auth;
 
   if (!isClaudeConfigured()) {
-    return NextResponse.json({ error: "The quiz builder is not configured yet." }, { status: 503 });
+    return NextResponse.json({ error: "The scorecard builder is not configured yet." }, { status: 503 });
   }
 
   // Cost guard: AI generations per business per hour.
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       .eq("organization_id", user.organizationId)
       .maybeSingle();
     if (!q || !q.builder_config) {
-      return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+      return NextResponse.json({ error: "Scorecard not found." }, { status: 404 });
     }
     current = q as CurrentQuiz;
     const { count } = await supabase
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
     `The business owner's account is named "${user.orgName}".` +
     (scorecard
       ? `\n\nBefore signing up they answered a short scorecard:\n- ${describeAnswers(scorecard).join("\n- ")}\n` +
-        `Use these answers: don't ask again for anything answered here, match the quiz to their industry, ` +
+        `Use these answers: don't ask again for anything answered here, match the scorecard to their industry, ` +
         `and design it for where their enquiries come from (a WhatsApp link, an Instagram bio link or a website embed).`
       : "");
 
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
       attemptMessages.push({ role: "assistant", content: JSON.stringify(turn) });
       attemptMessages.push({
         role: "user",
-        content: `That quiz can't be saved yet. Fix these problems and return the full quiz again:\n- ${errorsForRetry.join("\n- ")}`,
+        content: `That scorecard can't be saved yet. Fix these problems and return the full scorecard again:\n- ${errorsForRetry.join("\n- ")}`,
       });
     }
 
@@ -219,14 +219,14 @@ export async function POST(request: Request) {
           continue;
         }
         console.error("[builder/chat] Claude error:", err);
-        return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
+        return NextResponse.json({ error: "Something went wrong drafting your scorecard. Try again." }, { status: 502 });
       }
     }
 
     addUsage(usage, response.usage);
     if (response.stop_reason === "refusal") {
       return NextResponse.json({
-        reply: "I can't help build a quiz for that. Tell me about a different business or goal and I'll draft one.",
+        reply: "I can't help build a scorecard for that. Tell me about a different business or goal and I'll draft one.",
         quizId,
         credits: await settle(false, quizId),
       });
@@ -234,7 +234,7 @@ export async function POST(request: Request) {
     if (response.stop_reason === "max_tokens") {
       console.error("[builder/chat] hit max_tokens");
       await settle(false, quizId);
-      return NextResponse.json({ error: "That quiz came out too long. Ask for fewer questions." }, { status: 502 });
+      return NextResponse.json({ error: "That scorecard came out too long. Ask for fewer questions." }, { status: 502 });
     }
 
     // Log token usage per AI edit so real cost replaces the estimates.
@@ -246,7 +246,7 @@ export async function POST(request: Request) {
     } catch {
       console.error("[builder/chat] invalid JSON from model");
       await settle(false, quizId);
-      return NextResponse.json({ error: "Something went wrong drafting your quiz. Try again." }, { status: 502 });
+      return NextResponse.json({ error: "Something went wrong drafting your scorecard. Try again." }, { status: 502 });
     }
 
     if (!turn.quiz) break; // Claude needs more info; nothing to save.
@@ -289,7 +289,7 @@ export async function POST(request: Request) {
     console.error("[builder/chat] draft still invalid:", errorsForRetry);
     await track("chat_error", { orgId: user.organizationId, quizId, props: { reason: "invalid_draft" }, request });
     return NextResponse.json({
-      reply: "I had trouble putting that quiz together. Could you describe it a little differently?",
+      reply: "I had trouble putting that scorecard together. Could you describe it a little differently?",
       quizId,
       credits: await settle(false, quizId),
     });
@@ -326,9 +326,9 @@ export async function POST(request: Request) {
   if (current && !currentHasLeads) {
     const { error: upErr } = await supabase.from("quizzes").update(quizRow).eq("id", current.id);
     if (upErr) {
-      console.error("[builder/chat] quiz update error:", upErr.message);
+      console.error("[builder/chat] scorecard update error:", upErr.message);
       await settle(false, current.id);
-      return NextResponse.json({ error: "Could not save your quiz. Try again." }, { status: 500 });
+      return NextResponse.json({ error: "Could not save your scorecard. Try again." }, { status: 500 });
     }
     await supabase.from("quiz_questions").delete().eq("quiz_id", current.id);
     savedId = current.id;
@@ -341,9 +341,9 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     if (insErr || !created) {
-      console.error("[builder/chat] quiz insert error:", insErr?.message);
+      console.error("[builder/chat] scorecard insert error:", insErr?.message);
       await settle(false, null);
-      return NextResponse.json({ error: "Could not save your quiz. Try again." }, { status: 500 });
+      return NextResponse.json({ error: "Could not save your scorecard. Try again." }, { status: 500 });
     }
     savedId = created.id;
   }
@@ -379,7 +379,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     reply: forked
-      ? `${reply}\n\n(Your live quiz already has leads, so I saved these changes as a new version. Publish it when you're ready.)`
+      ? `${reply}\n\n(Your live scorecard already has leads, so I saved these changes as a new version. Publish it when you're ready.)`
       : reply,
     questions,
     quizId: savedId,

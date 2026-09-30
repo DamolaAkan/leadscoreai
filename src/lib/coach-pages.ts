@@ -11,10 +11,10 @@ export interface CoachBranch {
   sub: string; // one line under the examples
   demo: IndustryPage["demo"]; // sample quiz (hero phone rotation)
   examples: { emoji: string; text: string }[];
-  starter: string; // first builder message for "Build this quiz"
+  starter: string; // first builder message for "Build this scorecard"
 }
 
-const PROMISE = "Let our quiz find clients ready to pay.";
+const PROMISE = "Let our scorecard find clients ready to pay.";
 
 export const COACH_BRANCHES: CoachBranch[] = [
   // ── Coaches ──
@@ -23,7 +23,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
     group: "coach",
     label: "Fitness",
     emoji: "🏋️",
-    sub: "A quick fitness quiz asks about their goal, budget and how soon they want to start, so you only talk to people ready to train.",
+    sub: "A quick fitness scorecard asks about their goal, budget and how soon they want to start, so you only talk to people ready to train.",
     demo: {
       brand: "Iron Body Fitness",
       question: "How soon do you want to see results?",
@@ -41,14 +41,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "📆", text: "Find your perfect workout routine" },
     ],
     starter:
-      "I'm a fitness coach. I want a quiz that matches people to the right programme and shows me who is ready to pay for coaching now.",
+      "I'm a fitness coach. I want a scorecard that matches people to the right programme and shows me who is ready to pay for coaching now.",
   },
   {
     key: "sales",
     group: "coach",
     label: "Sales",
     emoji: "📈",
-    sub: "A short quiz checks team size, targets and training budget before anyone books a discovery call with you.",
+    sub: "A short scorecard checks team size, targets and training budget before anyone books a discovery call with you.",
     demo: {
       brand: "Closers Academy",
       question: "How big is your sales team?",
@@ -66,14 +66,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧭", text: "Which sales training fits your team?" },
     ],
     starter:
-      "I coach sales teams. I want a quiz that grades a company's sales process and shows me which ones have the team size and budget for training.",
+      "I coach sales teams. I want a scorecard that grades a company's sales process and shows me which ones have the team size and budget for training.",
   },
   {
     key: "relationship",
     group: "coach",
     label: "Relationship",
     emoji: "💞",
-    sub: "A caring quiz helps people see where their relationship stands, then invites the ones ready for help to your session, course or webinar.",
+    sub: "A caring scorecard helps people see where their relationship stands, then invites the ones ready for help to your session, course or webinar.",
     demo: {
       brand: "Better Together",
       question: "How would you rate communication in your relationship?",
@@ -91,14 +91,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🌡️", text: "How healthy is your relationship?" },
     ],
     starter:
-      "I'm a relationship coach. I want a quiz that rates people's communication in their relationship and invites the ones who need help to my webinar.",
+      "I'm a relationship coach. I want a scorecard that rates people's communication in their relationship and invites the ones who need help to my webinar.",
   },
   {
     key: "life",
     group: "coach",
     label: "Life",
     emoji: "🌱",
-    sub: "A short quiz shows people what's holding them back and who is ready to invest in changing it, before your first call.",
+    sub: "A short scorecard shows people what's holding them back and who is ready to invest in changing it, before your first call.",
     demo: {
       brand: "Next Chapter Coaching",
       question: "Which area of your life do you most want to change?",
@@ -116,14 +116,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "✨", text: "What's your purpose score?" },
     ],
     starter:
-      "I'm a life coach. I want a quiz that shows people what's holding them back and tells me who is ready to pay for coaching.",
+      "I'm a life coach. I want a scorecard that shows people what's holding them back and tells me who is ready to pay for coaching.",
   },
   {
     key: "business",
     group: "coach",
     label: "Business",
     emoji: "🚀",
-    sub: "A quick quiz checks their revenue, biggest bottleneck and budget, so your calls are with owners ready to grow.",
+    sub: "A quick scorecard checks their revenue, biggest bottleneck and budget, so your calls are with owners ready to grow.",
     demo: {
       brand: "Scale Up Coaching",
       question: "What's your business's monthly revenue?",
@@ -141,14 +141,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧭", text: "Which coaching programme fits you?" },
     ],
     starter:
-      "I coach small business owners. I want a quiz that finds their biggest growth problem and shows me who has the revenue to pay for coaching.",
+      "I coach small business owners. I want a scorecard that finds their biggest growth problem and shows me who has the revenue to pay for coaching.",
   },
   {
     key: "finance",
     group: "coach",
     label: "Finance & money",
     emoji: "💰",
-    sub: "A money quiz shows people where their finances stand and invites the ones ready to change it to your programme or strategy call.",
+    sub: "A money scorecard shows people where their finances stand and invites the ones ready to change it to your programme or strategy call.",
     demo: {
       brand: "Money Freedom Coaching",
       question: "How do you feel about your money right now?",
@@ -166,14 +166,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧭", text: "Which money plan fits you?" },
     ],
     starter:
-      "I'm a finance coach. I want a quiz that shows people where their money stands and tells me who is ready to pay for my programme.",
+      "I'm a finance coach. I want a scorecard that shows people where their money stands and tells me who is ready to pay for my programme.",
   },
   {
     key: "career",
     group: "coach",
     label: "Career",
     emoji: "🎯",
-    sub: "A short quiz finds where each person is in their career and who is ready to invest in their next move.",
+    sub: "A short scorecard finds where each person is in their career and who is ready to invest in their next move.",
     demo: {
       brand: "CareerLift",
       question: "Where are you in your career right now?",
@@ -191,14 +191,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "💼", text: "How strong is your LinkedIn?" },
     ],
     starter:
-      "I'm a career coach. I want a quiz that shows people where they're stuck in their career and tells me who is ready to pay for coaching.",
+      "I'm a career coach. I want a scorecard that shows people where they're stuck in their career and tells me who is ready to pay for coaching.",
   },
   {
     key: "health-nutrition",
     group: "coach",
     label: "Health & nutrition",
     emoji: "🥗",
-    sub: "A friendly quiz points each person to the right plan, with a clear note that it's a guide, and shows you who is ready to start.",
+    sub: "A friendly scorecard points each person to the right plan, with a clear note that it's a guide, and shows you who is ready to start.",
     demo: {
       brand: "Nourish Well",
       question: "What's your main health goal?",
@@ -216,14 +216,14 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "⚡", text: "What's your energy score?" },
     ],
     starter:
-      "I'm a nutrition coach. I want a quiz that points people to the right meal plan and shows me who is ready to pay for coaching.",
+      "I'm a nutrition coach. I want a scorecard that points people to the right meal plan and shows me who is ready to pay for coaching.",
   },
   {
     key: "faith-ministry",
     group: "coach",
     label: "Faith & ministry",
     emoji: "⛪",
-    sub: "A thoughtful quiz on marriage, relationships or purpose gives each person a personal report, then invites them to your programme, webinar or community.",
+    sub: "A thoughtful scorecard on marriage, relationships or purpose gives each person a personal report, then invites them to your programme, webinar or community.",
     demo: {
       brand: "Grace Life Ministry",
       question: "How would you rate communication in your marriage?",
@@ -241,7 +241,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "📖", text: "Which programme is right for you?" },
     ],
     starter:
-      "I run a ministry. I want a quiz that helps people rate communication in their marriage and invites them to our webinar and community.",
+      "I run a ministry. I want a scorecard that helps people rate communication in their marriage and invites them to our webinar and community.",
   },
   // ── Consultants ──
   {
@@ -292,7 +292,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🎯", text: "Are you ready to run ads?" },
     ],
     starter:
-      "I run a marketing agency. I want a quiz that grades a business's marketing and shows me who has the budget to hire us.",
+      "I run a marketing agency. I want a scorecard that grades a business's marketing and shows me who has the budget to hire us.",
   },
   {
     key: "hr",
@@ -317,7 +317,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧭", text: "Which HR service do you need?" },
     ],
     starter:
-      "I'm an HR consultant. I want a quiz that checks a company's HR gaps and shows me which ones are ready to pay for HR support.",
+      "I'm an HR consultant. I want a scorecard that checks a company's HR gaps and shows me which ones are ready to pay for HR support.",
   },
   {
     key: "tax-accounting",
@@ -342,7 +342,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧑‍💼", text: "Do you need an accountant?" },
     ],
     starter:
-      "I'm an accountant. I want a quiz that checks how healthy a small business's books and tax are and shows me who is ready to hire me.",
+      "I'm an accountant. I want a scorecard that checks how healthy a small business's books and tax are and shows me who is ready to hire me.",
   },
   {
     key: "immigration",
@@ -367,7 +367,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "📝", text: "Is your application ready?" },
     ],
     starter:
-      "I'm an immigration consultant. I want an eligibility quiz that shows people which visa route fits them and tells me who has the funds to apply now.",
+      "I'm an immigration consultant. I want an eligibility scorecard that shows people which visa route fits them and tells me who has the funds to apply now.",
   },
   {
     key: "it-tech",
@@ -392,7 +392,7 @@ export const COACH_BRANCHES: CoachBranch[] = [
       { emoji: "🧭", text: "Which tech solution fits you?" },
     ],
     starter:
-      "I'm an IT consultant. I want a quiz that checks a business's tech needs and shows me who has the budget for a project.",
+      "I'm an IT consultant. I want a scorecard that checks a business's tech needs and shows me who has the budget for a project.",
   },
 ];
 
@@ -401,7 +401,7 @@ export const COACH_HUB: IndustryPage = {
   eyebrow: "For coaches & consultants",
   headline: "Tired of unserious enquiries in your coaching or consulting business?",
   highlight: PROMISE,
-  sub: "Give every enquiry a short quiz before the call. You see their goal, budget and how soon they want to start, scored so you talk to the serious ones first.",
+  sub: "Give every enquiry a short scorecard before the call. You see their goal, budget and how soon they want to start, scored so you talk to the serious ones first.",
   examples: [
     { emoji: "💬", text: "Rate your communication skills in your relationships" },
     { emoji: "🚀", text: "Is your business ready to scale?" },
@@ -409,7 +409,7 @@ export const COACH_HUB: IndustryPage = {
     { emoji: "🇬🇧", text: "Are you eligible for a UK visa?" },
   ],
   starter:
-    "I'm a coach. I want a quiz that qualifies people before a discovery call and shows me who is ready to pay.",
+    "I'm a coach. I want a scorecard that qualifies people before a discovery call and shows me who is ready to pay.",
   namePlaceholder: "Your coaching business",
   demo: {
     brand: "Your Coaching",

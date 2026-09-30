@@ -63,7 +63,7 @@ export const SCORECARD: Question[] = [
   },
   {
     key: "go_live",
-    text: "If a quiz found your serious buyers, when would you want it live?",
+    text: "If a scorecard found your serious buyers, when would you want it live?",
     options: [
       { value: "this-week", emoji: "⚡", label: "This week", points: 25 },
       { value: "this-month", emoji: "📅", label: "This month", points: 15 },
@@ -105,10 +105,10 @@ export function scoreAnswers(a: Answers): ScorecardResult {
   const reasons: string[] = [];
   if (a.volume === "50-200" || a.volume === "200-plus")
     reasons.push(`You get ${option("volume", a.volume)!.label.toLowerCase()} enquiries a week, so knowing who is serious saves real time.`);
-  if (a.marketing === "paid-ads") reasons.push("You're paying for ads, so every click deserves a quiz that shows who is ready to buy.");
+  if (a.marketing === "paid-ads") reasons.push("You're paying for ads, so every click deserves a Buyer Scorecard that shows who is ready to buy.");
   if (a.time_lost === "most") reasons.push("Most of your week goes to people who never buy. That's the time we give back.");
   if (a.marketing === "not-yet")
-    reasons.push("LeadScoreAI works best once enquiries are coming in. A quiz can also give people a reason to enquire.");
+    reasons.push("LeadScoreAI works best once enquiries are coming in. A Buyer Scorecard can also give people a reason to enquire.");
   if (a.volume === "under-10") reasons.push("With under 10 enquiries a week, you can still talk to everyone. Qualifying matters more as you grow.");
   if (a.go_live === "this-week") reasons.push("You want it live this week. The builder will get you there in one chat.");
   const headline =
@@ -146,7 +146,7 @@ export function starterFromAnswers(a: Answers): string {
   if (vol && where) parts.push(`I get ${vol} enquiries a week, mostly ${where}.`);
   else if (where) parts.push(`Most of my enquiries come ${where}.`);
   if (a.marketing === "paid-ads") parts.push("I'm running paid ads.");
-  parts.push("I want a quiz that shows me who is serious and ready to pay.");
+  parts.push("I want a Buyer Scorecard that shows me who is serious and ready to pay.");
   return parts.join(" ");
 }
 

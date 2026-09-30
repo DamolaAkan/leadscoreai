@@ -41,10 +41,10 @@ export function LatseminaryProof() {
           <div className="p-6 text-center">
             <p className="text-[20px] font-extrabold leading-snug text-[#0B0B12]">Rate your communication skills in your relationships</p>
             <p className="mt-2 text-[14px] text-slate-500">
-              Take this quiz to get a detailed report on your communication with your spouse and loved ones.
+              Take this 2-minute check to get a detailed report on your communication with your spouse and loved ones.
             </p>
             <p className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-700">
-              <span className="text-amber-500">✔</span> 1,084 people have taken this quiz
+              <span className="text-amber-500">✔</span> 1,084 people have taken this check
             </p>
             <div className="mt-5 rounded-xl bg-violet-600 py-3 text-[15px] font-bold text-white">Get started</div>
           </div>

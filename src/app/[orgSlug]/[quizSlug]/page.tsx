@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .maybeSingle();
   if (!quiz) return {};
   const title = quiz.start_headline || org.name;
-  const description = quiz.start_subheadline || `A quick quiz from ${org.name}`;
+  const description = quiz.start_subheadline || `A quick scorecard from ${org.name}`;
   const base = process.env.NEXT_PUBLIC_APP_URL;
   return {
     ...(base ? { metadataBase: new URL(base) } : {}),

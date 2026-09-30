@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase";
 // brand-coloured, with the quiz headline and the business name.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Take the quiz";
+export const alt = "Take the 2-minute check";
 
 function shade(hex: string, f: number): string {
   const h = (hex || "#7C3AED").replace("#", "");
@@ -35,9 +35,9 @@ export default async function OgImage({ params }: { params: { orgSlug: string; q
     : { data: null };
 
   const color = org?.primary_color || "#7C3AED";
-  const headline = quiz?.start_headline || "Take the quiz";
+  const headline = quiz?.start_headline || "Take the 2-minute check";
   const name = org?.name || "LeadScoreAI";
-  const cta = quiz?.start_cta_text || "Start the quiz";
+  const cta = quiz?.start_cta_text || "Let's start";
 
   return new ImageResponse(
     (

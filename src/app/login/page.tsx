@@ -134,7 +134,7 @@ export default function LoginPage() {
 
           <div className="left-mid">
             <h1>
-              Tired of time&#8209;wasting enquiries? <em>Let our quiz find your buyers.</em>
+              Tired of time&#8209;wasting enquiries? <em>Let our scorecard find your buyers.</em>
             </h1>
 
             <div className="ledger" aria-hidden="true">
@@ -228,7 +228,7 @@ export default function LoginPage() {
                     {noAccount && (
                       <>
                         {" "}
-                        <Link href="/">Build your first quiz</Link>
+                        <Link href="/">Build your first scorecard</Link>
                       </>
                     )}
                   </div>

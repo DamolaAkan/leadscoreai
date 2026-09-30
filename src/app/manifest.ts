@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "LeadScoreAI",
     short_name: "LeadScoreAI",
-    description: "Build interactive quizzes that find your buyers, and see every lead scored.",
+    description: "Build Buyer Scorecards that find your buyers, and see every lead scored.",
     start_url: "/login?source=app",
     scope: "/",
     display: "standalone",

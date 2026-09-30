@@ -40,9 +40,9 @@ const LABELS: Record<string, string> = {
   studio_open: "🛠️ Opened the builder",
   tap_questions: "💬 Builder asked questions",
   chat_reply: "💬 Builder replied",
-  quiz_built: "✨ Built a quiz",
-  quiz_edited: "✏️ Edited a quiz",
-  quiz_forked: "✏️ Edited a live quiz (new version)",
+  quiz_built: "✨ Built a scorecard",
+  quiz_edited: "✏️ Edited a scorecard",
+  quiz_forked: "✏️ Edited a live scorecard (new version)",
   chat_error: "⚠️ Builder error",
   preview_opened: "▶️ Opened preview",
   paywall_shown: "💳 Saw the go-live offer",
@@ -50,10 +50,10 @@ const LABELS: Record<string, string> = {
   go_live_clicked: "💳 Clicked Go live",
   checkout_started: "💳 Started checkout",
   paid: "💰 Paid",
-  quiz_published: "🟢 Published a quiz",
-  quiz_unpublished: "⚪ Unpublished a quiz",
+  quiz_published: "🟢 Published a scorecard",
+  quiz_unpublished: "⚪ Unpublished a scorecard",
   share_whatsapp: "📲 Shared on WhatsApp",
-  link_copied: "🔗 Copied quiz link",
+  link_copied: "🔗 Copied scorecard link",
   embed_copied: "🧩 Copied embed code",
   lead_captured: "🎯 Got a lead",
   credits_opened: "⚡ Checked AI edits",
@@ -221,7 +221,7 @@ export default function BuilderActivityPage() {
                   <tr className="text-left text-[#98a2b3] text-xs uppercase tracking-wider">
                     <th className="py-1.5 font-semibold">Business</th>
                     <th className="py-1.5 font-semibold">Came from</th>
-                    <th className="py-1.5 font-semibold text-right">Quizzes</th>
+                    <th className="py-1.5 font-semibold text-right">Scorecards</th>
                     <th className="py-1.5 font-semibold text-right">AI edits</th>
                     <th className="py-1.5 font-semibold text-right">Leads</th>
                     <th className="py-1.5 font-semibold">Status</th>

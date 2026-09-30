@@ -21,8 +21,8 @@ export const DEFAULT_PAGE: IndustryPage = {
   slug: "",
   eyebrow: "",
   headline: "Tired of time\u2011wasting enquiries?",
-  highlight: "Let our quiz find your buyers.",
-  sub: "Describe your business in one chat. We build a quiz that tells you what each customer wants and whether they're ready to pay, before you reply.",
+  highlight: "Let our scorecard find your buyers.",
+  sub: "Describe your business in one chat. We build a Buyer Scorecard that tells you what each customer wants and whether they're ready to pay, before you reply.",
   examples: [
     { emoji: "🎓", text: "Are you eligible to study in the UK?" },
     { emoji: "✨", text: "Which skincare routine fits your skin?" },
@@ -57,7 +57,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "📝", text: "Is your application ready to submit?" },
     ],
     starter:
-      "I run a study-abroad agency. I want a quiz that tells students if they're eligible to study in the UK, and shows me who has the grades, English test and funding to apply now.",
+      "I run a study-abroad agency. I want a scorecard that tells students if they're eligible to study in the UK, and shows me who has the grades, English test and funding to apply now.",
     namePlaceholder: "BrightPath Education Lagos",
     demo: {
       brand: "BrightPath Education",
@@ -75,7 +75,7 @@ const PAGES: IndustryPage[] = [
     eyebrow: "For skincare & beauty brands",
     headline: "Match every customer",
     highlight: "to the right skincare routine.",
-    sub: "A fun skin quiz that matches each customer to the right routine, then sends them to you on WhatsApp ready to buy. You see every result and who's ready to spend.",
+    sub: "A fun skin scorecard that matches each customer to the right routine, then sends them to you on WhatsApp ready to buy. You see every result and who's ready to spend.",
     examples: [
       { emoji: "✨", text: "Which skincare routine fits your skin?" },
       { emoji: "🧴", text: "What's your real skin type?" },
@@ -83,7 +83,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "🌸", text: "Find your perfect glow kit" },
     ],
     starter:
-      "I sell skincare. I want a quiz that recommends the right routine or product bundle for each customer's skin, and tells me who is ready to buy.",
+      "I sell skincare. I want a scorecard that recommends the right routine or product bundle for each customer's skin, and tells me who is ready to buy.",
     namePlaceholder: "Glow Skincare Lagos",
     demo: {
       brand: "Glow Skincare",
@@ -109,7 +109,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "💍", text: "Plan your dream honeymoon" },
     ],
     starter:
-      "I'm a travel consultant. I want a fun quiz that matches people to the right holiday package and shows me who has the budget and dates to book soon.",
+      "I'm a travel consultant. I want a fun scorecard that matches people to the right holiday package and shows me who has the budget and dates to book soon.",
     namePlaceholder: "Wanderlust Travels Accra",
     demo: {
       brand: "Wanderlust Travels",
@@ -153,7 +153,7 @@ const PAGES: IndustryPage[] = [
     eyebrow: "For real estate agents & developers",
     headline: "Tired of real estate inspections",
     highlight: "that never turn into sales?",
-    sub: "A quick quiz that shows which buyers and renters have the budget, timeline and documents to move now, so your team spends time on the ones who will close.",
+    sub: "A quick scorecard that shows which buyers and renters have the budget, timeline and documents to move now, so your team spends time on the ones who will close.",
     examples: [
       { emoji: "🏠", text: "Are you ready to buy a home?" },
       { emoji: "📍", text: "Which neighbourhood suits you?" },
@@ -161,7 +161,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "🏗️", text: "Which of our developments fits you?" },
     ],
     starter:
-      "I'm a real estate agent. I want a quiz that shows which buyers have the budget, financing and timeline to buy soon, before I book viewings.",
+      "I'm a real estate agent. I want a scorecard that shows which buyers have the budget, financing and timeline to buy soon, before I book viewings.",
     namePlaceholder: "Prime Homes Lekki",
     demo: {
       brand: "Prime Homes",
@@ -179,7 +179,7 @@ const PAGES: IndustryPage[] = [
     eyebrow: "For hair & wig vendors",
     headline: "Match every customer",
     highlight: "to the perfect hair.",
-    sub: "A fun quiz that matches each customer to the right length, texture and style, then sends them to your WhatsApp ready to order. You see their budget and how soon they need it.",
+    sub: "A fun scorecard that matches each customer to the right length, texture and style, then sends them to your WhatsApp ready to order. You see their budget and how soon they need it.",
     examples: [
       { emoji: "💁🏾‍♀️", text: "Which hair length suits your face?" },
       { emoji: "🌀", text: "Bone straight, curly or body wave?" },
@@ -187,7 +187,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "💸", text: "Which bundle fits your budget?" },
     ],
     starter:
-      "I sell hair extensions and wigs. I want a fun quiz that matches each customer to the right length, texture and style, and shows me who has the budget to order this week.",
+      "I sell hair extensions and wigs. I want a fun scorecard that matches each customer to the right length, texture and style, and shows me who has the budget to order this week.",
     namePlaceholder: "Luxe Hair Lagos",
     demo: {
       brand: "Luxe Hair",
@@ -205,7 +205,7 @@ const PAGES: IndustryPage[] = [
     eyebrow: "For clinics & health practices",
     headline: "Find serious patients",
     highlight: "before they call.",
-    sub: "A short health quiz that points each person to the right screening or consultation, with a clear note that it's a guide, not a diagnosis. You see who is ready to book and how soon.",
+    sub: "A short health scorecard that points each person to the right screening or consultation, with a clear note that it's a guide, not a diagnosis. You see who is ready to book and how soon.",
     examples: [
       { emoji: "🩺", text: "Are you due for a full health check?" },
       { emoji: "👁️", text: "Is it time for an eye test?" },
@@ -213,7 +213,7 @@ const PAGES: IndustryPage[] = [
       { emoji: "❤️", text: "Know your heart health risk" },
     ],
     starter:
-      "I run a private clinic. I want a quiz that helps people see which health check or consultation fits them, and shows me who is ready to book and how soon.",
+      "I run a private clinic. I want a scorecard that helps people see which health check or consultation fits them, and shows me who is ready to book and how soon.",
     namePlaceholder: "CarePoint Clinic Ikeja",
     demo: {
       brand: "CarePoint Clinic",

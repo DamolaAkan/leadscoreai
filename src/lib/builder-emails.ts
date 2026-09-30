@@ -103,7 +103,7 @@ function offerLine(ctx: EmailContext): string {
   const { fmt, PRO, OFF } = pricing(ctx);
   return ctx.offerEndsAt
     ? `Go live before <b>${day(ctx.offerEndsAt)}</b> and your first month is <b>${fmt(PRO - OFF)}</b> instead of ${fmt(PRO)}.`
-    : `Go live on Pro for ${fmt(PRO)} a month. Build your first quiz and go live within 48 hours to save ${fmt(OFF)} on your first month.`;
+    : `Go live on Pro for ${fmt(PRO)} a month. Build your first scorecard and go live within 48 hours to save ${fmt(OFF)} on your first month.`;
 }
 
 export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext): { subject: string; html: string } {
@@ -116,12 +116,12 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
         html: layout({
           heading: "You're in. Let's find your serious buyers.",
           body: [
-            `Welcome, ${name}. Describe your business in the chat and LeadScoreAI builds a quiz that tells you what each customer wants and whether they're ready to pay.`,
-            `You have <b>30 free AI edits</b> to build and try it. Every quiz includes a few willingness-to-pay questions, so every lead comes in with a score from 0 to 100.`,
-            `When you're happy with it, go live on Pro for ${fmt(PRO)} a month. Go live within 48 hours of building your first quiz and your first month is ${fmt(PRO - OFF)}.`,
+            `Welcome, ${name}. Describe your business in the chat and LeadScoreAI builds a Buyer Scorecard that tells you what each customer wants and whether they're ready to pay.`,
+            `You have <b>30 free AI edits</b> to build and try it. Every scorecard includes a few willingness-to-pay questions, so every lead comes in with a score from 0 to 100.`,
+            `When you're happy with it, go live on Pro for ${fmt(PRO)} a month. Go live within 48 hours of building your first scorecard and your first month is ${fmt(PRO - OFF)}.`,
             `LeadScoreAI isn't for every business. <a href="${APP_URL}/who-its-for" style="color:#6d28d9;">Read who it's for</a> before you start.`,
           ],
-          cta: { label: "Build my first quiz", href: builderUrl(o) },
+          cta: { label: "Build my first scorecard", href: builderUrl(o) },
           ps: `Tip: start with one sentence like “I sell hair extensions${usd ? "" : " in Lagos"} and want to know who's ready to buy.”`,
         }),
       };
@@ -131,29 +131,29 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
         html: layout({
           heading: esc(WHO_ITS_FOR_TITLE),
           body: [esc(WHO_ITS_FOR_INTRO), ...whoItsForHtml(), `<span style="color:#667085;">Damola Akanbi, founder of LeadScoreAI</span>`],
-          cta: { label: ctx.hasQuiz ? "Open my builder" : "Build my first quiz", href: builderUrl(o) },
+          cta: { label: ctx.hasQuiz ? "Open my builder" : "Build my first scorecard", href: builderUrl(o) },
           ps: `Want to print it or share it? It's on our website: <a href="${APP_URL}/who-its-for" style="color:#6d28d9;">${APP_URL.replace(/^https?:\/\//, "")}/who-its-for</a>`,
         }),
       };
     case "nudge_d1":
       return ctx.hasQuiz
         ? {
-            subject: "Your quiz is ready. Put it in front of customers",
+            subject: "Your scorecard is ready. Put it in front of customers",
             html: layout({
-              heading: "Your quiz is built. Now let it find your buyers.",
+              heading: "Your scorecard is built. Now let it find your buyers.",
               body: [
-                `Nice work, ${name}. Your quiz is ready to try in the builder. The next step is getting it in front of real customers on WhatsApp, Instagram or your website.`,
+                `Nice work, ${name}. Your scorecard is ready to try in the builder. The next step is getting it in front of real customers on WhatsApp, Instagram or your website.`,
                 offerLine(ctx),
               ],
               cta: { label: "Go live now", href: builderUrl(o) },
             }),
           }
         : {
-            subject: "Your first quiz is one message away",
+            subject: "Your first scorecard is one message away",
             html: layout({
-              heading: "Build your first quiz in one chat",
+              heading: "Build your first scorecard in one chat",
               body: [
-                `Hi ${name}, you haven't built your first quiz yet. It takes about a minute: tell the builder what you sell and who your customers are, and it drafts everything.`,
+                `Hi ${name}, you haven't built your first scorecard yet. It takes about a minute: tell the builder what you sell and who your customers are, and it drafts everything.`,
                 `Try one of these:<br>• “I install solar${usd ? "" : " in Abuja"}. Tell me which homes can afford it.”<br>• “I run a clinic. Help people find the right health check.”<br>• “I sell wigs. Match customers to the perfect hair.”`,
               ],
               cta: { label: "Start building", href: builderUrl(o) },
@@ -163,26 +163,26 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
       return {
         subject: "Know who's ready to pay before you reply",
         html: layout({
-          heading: "Not just a quiz. A quiz that finds your buyer.",
+          heading: "Not just a form. A scorecard that finds your buyer.",
           body: [
-            `Every LeadScoreAI quiz asks a few willingness-to-pay questions about budget, timing and commitment, in your brand's voice. Each lead gets a score from 0 to 100, so you call the ready ones first.`,
+            `Every LeadScoreAI scorecard asks a few willingness-to-pay questions about budget, timing and commitment, in your brand's voice. Each lead gets a score from 0 to 100, so you call the ready ones first.`,
             `<i>“With LeadScoreAI we were able to determine our prospects' willingness to pay. We were able to build our own data.”</i><br>Seni Olayemi, CEO, Oríkì Energy`,
             offerLine(ctx),
           ],
-          cta: { label: ctx.hasQuiz ? "Go live" : "Build my quiz", href: builderUrl(o) },
+          cta: { label: ctx.hasQuiz ? "Go live" : "Build my scorecard", href: builderUrl(o) },
         }),
       };
     case "nudge_d5":
       return {
-        subject: "Share your quiz where your customers already are",
+        subject: "Share your scorecard where your customers already are",
         html: layout({
           heading: "One tap to WhatsApp",
           body: [
-            `Once your quiz is live, you can share it on WhatsApp with a proper preview card, put the link in your Instagram bio or status, or add it to your website with one line of code.`,
+            `Once your scorecard is live, you can share it on WhatsApp with a proper preview card, put the link in your Instagram bio or status, or add it to your website with one line of code.`,
             `Every answer lands in your dashboard, scored Hot, Warm or Cold with a willingness-to-pay score, so you know exactly who to message first.`,
             offerLine(ctx),
           ],
-          cta: { label: ctx.hasQuiz ? "Go live and share" : "Build my quiz", href: builderUrl(o) },
+          cta: { label: ctx.hasQuiz ? "Go live and share" : "Build my scorecard", href: builderUrl(o) },
         }),
       };
     case "nudge_d7":
@@ -191,8 +191,8 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
         html: layout({
           heading: `Ready when you are, ${name}`,
           body: [
-            `It's been a week since you joined. Your quiz and your free AI edits are still waiting for you.`,
-            `Pro is ${fmt(PRO)} a month and includes 1,000 leads a month, 3 live quizzes, 150 AI edits a month and a willingness-to-pay score on every lead.`,
+            `It's been a week since you joined. Your scorecard and your free AI edits are still waiting for you.`,
+            `Pro is ${fmt(PRO)} a month and includes 1,000 leads a month, 3 live scorecards, 150 AI edits a month and a willingness-to-pay score on every lead.`,
             `Stuck, or need something the builder can't do? Reply to this email and our support team will help.`,
           ],
           cta: { label: "Open my builder", href: builderUrl(o) },
@@ -206,9 +206,9 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           body: [
             `Thanks, ${name}. ${ctx.amountPaid ? `We've received your payment of <b>${fmt(ctx.amountPaid)}</b> and ` : ""}Pro is active${ctx.periodEnd ? ` until <b>${day(ctx.periodEnd)}</b>` : ""}.`,
             ctx.quizLive
-              ? `Your quiz is now <b>live</b>. Share it on WhatsApp from the builder and watch your leads come in.`
-              : `You can now publish your quizzes. Open the builder, tap Publish, and share it on WhatsApp.`,
-            `Your plan includes 1,000 leads a month, 3 live quizzes and 150 AI edits a month. ${usd ? "It renews automatically each month, and you can update your card or cancel any time in Settings." : "We'll remind you a few days before it's time to renew."}`,
+              ? `Your scorecard is now <b>live</b>. Share it on WhatsApp from the builder and watch your leads come in.`
+              : `You can now publish your scorecards. Open the builder, tap Publish, and share it on WhatsApp.`,
+            `Your plan includes 1,000 leads a month, 3 live scorecards and 150 AI edits a month. ${usd ? "It renews automatically each month, and you can update your card or cancel any time in Settings." : "We'll remind you a few days before it's time to renew."}`,
           ],
           cta: { label: "Open my dashboard", href: builderUrl(o) },
         }),
@@ -222,19 +222,19 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
             `Hi ${name}, your LeadScoreAI Pro plan runs until <b>${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}</b>.`,
             usd
               ? `It renews automatically for ${fmt(PRO)} on your card, so there's nothing to do. To update your card or cancel, go to Settings.`
-              : `Renew for ${fmt(PRO)} to keep your quizzes live and your leads coming in. Pay by bank transfer, card or USSD in Settings.`,
+              : `Renew for ${fmt(PRO)} to keep your scorecards live and your leads coming in. Pay by bank transfer, card or USSD in Settings.`,
           ],
           cta: { label: usd ? "Manage my plan" : "Renew my plan", href: settingsUrl(o) },
         }),
       };
     case "lapsed":
       return {
-        subject: "Your Pro plan has ended: your quizzes are paused",
+        subject: "Your Pro plan has ended: your scorecards are paused",
         html: layout({
           heading: "We didn't receive your renewal",
           body: [
-            `Hi ${name}, your LeadScoreAI Pro plan ended${ctx.periodEnd ? ` on <b>${day(ctx.periodEnd)}</b>` : ""} and we didn't receive a renewal payment, so your quizzes are paused and aren't taking new answers.`,
-            `Everything is saved. Renew for ${fmt(PRO)} and your quizzes go straight back to work.`,
+            `Hi ${name}, your LeadScoreAI Pro plan ended${ctx.periodEnd ? ` on <b>${day(ctx.periodEnd)}</b>` : ""} and we didn't receive a renewal payment, so your scorecards are paused and aren't taking new answers.`,
+            `Everything is saved. Renew for ${fmt(PRO)} and your scorecards go straight back to work.`,
             `If you paid and still see this, reply to this email and we'll sort it out.`,
           ],
           cta: { label: "Renew my plan", href: settingsUrl(o) },

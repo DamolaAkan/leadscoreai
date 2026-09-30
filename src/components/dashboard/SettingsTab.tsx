@@ -456,9 +456,9 @@ export default function SettingsTab({
 
       {/* Quizzes */}
       <div className="bg-white rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Quizzes</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">Buyer Scorecards</h3>
         {quizzes.length === 0 ? (
-          <p className="text-gray-500">No quizzes found.</p>
+          <p className="text-gray-500">No scorecards found.</p>
         ) : (
           <div className="space-y-3">
             {quizzes.map((q) => (

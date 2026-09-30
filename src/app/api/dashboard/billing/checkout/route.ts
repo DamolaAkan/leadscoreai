@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       ["Email", email],
       ["WhatsApp", org.phone ? waLink(org.phone) : "Not given"],
       ["Amount", `${money(amount, currency)}${amount < price ? ` (${money(price - amount, currency)} go-live discount)` : ""}${usd ? " via Stripe" : ""}`],
-      ["Going live with", publishQuizId ? "A quiz is waiting to publish" : "No quiz picked"],
+      ["Going live with", publishQuizId ? "A scorecard is waiting to publish" : "No scorecard picked"],
       ["Reference", reference],
       ["When", lagosNow()],
       ["Next", "Not paid yet. If no 💰 payment alert follows, reach out."],
