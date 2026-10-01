@@ -1,3 +1,4 @@
+import { paystackSplitFor } from "@/lib/partners";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
@@ -123,6 +124,7 @@ export async function POST(request: Request) {
         callbackUrl,
         discountNaira: offer.discount,
         publishQuizId,
+        split: await paystackSplitFor(org.id, price - offer.discount),
       });
       if (!init?.status || !init?.data?.authorization_url) {
         console.error("[billing/checkout] paystack init failed:", init?.message);

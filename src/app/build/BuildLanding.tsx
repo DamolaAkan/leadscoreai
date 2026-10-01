@@ -718,6 +718,9 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               <span className="font-bold text-lg">LeadScoreAI</span>
             </div>
             <p className="mt-2 text-[14px] text-slate-500">Buyer Scorecards that find your buyers.</p>
+            <a href="/partners" className="mt-3 inline-block text-[14px] font-semibold text-violet-700 hover:text-violet-800">
+              Digital marketer? Become a partner →
+            </a>
           </div>
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">For your industry</p>

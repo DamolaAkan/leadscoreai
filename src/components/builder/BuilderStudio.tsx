@@ -157,6 +157,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const [tab, setTab] = useState<Tab>("chat");
   const [deskTab, setDeskTab] = useState<"preview" | "share">("preview");
   const [shareMsg, setShareMsg] = useState("");
+  const [demoCopied, setDemoCopied] = useState(false);
   const [taps, setTaps] = useState<Record<number, string>>({});
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -866,6 +867,28 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               </p>
             )}
           </div>
+
+          {!current.is_active && (
+            <div className="rounded-2xl bg-[#1C2333] border border-[#2B3245] p-4">
+              <p className="font-semibold text-[#F5F9FC]">Free demo link</p>
+              <p className="text-xs text-[#9DA2A6] mt-1 leading-relaxed">
+                Show a client exactly how it works before anyone pays. Answers aren&apos;t saved and no leads are collected.
+              </p>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(`${window.location.origin}/build/preview/${current.id}?demo=1`);
+                    setDemoCopied(true);
+                    setTimeout(() => setDemoCopied(false), 2000);
+                    trackClient("demo_link_copied", {}, current.id);
+                  } catch {}
+                }}
+                className="mt-3 w-full py-3 rounded-xl bg-[#2B3245] text-[#F5F9FC] text-sm font-semibold active:scale-[0.99] transition"
+              >
+                {demoCopied ? "Demo link copied" : "Copy demo link"}
+              </button>
+            </div>
+          )}
 
           {current.is_active && (
             <>

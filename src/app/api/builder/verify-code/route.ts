@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { generateDashboardSessionId } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { EMAIL_RE, escapeLike, normalizeWhatsApp, uniqueOrgSlug, waLink } from "@/lib/builder-server";
+import { activePartnerIdByRef, refCodeFromRequest } from "@/lib/partners";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { attributeVisitor, describeFirstTouch, sanitizeFirstTouch, track } from "@/lib/track";
 import { clientSignals, metaCookies, sendMetaEvent } from "@/lib/meta-capi";
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
     isNewAccount = true;
     const name = String(businessName || "").trim().slice(0, 80) || norm.split("@")[0];
     const slug = await uniqueOrgSlug(name);
+    const partnerId = await activePartnerIdByRef(refCodeFromRequest(request));
     const { data: created, error } = await supabase
       .from("organizations")
       .insert({
@@ -92,6 +94,7 @@ export async function POST(request: Request) {
         billing_currency: region.currency,
         country: region.country,
         region_signals: signals,
+        partner_id: partnerId,
       })
       .select("id, name, slug, phone")
       .single();

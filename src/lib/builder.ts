@@ -639,5 +639,5 @@ export const RESERVED_SLUGS = new Set([
   "microfinance", "mortgage", "policies", "quiz", "reset-password", "solar", "staff",
   "approvals", "client-onboarding", "deals", "earnings", "office-manager", "onboarding",
   "payouts", "profile", "team", "manifesto", "admin", "app", "www", "leadscoreai",
-  "_next", "static", "public", "assets", "favicon.ico", "builder-activity", "track", "proof", "logo", "logos",
+  "_next", "static", "public", "assets", "favicon.ico", "builder-activity", "track", "proof", "logo", "logos", "partners", "partner-payouts",
 ]);

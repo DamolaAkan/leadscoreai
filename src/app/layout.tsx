@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import RegisterSW from "@/components/pwa/RegisterSW";
+import RefCapture from "@/components/RefCapture";
 
 // Inter — the dashboard + scorecard design system font (applied on those roots
 // only, so the marketing site keeps its own type).
@@ -70,6 +71,7 @@ export default function RootLayout({
       >
         {children}
         <RegisterSW />
+        <RefCapture />
       </body>
     </html>
   );

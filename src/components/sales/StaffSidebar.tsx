@@ -9,6 +9,7 @@ interface NavItem {
   label: string;
   icon: string;
   superAdminOnly?: boolean;
+  founderOnly?: boolean; // the partner programme is Damola's alone
   newTab?: boolean;
 }
 
@@ -18,6 +19,7 @@ const SALES: NavItem[] = [
   { href: "/client-onboarding", label: "Client Activations", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
   { href: "/earnings", label: "Commission Ledger", icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" },
   { href: "/approvals", label: "Approvals", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+  { href: "/partner-payouts", label: "Partner Payouts", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", founderOnly: true },
   { href: "/payouts", label: "Payouts", icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", superAdminOnly: true },
 ];
 
@@ -58,6 +60,7 @@ export default function StaffSidebar({
 
   const renderItem = (item: NavItem) => {
     if (item.superAdminOnly && !superAdmin) return null;
+    if (item.founderOnly && !["akanbi@leadscoreai.com", "akanbidamola"].includes(user.email.toLowerCase())) return null;
     return (
       <Link
         key={item.href}

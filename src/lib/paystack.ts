@@ -204,6 +204,7 @@ export async function initTransaction(opts: {
   callbackUrl: string;
   discountNaira?: number; // go-live offer, first payment only
   publishQuizId?: string | null; // quiz to put live once this payment succeeds
+  split?: { subaccount: string; transaction_charge: number; bearer: "account" } | null; // partner commission
 }) {
   const discount = opts.discountNaira || 0;
   const secret = process.env.PAYSTACK_SECRET_KEY!;
@@ -221,7 +222,9 @@ export async function initTransaction(opts: {
         purpose: "leadscoreai_subscription",
         discount_naira: discount,
         publish_quiz_id: opts.publishQuizId || null,
+        partner_split: !!opts.split,
       },
+      ...(opts.split || {}),
       // Bank transfer first: it's how most Nigerians pay. No "bank" (pay with
       // online banking) option: it confused buyers and failed (2026-09-27).
       channels: ["bank_transfer", "card", "ussd", "qr"],

@@ -1,3 +1,4 @@
+import { recordPartnerEarning } from "@/lib/partners";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import {
@@ -83,6 +84,7 @@ async function onInvoicePaid(inv: Obj) {
     .update({ billing_status: "active", current_period_end: end.toISOString(), last_paid_at: new Date().toISOString() })
     .eq("id", org.id);
   await track("renewed", { orgId: org.id, props: { amount: paidUsd, currency: "USD", provider: "stripe" } });
+  await recordPartnerEarning({ orgId: org.id, paymentRef: String(inv.id ?? ""), clientPaid: usd(paidUsd), settled: false });
   await sendTeamAlert(`🔁 Renewal: ${org.name} paid ${usd(paidUsd)}`, [
     ["Business", org.name],
     ["Email", org.email ?? ""],

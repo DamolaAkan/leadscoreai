@@ -12,6 +12,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.leadscoreai.com"
 const FROM = { fromEmail: "hello@leadscoreai.com", fromName: "LeadScoreAI" };
 const SUPPORT = "stella@leadscoreai.com";
 export const TEAM_ALERTS = ["akanbi@leadscoreai.com", "stella@leadscoreai.com"];
+// The partner programme is Damola's alone: its alerts never go to the team.
+export const FOUNDER_ALERTS = ["akanbi@leadscoreai.com"];
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -276,7 +278,7 @@ export async function sendOwnerEmailOnce(
 
 // ── Team alerts (Damola + Stella) ─────────────────────────────────────────
 
-export async function sendTeamAlert(subject: string, rows: [string, string][]): Promise<void> {
+export async function sendTeamAlert(subject: string, rows: [string, string][], to: string[] = TEAM_ALERTS): Promise<void> {
   try {
     const apiKey = await getResendKey();
     if (!apiKey) return;
@@ -287,7 +289,7 @@ export async function sendTeamAlert(subject: string, rows: [string, string][]): 
       )
       .join("");
     const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;"><p style="margin:0 0 10px;font-weight:700;">${esc(subject)}</p><table style="border-collapse:collapse;">${table}</table></div>`;
-    await sendSequenceEmail({ to: TEAM_ALERTS, subject, html, apiKey, fromEmail: FROM.fromEmail, fromName: "LeadScoreAI Alerts" });
+    await sendSequenceEmail({ to, subject, html, apiKey, fromEmail: FROM.fromEmail, fromName: "LeadScoreAI Alerts" });
   } catch (e) {
     console.error("[builder-emails] team alert failed:", e);
   }

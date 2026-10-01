@@ -4,6 +4,7 @@
 // webhook alone. Safe to run twice: the first caller claims the subscription
 // (conditional update) and only it sends emails and alerts.
 import { createServiceClient } from "./supabase";
+import { recordPartnerEarning } from "./partners";
 import { STRIPE_APP, billingStatusFor, getSubscription, periodEndOf } from "./stripe";
 import { PRICING, editsFor, money } from "./money";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "./builder-emails";
@@ -166,6 +167,7 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
     },
     sessionId
   );
+  await recordPartnerEarning({ orgId: org.id, paymentRef: sessionId, clientPaid: usd(paidUsd), settled: false });
   await sendTeamAlert(`💰 New payment: ${org.name} is on Pro (USD)`, [
     ["Business", org.name],
     ["Email", org.email ?? ""],

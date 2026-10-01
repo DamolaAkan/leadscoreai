@@ -1,3 +1,4 @@
+import { recordPartnerEarning } from "@/lib/partners";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { verifyWebhookSignature, TIERS, Tier, GO_LIVE_DISCOUNT_NAIRA, tierPriceFloor, tierPriceFor } from "@/lib/paystack";
@@ -127,6 +128,12 @@ export async function POST(request: Request) {
         await track("paid", {
           orgId,
           props: { tier, amount_naira: Math.round(amountNaira), discount_naira: discount, self_serve: !!org?.self_serve },
+        });
+        await recordPartnerEarning({
+          orgId,
+          paymentRef: String(d.reference ?? ""),
+          clientPaid: naira(amountNaira),
+          settled: (meta as { partner_split?: boolean }).partner_split === true,
         });
 
         // Meta (Siteflipmarket dataset): Purchase for self-serve owners (ad conversions).
