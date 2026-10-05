@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Invoice } from "@/lib/invoice-types";
 import { formatCurrency, formatDate } from "@/lib/invoice-utils";
 import StatusBadge from "./StatusBadge";
@@ -9,7 +11,37 @@ interface InvoiceTableProps {
   invoices: Invoice[];
 }
 
+function authHeaders(): Record<string, string> {
+  const sid = typeof window !== "undefined" ? localStorage.getItem("lsai-admin-session") : null;
+  return sid ? { Authorization: `Bearer ${sid}` } : {};
+}
+
 export default function InvoiceTable({ invoices }: InvoiceTableProps) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Duplicate → fresh draft dated today; open it so the date can be adjusted.
+  async function duplicate(id: string) {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/invoices/${id}/duplicate`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.invoice?.id) {
+        router.push(`/invoices/${data.invoice.id}/edit`);
+      } else {
+        alert(data.error || "Could not duplicate the invoice.");
+        setBusyId(null);
+      }
+    } catch {
+      alert("Could not duplicate the invoice.");
+      setBusyId(null);
+    }
+  }
+
   if (invoices.length === 0) {
     return (
       <div className="text-center py-12 text-black/50">
@@ -52,12 +84,21 @@ export default function InvoiceTable({ invoices }: InvoiceTableProps) {
               </td>
               <td className="py-3 px-4 text-sm text-gray-500">{formatDate(invoice.issue_date)}</td>
               <td className="py-3 px-4 text-right">
-                <Link
-                  href={`/invoices/${invoice.id}`}
-                  className="text-[#7C3AED] hover:underline text-sm"
-                >
-                  View
-                </Link>
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => duplicate(invoice.id)}
+                    disabled={busyId === invoice.id}
+                    className="text-gray-500 hover:text-[#7C3AED] text-sm disabled:opacity-50"
+                  >
+                    {busyId === invoice.id ? "Duplicating…" : "Duplicate"}
+                  </button>
+                  <Link
+                    href={`/invoices/${invoice.id}`}
+                    className="text-[#7C3AED] hover:underline text-sm"
+                  >
+                    View
+                  </Link>
+                </div>
               </td>
             </tr>
           ))}
