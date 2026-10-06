@@ -969,7 +969,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               const t = TEMPLATES[k];
               const on = (current.template ?? "classic") === k;
               // Thumbnails show the owner's brand colour once they've set one.
-              const swatchBtn = color.toUpperCase() !== "#7C3AED" ? color : t.button ?? color;
+              const swatchBtn = !["#7C3AED", "#0F766E"].includes(color.toUpperCase()) ? color : t.button ?? color;
               return (
                 <button
                   key={k}

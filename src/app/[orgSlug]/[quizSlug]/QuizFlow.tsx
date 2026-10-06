@@ -108,7 +108,10 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   // template; a template's own colours apply only while the brand colour is
   // still the LeadScoreAI default purple.
   const brand = org.primary_color || "";
-  const customBrand = /^#[0-9a-f]{6}$/i.test(brand) && brand.toUpperCase() !== "#7C3AED";
+  // A real brand colour overrides a template's accent. LeadScoreAI violet is the
+  // default, and #0F766E is the teal the builder used to suggest to everyone,
+  // so neither counts as the owner's choice.
+  const customBrand = /^#[0-9a-f]{6}$/i.test(brand) && !["#7C3AED", "#0F766E"].includes(brand.toUpperCase());
   const accent = themed && customBrand ? brand : theme.accent ?? org.primary_color;
   const btn = themed && customBrand ? brand : theme.button ?? accent;
   const btnInk = themed ? inkOn(btn) : theme.buttonInk;
