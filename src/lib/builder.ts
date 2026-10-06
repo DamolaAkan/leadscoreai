@@ -402,8 +402,10 @@ export function slugify(s: string, fallback = "quiz"): string {
 }
 
 function safeUrl(u: string): string | null {
-  const s = u.trim();
+  let s = u.trim();
   if (!s) return null;
+  // Owners often type links without the scheme ("www.site.com/book", "wa.me/234…").
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[\w-]+(\.[\w-]+)+(\/|$|\?)/.test(s)) s = `https://${s}`;
   try {
     const url = new URL(s);
     return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
