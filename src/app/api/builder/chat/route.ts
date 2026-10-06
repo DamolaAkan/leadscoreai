@@ -234,7 +234,7 @@ export async function POST(request: Request) {
         if (err instanceof Anthropic.RateLimitError) {
           return NextResponse.json({ error: "The builder is busy. Try again in a minute." }, { status: 503 });
         }
-        if (err instanceof Anthropic.BadRequestError && turnSchema === fullSchema && /grammar/i.test(err.message)) {
+        if (err instanceof Anthropic.BadRequestError && turnSchema === fullSchema && /grammar|schema/i.test(err.message)) {
           console.error("[builder/chat] full schema rejected, using the basic schema:", err.message);
           await track("builder_schema_fallback", { orgId: user.organizationId, quizId, props: { reason: "grammar" }, request });
           turnSchema = basicSchema;

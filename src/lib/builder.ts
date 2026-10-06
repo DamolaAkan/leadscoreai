@@ -238,8 +238,41 @@ export const BUILDER_TURN_SCHEMA = {
   required: [...BUILDER_TURN_SCHEMA_BASE.required, "calculator"],
 } as const;
 
-// Fallback if the API ever rejects the full schema: plain quizzes, no calculator.
-export const BUILDER_TURN_SCHEMA_BASIC = BUILDER_TURN_SCHEMA_BASE;
+// Fallback if the API ever rejects the full schema: the original shape, with no
+// calculator and no result details/price (safeBand treats them as absent).
+const legacyBand = {
+  ...band,
+  properties: { label: band.properties.label, headline: band.properties.headline, body: band.properties.body, next_steps: band.properties.next_steps },
+  required: ["label", "headline", "body", "next_steps"],
+};
+const legacyDraftQuizSchema = {
+  ...draftQuizSchema,
+  properties: {
+    ...draftQuizSchema.properties,
+    outcomes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          key: { type: "string" },
+          title: { type: "string" },
+          description: { type: "string" },
+          recommendation: { type: "string" },
+        },
+        required: ["key", "title", "description", "recommendation"],
+        additionalProperties: false,
+      },
+    },
+    results: {
+      ...draftQuizSchema.properties.results,
+      properties: { hot: legacyBand, warm: legacyBand, cold: legacyBand, not_qualified: legacyBand },
+    },
+  },
+};
+export const BUILDER_TURN_SCHEMA_BASIC = {
+  ...BUILDER_TURN_SCHEMA_BASE,
+  properties: { ...BUILDER_TURN_SCHEMA_BASE.properties, quiz: { anyOf: [legacyDraftQuizSchema, { type: "null" }] } },
+};
 
 export const BUILDER_SYSTEM_PROMPT = `You are the Buyer Scorecard designer inside LeadScoreAI, a product that lets business owners create Buyer Scorecards by chatting. In every reply to the owner call what you build a "Buyer Scorecard" (or "scorecard"); never use the word "quiz". Most users run small and mid-sized businesses in Africa (Nigeria, Ghana, Kenya, South Africa and elsewhere), but anyone can use it. Typical users: skincare and beauty brands, travel consultants, education and study-abroad consultants, solar installers, lenders, real estate agents, coaches, clinics and agencies.
 
