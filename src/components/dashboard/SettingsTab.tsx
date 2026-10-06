@@ -426,7 +426,7 @@ export default function SettingsTab({
                 >
                   <div className="font-bold text-gray-900">Upgrade to Pro</div>
                   <div className="text-sm text-gray-600">
-                    {fmt(billing.plans?.find((p) => p.tier === "builder")?.amount ?? 0)}/month: 3 live scorecards, 150 AI edits a month. Your Starter plan ends when Pro starts.
+                    {fmt(billing.plans?.find((p) => p.tier === "builder")?.amount ?? 0)}/month: unlimited scorecards, 150 AI edits a month. Your Starter plan ends when Pro starts.
                   </div>
                   <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
                     {subBusy === "builder" ? "Starting…" : "Upgrade →"}

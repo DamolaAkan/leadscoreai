@@ -87,8 +87,8 @@ function pricing(ctx: EmailContext) {
     PLAN: ctx.plan === "starter" ? "Starter" : "Pro",
     INCLUDES:
       ctx.plan === "starter"
-        ? "100 leads a month, 1 live scorecard and 30 AI edits a month"
-        : "1,000 leads a month, 3 live scorecards and 150 AI edits a month",
+        ? "100 leads a month, 1 Buyer Scorecard and 30 AI edits a month"
+        : "1,000 leads a month, unlimited scorecards and 150 AI edits a month",
   };
 }
 
@@ -200,7 +200,7 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
           heading: `Ready when you are, ${name}`,
           body: [
             `It's been a week since you joined. Your scorecard and your free AI edits are still waiting for you.`,
-            `Pro is ${fmt(PRO)} a month and includes 1,000 leads a month, 3 live scorecards, 150 AI edits a month and a willingness-to-pay score on every lead.`,
+            `Pro is ${fmt(PRO)} a month and includes 1,000 leads a month, unlimited scorecards, 150 AI edits a month and a willingness-to-pay score on every lead.`,
             `Stuck, or need something the builder can't do? Reply to this email and our support team will help.`,
           ],
           cta: { label: "Open my builder", href: builderUrl(o) },

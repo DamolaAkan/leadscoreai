@@ -135,7 +135,7 @@ function planFor(cur: Currency) {
     topup: `${fmt(p.topupStep)} = ${p.editsPerStep} edits`,
     payWith: cur === "USD" ? "Pay by card · Renews monthly" : "Bank transfer, card or USSD",
     payAnswer:
-      `No. Building and previewing your scorecard is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.starter)} a month on Starter (1 live scorecard) or ${fmt(p.pro)} a month on Pro. ` +
+      `No. Building and previewing your scorecard is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.starter)} a month on Starter (1 scorecard) or ${fmt(p.pro)} a month on Pro. ` +
       `Go live on Pro within 48 hours of building your first scorecard and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
       (cur === "USD" ? "Pay by card; it renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD through Paystack. Cancel anytime."),
   };
@@ -146,7 +146,7 @@ const STARTER = {
   blurb: "Try it on one offer.",
   features: [
     "100 leads a month",
-    "1 live scorecard",
+    "1 Buyer Scorecard",
     "30 AI edits a month",
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",
@@ -159,7 +159,7 @@ const PLAN = {
   blurb: "Everything you need to find your buyers.",
   features: [
     "1,000 leads a month",
-    "3 live scorecards",
+    "Unlimited scorecards",
     TOPUP_FEATURE,
     "Willingness-to-pay score on every lead",
     "Every lead scored Hot, Warm or Cold",

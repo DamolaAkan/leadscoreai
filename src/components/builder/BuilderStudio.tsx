@@ -59,6 +59,7 @@ interface GoLiveInfo {
   price: number;
   currency: Currency; // NGN (Paystack) or USD (Stripe)
   offer: { eligible: boolean; discount: number; endsAt: string | null };
+  starter?: boolean; // paid Starter: one Buyer Scorecard
 }
 
 interface Credits {
@@ -223,6 +224,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
         setBilling({
           canPublish: b.canPublish !== false,
           price: b.plans?.find((p: { tier: string }) => p.tier === "builder")?.amount ?? PRICING[asCurrency(b.currency)].pro,
+          starter: b.paid === true && b.tier === "starter",
           currency: asCurrency(b.currency),
           offer: b.offer ?? { eligible: false, discount: 0, endsAt: null },
         })
@@ -1036,12 +1038,22 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
 
   const quizList = (
     <div className="space-y-1">
-      <button
-        onClick={() => openQuiz(null)}
-        className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold mb-2"
-      >
-        + New scorecard
-      </button>
+      {billing?.starter && quizzes.length >= 1 ? (
+        <p className="mb-2 rounded-xl border border-[#2B3245] bg-[#0E1525] px-3 py-2.5 text-[12.5px] leading-relaxed text-[#9DA2A6]">
+          Starter includes 1 Buyer Scorecard.{" "}
+          <a href={`/dashboard/${org?.slug ?? ""}?tab=settings`} className="font-semibold text-violet-300 underline underline-offset-2">
+            Upgrade to Pro
+          </a>{" "}
+          for unlimited scorecards.
+        </p>
+      ) : (
+        <button
+          onClick={() => openQuiz(null)}
+          className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold mb-2"
+        >
+          + New scorecard
+        </button>
+      )}
       {quizzes.length === 0 && <p className="text-xs text-[#9DA2A6] px-1 py-2">No scorecards yet.</p>}
       {quizzes.map((q) => (
         <button
@@ -1403,7 +1415,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                     <span className="text-[14px] text-[#9DA2A6]"> /month</span>
                   </div>
                 )}
-                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">3 live scorecards · 150 AI edits a month · no LeadScoreAI branding</p>
+                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">Unlimited scorecards · 150 AI edits a month · no LeadScoreAI branding</p>
               </button>
               <button
                 type="button"
@@ -1417,7 +1429,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
                   <span className="text-[22px] font-extrabold text-[#F5F9FC]">{fmt(price.starter)}</span>
                   <span className="text-[14px] text-[#9DA2A6]"> /month</span>
                 </div>
-                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">1 live scorecard · 30 AI edits a month</p>
+                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">1 scorecard · 30 AI edits a month</p>
               </button>
               <p className="pt-1 text-[12px] text-[#9DA2A6]">
                 {cur === "USD" ? "Pay by card, renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD. Cancel anytime."}

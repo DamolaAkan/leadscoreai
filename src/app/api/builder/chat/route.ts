@@ -5,6 +5,7 @@ import { getClaude, isClaudeConfigured } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logFeatureRequest, requireBuilderUser, uniqueQuizSlug } from "@/lib/builder-server";
 import { addUsage, costUsd, emptyUsage, getCreditStatus, loadOrgForCredits, recordEdit, type CreditStatus } from "@/lib/credits";
+import { isStarter, PLAN_LIMITS } from "@/lib/paystack";
 import { track } from "@/lib/track";
 import { isTemplateKey, pickTemplate } from "@/lib/quiz-templates";
 import { describeAnswers, sanitizeAnswers } from "@/lib/signup-scorecard";
@@ -107,6 +108,27 @@ export async function POST(request: Request) {
   if (history[0].role !== "user") history.shift();
 
   const supabase = createServiceClient();
+
+  // Starter includes one Buyer Scorecard: a brand-new one is refused (before any
+  // AI cost). Editing the existing scorecard, including a new version of one that
+  // already has leads, is still allowed.
+  if (!quizId && isStarter(creditOrg)) {
+    const { count: owned } = await supabase
+      .from("quizzes")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", user.organizationId)
+      .not("builder_config", "is", null);
+    if ((owned ?? 0) >= PLAN_LIMITS.starter.scorecards) {
+      await track("scorecard_limit", { orgId: user.organizationId, props: { tier: "starter" }, request });
+      return NextResponse.json(
+        {
+          error: "Starter includes 1 Buyer Scorecard. Keep improving the one you have, or upgrade to Pro in Settings for unlimited scorecards.",
+          code: "starter_limit",
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   // Load the current draft (if editing) so Claude edits it rather than starting over.
   let current: CurrentQuiz | null = null;

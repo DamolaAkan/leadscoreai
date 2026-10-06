@@ -15,12 +15,17 @@ export const TIERS = {
 } as const;
 export type Tier = keyof typeof TIERS;
 
-// What each self-serve plan includes. Live scorecards and AI edits are enforced;
-// leads are the headline allowance (not capped in code).
+// What each self-serve plan includes. Starter's one scorecard and both plans' AI
+// edits are enforced; leads are the headline allowance (not capped in code).
 export const PLAN_LIMITS = {
-  starter: { liveScorecards: 1, edits: 30, leads: 100 },
-  builder: { liveScorecards: 3, edits: 150, leads: 1000 },
+  starter: { scorecards: 1, edits: 30, leads: 100 },
+  builder: { scorecards: Infinity, edits: 150, leads: 1000 },
 } as const;
+
+// A paid Starter account: one Buyer Scorecard, one live at a time.
+export function isStarter(org: OrgBilling | null | undefined): boolean {
+  return !!org?.self_serve && org.billing_tier === "starter" && isPaid(org);
+}
 export type SelfServeTier = keyof typeof PLAN_LIMITS;
 export const isSelfServeTier = (t: unknown): t is SelfServeTier => t === "starter" || t === "builder";
 

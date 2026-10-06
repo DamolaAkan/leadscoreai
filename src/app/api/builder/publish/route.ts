@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireBuilderUser } from "@/lib/builder-server";
-import { canPublish, currencyFor, goLiveOffer, isPaid, OrgBilling, PLAN_LIMITS, tierPriceFor } from "@/lib/paystack";
+import { canPublish, currencyFor, goLiveOffer, isStarter, OrgBilling, tierPriceFor } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 import { track } from "@/lib/track";
 
@@ -56,21 +56,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Starter includes one live scorecard.
-    if (org?.self_serve && org.billing_tier === "starter" && isPaid(org as OrgBilling)) {
-      const { count: live } = await supabase
+    // Starter: one live scorecard at a time. Publishing a new version (made when
+    // the live one already had leads) takes the previous one offline.
+    if (isStarter(org as OrgBilling)) {
+      const { data: others } = await supabase
         .from("quizzes")
-        .select("id", { count: "exact", head: true })
+        .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq("organization_id", user.organizationId)
         .eq("is_active", true)
         .not("builder_config", "is", null)
-        .neq("id", quizId);
-      if ((live ?? 0) >= PLAN_LIMITS.starter.liveScorecards) {
-        await track("publish_blocked", { orgId: user.organizationId, quizId, props: { reason: "starter_limit" }, request });
-        return NextResponse.json(
-          { error: "Starter includes 1 live Buyer Scorecard. Unpublish your other one, or upgrade to Pro in Settings for 3." },
-          { status: 403 }
-        );
+        .neq("id", quizId)
+        .select("id");
+      if (others?.length) {
+        await track("quiz_unpublished", { orgId: user.organizationId, quizId: others[0].id, props: { reason: "starter_swap" }, request });
       }
     }
   }
