@@ -5,7 +5,7 @@
 // allowance). Every AI call is logged with its real token cost so we can watch
 // margins. Ledger: builder_credit_ledger.
 import { createServiceClient } from "./supabase";
-import { isPaid, type OrgBilling } from "./paystack";
+import { isPaid, type OrgBilling, billingPeriodStart } from "./paystack";
 
 export const FREE_EDITS = 30;
 export const PRO_MONTHLY_EDITS = 150;
@@ -76,10 +76,9 @@ type OrgForCredits = OrgBilling & { id: string };
 export async function getCreditStatus(org: OrgForCredits): Promise<CreditStatus> {
   const supabase = createServiceClient();
   const paid = isPaid(org);
-  const periodStart =
-    paid && org.current_period_end
-      ? new Date(new Date(org.current_period_end).getTime() - 30 * 24 * 3600 * 1000).toISOString()
-      : null;
+  // Paid: only edits since this month's payment count, so free edits used before
+  // subscribing never carry over (a new subscriber always starts on the full allowance).
+  const periodStart = paid ? billingPeriodStart(org)?.toISOString() ?? null : null;
 
   let allowanceQ = supabase
     .from("builder_credit_ledger")

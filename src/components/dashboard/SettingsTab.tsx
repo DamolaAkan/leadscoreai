@@ -28,6 +28,9 @@ interface SettingsTabProps {
   getAuthHeaders: () => Record<string, string>;
 }
 
+// Starter includes 100 leads a month (PLAN_LIMITS.starter.leads in lib/paystack).
+const STARTER_LEADS = 100;
+
 export default function SettingsTab({
   user,
   accent,
@@ -53,6 +56,7 @@ export default function SettingsTab({
     currency?: Currency;
     stripeManaged?: boolean;
     reason?: string;
+    periodLeads?: number | null; // Starter: real leads this billing month
   } | null>(null);
   const [subBusy, setSubBusy] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState("");
@@ -363,6 +367,31 @@ export default function SettingsTab({
               {billing?.paid ? "Active" : "Not subscribed"}
             </span>
           </div>
+
+          {billing?.paid && billing.tier === "starter" && typeof billing.periodLeads === "number" && (
+            <div>
+              <div className="flex justify-between text-sm text-gray-600 mb-1.5">
+                <span>Leads this month</span>
+                <b className="text-gray-900">
+                  {billing.periodLeads} of {STARTER_LEADS}
+                </b>
+              </div>
+              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(100, Math.round((billing.periodLeads / STARTER_LEADS) * 100))}%`,
+                    background: billing.periodLeads >= STARTER_LEADS * 0.8 ? "#d97706" : accent,
+                  }}
+                />
+              </div>
+              {billing.periodLeads >= STARTER_LEADS * 0.8 && (
+                <p className="text-xs text-amber-700 mt-1.5">
+                  After {STARTER_LEADS} leads your scorecard keeps collecting, but you&apos;ll need Pro to see them.
+                </p>
+              )}
+            </div>
+          )}
 
           {billing?.paid && billing?.currentPeriodEnd && (
             <p className="text-sm text-gray-600">

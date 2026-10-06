@@ -135,18 +135,22 @@ function LockScreen({
       setBusy(null);
     }
   };
-  const discount = info.offer?.eligible ? info.offer.discount : 0;
+  // Starter over its monthly leads: the only way on is Pro (no go-live discount).
+  const overPlan = info.reason === "plan_leads_exhausted";
+  const discount = !overPlan && info.offer?.eligible ? info.offer.discount : 0;
   const fmt = (n: number) => money(n, info.currency);
 
   const limit = info.leadLimit ?? 10;
-  const headline =
-    info.reason === "trial_expired"
+  const headline = overPlan
+    ? `You've reached your Starter limit of ${limit} leads this month`
+    : info.reason === "trial_expired"
       ? `Your ${info.trialDays ?? 30}-day free trial has ended`
       : `You've used all ${limit} of your free leads`;
-  const plans = info.plans ?? [
+  const allPlans = info.plans ?? [
     { tier: "core", label: "Core", amount: info.prices?.core ?? 130000 },
     { tier: "pro", label: "Pro", amount: info.prices?.pro ?? 250000 },
   ];
+  const plans = overPlan ? allPlans.filter((p) => p.tier === "builder") : allPlans;
 
   return (
     <div
@@ -165,11 +169,22 @@ function LockScreen({
         </div>
         <h1 className="text-2xl font-bold text-[#16202e] mb-2">{headline}</h1>
         <p className="text-[#667085] leading-relaxed mb-1 max-w-md mx-auto">
-          {orgName}&apos;s Buyer Scorecard is still live and collecting leads, but your dashboard is
-          locked until you subscribe.
+          {overPlan ? (
+            <>
+              {orgName}&apos;s Buyer Scorecard is still live and collecting leads. You have{" "}
+              <b>{Math.max(0, (info.leadsUsed ?? limit) - limit)} more</b> waiting. Upgrade to Pro to see them.
+            </>
+          ) : (
+            <>
+              {orgName}&apos;s Buyer Scorecard is still live and collecting leads, but your dashboard is locked
+              until you subscribe.
+            </>
+          )}
         </p>
         <p className="text-sm text-[#98a2b3] mb-6">
-          Subscribe to unlock every lead waiting for you, plus analytics and predictive insights.
+          {overPlan
+            ? "Pro includes 1,000 leads a month, unlimited scorecards and 150 AI edits. Your Starter plan ends when Pro starts."
+            : "Subscribe to unlock every lead waiting for you, plus analytics and predictive insights."}
         </p>
 
         {discount > 0 && (

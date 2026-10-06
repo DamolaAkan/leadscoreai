@@ -22,6 +22,15 @@ export const PLAN_LIMITS = {
   builder: { scorecards: Infinity, edits: 150, leads: 1000 },
 } as const;
 
+// Start of the current paid month: the last payment (renewals set it), else 30
+// days before the period end. Used for monthly edits and Starter's lead allowance.
+export function billingPeriodStart(org: OrgBilling | null | undefined): Date | null {
+  if (!org?.current_period_end) return null;
+  const fallback = new Date(new Date(org.current_period_end).getTime() - 30 * 24 * 3600 * 1000);
+  const lastPaid = org.last_paid_at ? new Date(org.last_paid_at) : null;
+  return lastPaid && lastPaid > fallback && lastPaid <= new Date() ? lastPaid : fallback;
+}
+
 // A paid Starter account: one Buyer Scorecard, one live at a time.
 export function isStarter(org: OrgBilling | null | undefined): boolean {
   return !!org?.self_serve && org.billing_tier === "starter" && isPaid(org);
@@ -151,6 +160,7 @@ export type AccessReason =
   | "pending_activation"
   | "trial_active"
   | "leads_exhausted"
+  | "plan_leads_exhausted" // paid Starter past its monthly lead allowance: upgrade to see leads
   | "trial_expired"
   | "build_free"; // self-serve, unpaid: builds free, can't publish yet
 
@@ -172,7 +182,8 @@ export interface AccessState {
 // - anything else (trial/free/expired) → locked once 10 real leads OR 30 days hit.
 export function computeAccess(
   org: OrgBilling | null | undefined,
-  realLeadCount: number
+  realLeadCount: number,
+  periodLeadCount = 0 // real leads in the current billing month (Starter's allowance)
 ): AccessState {
   const tier = org?.billing_tier ?? null;
   const paid = isPaid(org);
@@ -183,6 +194,11 @@ export function computeAccess(
     return { ...base, locked: false, trialEndsAt: null, reason: "grandfathered" };
   }
   if (paid) {
+    // Starter includes 100 leads a month. Past that the scorecard keeps working and
+    // keeps collecting; only the dashboard locks until they upgrade to Pro.
+    if (org?.billing_tier === "starter" && periodLeadCount > PLAN_LIMITS.starter.leads) {
+      return { ...base, leadsUsed: periodLeadCount, leadLimit: PLAN_LIMITS.starter.leads, locked: true, trialEndsAt: null, reason: "plan_leads_exhausted" };
+    }
     return { ...base, locked: false, trialEndsAt: null, reason: "paid" };
   }
   // Self-serve builder accounts are never locked out: building is free, and

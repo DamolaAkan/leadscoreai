@@ -14,6 +14,7 @@ import {
   trialDaysFor,
   goLiveOffer,
   canPublish,
+  billingPeriodStart,
 } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 
@@ -54,7 +55,30 @@ export async function GET(request: Request) {
   }
   const realLeadCount = Math.max(0, (totalLeads ?? 0) - testLeads);
 
-  const access = computeAccess(b, realLeadCount);
+  // Starter's monthly lead allowance: real leads since this month's payment.
+  let periodLeadCount = 0;
+  const periodStart = b.billing_tier === "starter" && isPaid(b) ? billingPeriodStart(b) : null;
+  if (periodStart) {
+    const since = periodStart.toISOString();
+    const { count: inPeriod } = await supabase
+      .from("quiz_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", user.organizationId)
+      .gte("created_at", since);
+    let testInPeriod = 0;
+    if (orgEmail) {
+      const { count } = await supabase
+        .from("quiz_responses")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", user.organizationId)
+        .gte("created_at", since)
+        .ilike("contact_email", orgEmail);
+      testInPeriod = count ?? 0;
+    }
+    periodLeadCount = Math.max(0, (inPeriod ?? 0) - testInPeriod);
+  }
+
+  const access = computeAccess(b, realLeadCount, periodLeadCount);
   const firstQuizAt = b.self_serve ? await firstBuilderQuizAt(user.organizationId) : null;
 
   return NextResponse.json({
@@ -82,6 +106,8 @@ export async function GET(request: Request) {
     leadsUsed: access.leadsUsed,
     leadLimit: access.leadLimit,
     leadsRemaining: Math.max(0, access.leadLimit - access.leadsUsed),
+    // Starter only: real leads this billing month, against its allowance.
+    periodLeads: periodStart ? periodLeadCount : null,
     trialEndsAt: access.trialEndsAt,
   });
 }
