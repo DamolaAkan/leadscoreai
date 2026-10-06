@@ -26,6 +26,8 @@ import { computeMatchOutcome, type BuilderOutcome } from "@/lib/builder";
 import { calcPoints, computeCalc, defaultInputs, describeCalc, formatMoney, type CalcInputs } from "@/lib/calculator";
 import CalculatorStep from "./CalculatorStep";
 import { themeFor } from "@/lib/quiz-templates";
+import { styleV2For } from "@/lib/quiz-styles-v2";
+import { Screen, StyledStart, StyledProgress, StyledAnswers, StyledNav, QuestionEyebrow, StyledResultHero, type V2Ctx } from "./StyledFlow";
 
 const SUPPORTED_COUNTRIES: Country[] = [
   "US", "GB", "CA", "NG", "AE", "SA", "QA", "ZA", "GH", "AU",
@@ -125,6 +127,39 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
       <style>{`.phone-input-wrapper input{background:transparent;color:inherit;outline:none;border:0}`}</style>
     </>
   ) : null;
+
+  // Styles v2: every builder scorecard gets its style's own layout (StyledFlow).
+  // The owner's real brand colour still drives buttons and selections.
+  const v2 = !!builder;
+  const sv = styleV2For(theme.key);
+  const v2Sel = customBrand ? brand : sv.sel;
+  const v2Btn = customBrand ? brand : sv.btn;
+  const v2Ctx: V2Ctx = {
+    v: sv,
+    btn: v2Btn,
+    btnInk: customBrand ? inkOn(brand) : sv.btnInk,
+    sel: v2Sel,
+    selInk: inkOn(v2Sel),
+    emph: customBrand ? brand : sv.emph,
+  };
+  const v2Fonts = v2 ? (
+    <>
+      {sv.fonts && <link rel="stylesheet" href={sv.fonts} />}
+      <style>{`.phone-input-wrapper input{background:transparent;color:inherit;outline:none;border:0}`}</style>
+    </>
+  ) : null;
+  const v2Logo = (size: number, radius: number) =>
+    org.logo_url ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={org.logo_url} alt={org.name} style={{ width: size, height: size, borderRadius: radius, objectFit: "cover" }} />
+    ) : (
+      <div
+        className="flex items-center justify-center font-bold flex-shrink-0"
+        style={{ width: size, height: size, borderRadius: radius, background: v2Btn, color: v2Ctx.btnInk, fontSize: size / 2.3 }}
+      >
+        {org.name[0]}
+      </div>
+    );
 
   // Detect user's country for phone input default
   useEffect(() => {
@@ -471,6 +506,421 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
   ) : null;
 
 
+  // Contact details step (shared by every layout).
+  const contactCard = (
+            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]" style={tx({ background: theme.cardBg, boxShadow: theme.cardShadow, borderRadius: theme.cardRadius, border: `1px solid ${theme.cardBorder}` })}>
+              <h2
+                className="text-2xl font-bold text-center mb-2"
+                style={{ color: theme.title, ...tx({ fontFamily: theme.headFont, fontWeight: theme.headWeight ?? 700, fontSize: 34 }) }}
+              >
+                Almost there!
+              </h2>
+              <p className="text-center mb-7 text-sm" style={{ color: theme.muted }}>
+                Enter your details to see your personalised results.
+              </p>
+
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
+                    placeholder="John Smith"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                {quiz.collect_company && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
+                        Company Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={contactCompany}
+                        onChange={(e) => setContactCompany(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
+                        onFocus={inputFocus}
+                        onBlur={inputBlur}
+                        placeholder="Your microfinance bank or company"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
+                        Website <span style={{ color: "#94a3b8" }}>(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={contactWebsite}
+                        onChange={(e) => setContactWebsite(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
+                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
+                        onFocus={inputFocus}
+                        onBlur={inputBlur}
+                        placeholder="www.yourcompany.com"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
+                    Phone Number
+                  </label>
+                  <PhoneInput
+                    international
+                    defaultCountry={detectedCountry}
+                    countries={SUPPORTED_COUNTRIES}
+                    value={contactPhone}
+                    onChange={(val) => setContactPhone(val || "")}
+                    className="phone-input-wrapper w-full px-4 py-2.5 rounded-lg border text-[15px]"
+                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }), "--PhoneInputCountryFlag-height": "1em" } as unknown as React.CSSProperties}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-lg text-white font-semibold text-base disabled:opacity-60 mt-2"
+                  style={{ backgroundColor: themed ? btn : accent, ...btnStyle }}
+                >
+                  {isSubmitting ? "Calculating…" : "See my results →"}
+                </button>
+              </form>
+            </div>
+  );
+
+  // Results for builder scorecards (Qualify or Match).
+  const builderResults =
+    step === "results" && qualification && builder
+      ? (() => {
+            const firstName = contactName.split(" ")[0] || "there";
+            const band = builder.results[qualification];
+
+            // Each answer with the insight the AI wrote for it, for the breakdown.
+            const picks = answers.flatMap((a) => {
+              const q = questions.find((x) => x.id === a.questionId);
+              const o = q?.options.find((x) => x.value === a.answerValue);
+              if (!q || !o) return [];
+              const topic = builder.topics?.[q.question_order - 1] || q.question_text;
+              const level: "strong" | "ok" | "work" | "none" =
+                q.max_points <= 0
+                  ? "none"
+                  : o.points >= q.max_points
+                  ? "strong"
+                  : o.points <= q.max_points * 0.4
+                  ? "work"
+                  : "ok";
+              return [{ q, o, topic, level }];
+            });
+            const marker = {
+              strong: { icon: "✓", color: "#16a34a", bg: "#dcfce7" },
+              ok: { icon: "•", color: "#2563eb", bg: "#dbeafe" },
+              work: { icon: "!", color: "#d97706", bg: "#fef3c7" },
+              none: { icon: "•", color: accent, bg: accent + "1a" },
+            } as const;
+            // Viral loop: people who finish a quiz pass it on to friends on WhatsApp.
+            const shareUrl =
+              typeof window !== "undefined" ? `${window.location.origin}/${org.slug}/${quiz.slug}` : "";
+            // A WhatsApp link gets a proper green WhatsApp button.
+            const isWa = !!quiz.cta_url && /(wa\.me|whatsapp\.com)/i.test(quiz.cta_url);
+            const waIcon = (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.2.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.7-.1 1.2Z" />
+              </svg>
+            );
+            const ctaLabel = builder.cta_text || (isWa ? "Chat on WhatsApp" : "Get in touch");
+            // Their calculator figures, recomputed from what they entered.
+            const estimate =
+              calc && calcInputs && answers.some((a) => a.answerValue === "calculator")
+                ? (() => {
+                    const r = computeCalc(calc, calcInputs);
+                    const reverse = calc.type === "loan" && calcInputs.mode === "budget";
+                    return (
+                      <div
+                        className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center"
+                        style={tx({ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: theme.cardRadius, boxShadow: theme.cardShadow })}
+                      >
+                        <h3 className="text-base font-semibold" style={{ color: theme.text }}>
+                          Your estimate
+                        </h3>
+                        <p className="font-extrabold mt-2" style={{ fontSize: "clamp(24px, 5vw, 32px)", color: accent }}>
+                          {reverse
+                            ? `Up to ${formatMoney(r.maxPrice ?? 0, calc.currency)}`
+                            : `${formatMoney(r.monthly, calc.currency)} a month`}
+                        </p>
+                        <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.body }}>
+                          {describeCalc(calc, calcInputs, r)}
+                        </p>
+                        <p className="text-xs mt-3" style={{ color: theme.faint }}>
+                          An estimate to guide you, not a loan offer. {org.name} will confirm your exact terms.
+                        </p>
+                      </div>
+                    );
+                  })()
+                : null;
+
+            // ── Template results: an elegant hero card with the WhatsApp CTA inside ──
+            {
+              const cardS: React.CSSProperties = {
+                background: theme.cardBg,
+                border: `1px solid ${theme.cardBorder}`,
+                borderRadius: sv.radius <= 4 ? sv.radius : theme.cardRadius,
+                boxShadow: theme.cardShadow,
+              };
+              const heading: React.CSSProperties = {
+                fontFamily: theme.headFont,
+                fontWeight: theme.headWeight ?? 700,
+                color: theme.title,
+                letterSpacing: "-0.01em",
+              };
+              const rowsT = (rows: typeof picks) =>
+                rows
+                  .filter((r) => r.o.insight)
+                  .map((r) => (
+                    <div key={r.q.id} className="flex gap-3 py-3.5 border-t first:border-t-0" style={{ borderColor: theme.line }}>
+                      <span
+                        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={
+                          r.level === "none"
+                            ? { backgroundColor: btn + "22", color: theme.dark ? "#ffffff" : btn }
+                            : { backgroundColor: marker[r.level].bg, color: marker[r.level].color }
+                        }
+                      >
+                        {marker[r.level].icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold" style={{ color: theme.text }}>
+                          {r.topic}
+                          <span className="font-normal" style={{ color: theme.faint }}>
+                            {" "}· {r.o.emoji ? `${r.o.emoji} ` : ""}
+                            {r.o.text}
+                          </span>
+                        </p>
+                        <p className="text-sm mt-1 leading-relaxed" style={{ color: theme.body }}>
+                          {r.o.insight}
+                        </p>
+                      </div>
+                    </div>
+                  ));
+              const section = (title: string, children: React.ReactNode) => (
+                <div className="p-7 md:p-8" style={cardS}>
+                  <h3 className="mb-2" style={{ ...heading, fontSize: 26 }}>
+                    {title}
+                  </h3>
+                  {children}
+                </div>
+              );
+              const nextT = band.next_steps?.length
+                ? section(
+                    "Your next steps",
+                    <ol className="space-y-3 mt-3">
+                      {band.next_steps.map((st, i) => (
+                        <li key={i} className="flex gap-3 items-start">
+                          <span
+                            className="flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
+                            style={{ backgroundColor: btn, color: btnInk }}
+                          >
+                            {i + 1}
+                          </span>
+                          <span className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
+                            {st}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )
+                : null;
+              const shareT = !preview && shareUrl ? (
+                <div className="text-center">
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Take this quick 2-minute check: ${shareUrl}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm border-2"
+                    style={{ borderColor: "#25D366", color: sv.resultDark || theme.dark ? "#25D366" : "#128C7E", borderRadius: 999 }}
+                  >
+                    {waIcon}
+                    Share with a friend
+                  </a>
+                </div>
+              ) : null;
+              const note = (
+                <p className="text-center text-sm" style={{ color: sv.resultDark ? "rgba(255,255,255,0.72)" : sv.faint }}>
+                  {org.name} will be in touch at {contactEmail || "the details you shared"}.
+                </p>
+              );
+
+              // Styles v2 hero, shared by Match and Qualify results.
+              const cleanDetails = (d: unknown) =>
+                Array.isArray(d)
+                  ? d
+                      .filter((x): x is { label: string; value: string } => !!x && typeof x.label === "string" && typeof x.value === "string" && !!x.value.trim())
+                      .slice(0, 6)
+                  : [];
+              const heroFor = (headline: string, body: string, tier: string, details: unknown, price: unknown) => (
+                <StyledResultHero
+                  ctx={v2Ctx}
+                  percentage={percentage}
+                  tierLabel={tier}
+                  tierColor={TIER_COLORS[qualification]}
+                  headline={headline}
+                  body={body}
+                  firstName={firstName}
+                  orgName={org.name}
+                  details={cleanDetails(details)}
+                  price={typeof price === "string" ? price.trim() : ""}
+                  bars={picks.filter((r) => r.q.max_points > 0).map((r) => ({ topic: r.topic, ratio: r.o.points / r.q.max_points }))}
+                  insights={picks.filter((r) => r.o.insight).map((r) => ({ topic: r.topic, text: r.o.insight as string, good: r.level === "strong" || r.level === "ok" || r.level === "none" }))}
+                  steps={band.next_steps ?? []}
+                  cta={quiz.cta_url ? { href: quiz.cta_url, label: ctaLabel, isWa } : null}
+                  resultImg={builder.images?.result ?? null}
+                  isMatch={builder.kind === "match" && !!matchOutcome}
+                />
+              );
+
+              if (builder.kind === "match" && matchOutcome) {
+                const whyPicks = picks.filter((r) => r.o.outcome === matchOutcome.key && r.o.insight).slice(0, 4);
+                const why = rowsT(whyPicks);
+                // Only answers not already explained above.
+                const good = rowsT(picks.filter((r) => r.q.max_points > 0 && !whyPicks.includes(r)));
+                return (
+                  <div className="space-y-5">
+                    {heroFor(matchOutcome.title, matchOutcome.description, `${percentage}% match`, matchOutcome.details, matchOutcome.price)}
+                    {estimate}
+                    {why.length ? section("Why this fits you", why) : null}
+                    {matchOutcome.recommendation
+                      ? section(
+                          "Our recommendation",
+                          <p className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
+                            {matchOutcome.recommendation}
+                          </p>
+                        )
+                      : null}
+                    {good.length ? section("Good to know", good) : null}
+                    {sv.result === "plan" ? null : nextT}
+                    {shareT}
+                    {note}
+                  </div>
+                );
+              }
+
+              const rows = rowsT(picks);
+              return (
+                <div className="space-y-5">
+                  {heroFor(band.headline, band.body, band.label, band.details, band.price)}
+                  {estimate}
+                  {rows.length && sv.result !== "letter" ? section("Your answers, analysed", rows) : null}
+                  {sv.result === "plan" ? null : nextT}
+                  {shareT}
+                  {note}
+                </div>
+              );
+            }
+
+          })()
+      : null;
+
+  // ── STYLES v2: builder scorecards ──
+  if (v2) {
+    const q = questions[currentQ];
+    const topicAt = (i: number) => builder?.topics?.[(questions[i]?.question_order ?? i + 1) - 1] ?? "";
+    if (step === "start") {
+      return (
+        <div ref={rootRef}>
+          {v2Fonts}
+          {previewBanner}
+          <StyledStart
+            ctx={v2Ctx}
+            orgName={org.name}
+            logo={v2Logo}
+            initial={org.name[0] ?? "•"}
+            headline={quiz.start_headline}
+            sub={quiz.start_subheadline}
+            ctaText={quiz.start_cta_text}
+            count={questions.length}
+            topics={(builder?.topics ?? []).filter(Boolean)}
+            heroImg={builder?.images?.hero ?? null}
+            onStart={handleStart}
+            busy={isSubmitting}
+            embed={embed}
+          />
+        </div>
+      );
+    }
+    const screenBg = step === "results" ? sv.resultBg : step === "questions" ? sv.qBg ?? sv.bg : sv.bg;
+    const footInk = step === "results" ? (sv.resultDark ? "rgba(255,255,255,0.55)" : sv.faint) : sv.dark ? "rgba(255,255,255,0.5)" : sv.faint;
+    return (
+      <div ref={rootRef}>
+        {v2Fonts}
+        {previewBanner}
+        <Screen bg={screenBg} font={sv.bodyFont} embed={embed}>
+          <div className="flex-1 flex flex-col gap-6 px-5 sm:px-6 pt-6 pb-8">
+            {step === "questions" && q && (
+              <>
+                <StyledProgress ctx={v2Ctx} index={currentQ} total={questions.length} topic={topicAt(currentQ)} onBack={handleBack} />
+                <div className="flex flex-col gap-2.5">
+                  <QuestionEyebrow ctx={v2Ctx} topic={topicAt(currentQ)} index={currentQ} total={questions.length} />
+                  <h2 style={{ fontFamily: sv.headFont, fontWeight: sv.headWeight, fontSize: "clamp(27px, 7vw, 32px)", lineHeight: 1.1, letterSpacing: sv.headWeight >= 700 ? "-0.02em" : "0", color: sv.dark ? "#ffffff" : sv.ink, margin: 0 }}>
+                    {q.question_text}
+                  </h2>
+                </div>
+                {q.question_type === "calculator" && calc && calcInputs ? (
+                  <CalculatorStep config={calc} inputs={calcInputs} accent={v2Sel} onChange={setCalcInputs} />
+                ) : (
+                  <StyledAnswers ctx={v2Ctx} options={q.options} selected={selectedOption} onSelect={setSelectedOption} />
+                )}
+                <div className="mt-auto pt-2">
+                  <StyledNav
+                    ctx={v2Ctx}
+                    onBack={handleBack}
+                    onNext={handleAnswer}
+                    label={isSubmitting ? "Saving…" : currentQ < questions.length - 1 ? "Next" : "Continue"}
+                    disabled={(!selectedOption && q.question_type !== "calculator") || isSubmitting}
+                  />
+                </div>
+              </>
+            )}
+            {step === "contact" && contactCard}
+            {builderResults}
+          </div>
+          <p className="pb-6 text-center text-[12px] font-medium" style={{ color: footInk }}>
+            All responses are confidential
+            {!hideBranding(org) && " · Powered by LeadScoreAI"}
+          </p>
+        </Screen>
+      </div>
+    );
+  }
+
   // ── START — dark hero ──
   if (step === "start") {
     return (
@@ -710,580 +1160,10 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
           )}
 
           {/* CONTACT FORM */}
-          {step === "contact" && (
-            <div className="bg-white rounded-xl p-7 md:p-10 shadow-[0_4px_12px_rgba(0,0,0,0.06)]" style={tx({ background: theme.cardBg, boxShadow: theme.cardShadow, borderRadius: theme.cardRadius, border: `1px solid ${theme.cardBorder}` })}>
-              <h2
-                className="text-2xl font-bold text-center mb-2"
-                style={{ color: theme.title, ...tx({ fontFamily: theme.headFont, fontWeight: theme.headWeight ?? 700, fontSize: 34 }) }}
-              >
-                Almost there!
-              </h2>
-              <p className="text-center mb-7 text-sm" style={{ color: theme.muted }}>
-                Enter your details to see your personalised results.
-              </p>
-
-              <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
-                    onFocus={inputFocus}
-                    onBlur={inputBlur}
-                    placeholder="John Smith"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
-                    onFocus={inputFocus}
-                    onBlur={inputBlur}
-                    placeholder="john@example.com"
-                  />
-                </div>
-
-                {quiz.collect_company && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
-                        Company Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={contactCompany}
-                        onChange={(e) => setContactCompany(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
-                        onFocus={inputFocus}
-                        onBlur={inputBlur}
-                        placeholder="Your microfinance bank or company"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
-                        Website <span style={{ color: "#94a3b8" }}>(optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={contactWebsite}
-                        onChange={(e) => setContactWebsite(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border text-[15px] outline-none"
-                        style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }) }}
-                        onFocus={inputFocus}
-                        onBlur={inputBlur}
-                        placeholder="www.yourcompany.com"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: theme.body }}>
-                    Phone Number
-                  </label>
-                  <PhoneInput
-                    international
-                    defaultCountry={detectedCountry}
-                    countries={SUPPORTED_COUNTRIES}
-                    value={contactPhone}
-                    onChange={(val) => setContactPhone(val || "")}
-                    className="phone-input-wrapper w-full px-4 py-2.5 rounded-lg border text-[15px]"
-                    style={{ borderColor: theme.inputBorder, color: theme.inputInk, backgroundColor: theme.inputBg, ...tx({ borderRadius: 14 }), "--PhoneInputCountryFlag-height": "1em" } as unknown as React.CSSProperties}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 rounded-lg text-white font-semibold text-base disabled:opacity-60 mt-2"
-                  style={{ backgroundColor: themed ? btn : accent, ...btnStyle }}
-                >
-                  {isSubmitting ? "Calculating…" : "See my results →"}
-                </button>
-              </form>
-            </div>
-          )}
+          {step === "contact" && contactCard}
 
           {/* BUILDER RESULT — quizzes made in the chat builder (Qualify or Match) */}
-          {step === "results" && qualification && builder && (() => {
-            const firstName = contactName.split(" ")[0] || "there";
-            const band = builder.results[qualification];
-
-            // Each answer with the insight the AI wrote for it, for the breakdown.
-            const picks = answers.flatMap((a) => {
-              const q = questions.find((x) => x.id === a.questionId);
-              const o = q?.options.find((x) => x.value === a.answerValue);
-              if (!q || !o) return [];
-              const topic = builder.topics?.[q.question_order - 1] || q.question_text;
-              const level: "strong" | "ok" | "work" | "none" =
-                q.max_points <= 0
-                  ? "none"
-                  : o.points >= q.max_points
-                  ? "strong"
-                  : o.points <= q.max_points * 0.4
-                  ? "work"
-                  : "ok";
-              return [{ q, o, topic, level }];
-            });
-            const marker = {
-              strong: { icon: "✓", color: "#16a34a", bg: "#dcfce7" },
-              ok: { icon: "•", color: "#2563eb", bg: "#dbeafe" },
-              work: { icon: "!", color: "#d97706", bg: "#fef3c7" },
-              none: { icon: "•", color: accent, bg: accent + "1a" },
-            } as const;
-            const insightRows = (rows: typeof picks) =>
-              rows
-                .filter((r) => r.o.insight)
-                .map((r) => (
-                  <div key={r.q.id} className="flex gap-3 py-3 border-t first:border-t-0" style={{ borderColor: "#f1f5f9" }}>
-                    <span
-                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: marker[r.level].bg, color: marker[r.level].color }}
-                    >
-                      {marker[r.level].icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-semibold" style={{ color: "#1e293b" }}>
-                        {r.topic}
-                        <span className="font-normal" style={{ color: "#94a3b8" }}>
-                          {" "}· {r.o.emoji ? `${r.o.emoji} ` : ""}
-                          {r.o.text}
-                        </span>
-                      </p>
-                      <p className="text-sm mt-1 leading-relaxed" style={{ color: "#475569" }}>
-                        {r.o.insight}
-                      </p>
-                    </div>
-                  </div>
-                ));
-            const nextSteps = band.next_steps?.length ? (
-              <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                <h3 className="text-base font-semibold mb-4" style={{ color: "#1e293b" }}>
-                  Your next steps
-                </h3>
-                <ol className="space-y-3">
-                  {band.next_steps.map((s, i) => (
-                    <li key={i} className="flex gap-3 items-start">
-                      <span
-                        className="flex-shrink-0 w-6 h-6 rounded-full text-xs font-bold text-white flex items-center justify-center mt-0.5"
-                        style={{ backgroundColor: accent }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="text-sm leading-relaxed" style={{ color: "#475569" }}>
-                        {s}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null;
-            // Viral loop: people who finish a quiz pass it on to friends on WhatsApp.
-            const shareUrl =
-              typeof window !== "undefined" ? `${window.location.origin}/${org.slug}/${quiz.slug}` : "";
-            const shareFriend = !preview && shareUrl ? (
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Take this quick 2-minute check: ${shareUrl}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm border-2"
-                style={{ borderColor: "#25D366", color: "#128C7E" }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
-                  <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.2.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.7-.1 1.2Z" />
-                </svg>
-                Share with a friend
-              </a>
-            ) : null;
-            // A WhatsApp link gets a proper green WhatsApp button.
-            const isWa = !!quiz.cta_url && /(wa\.me|whatsapp\.com)/i.test(quiz.cta_url);
-            const waIcon = (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.2.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.1.1.7-.1 1.2Z" />
-              </svg>
-            );
-            const ctaLabel = builder.cta_text || (isWa ? "Chat on WhatsApp" : "Get in touch");
-            const cta = quiz.cta_url ? (
-              <a
-                href={quiz.cta_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg text-white font-semibold text-base"
-                style={{ backgroundColor: isWa ? "#25D366" : accent }}
-              >
-                {isWa && waIcon}
-                {ctaLabel}
-              </a>
-            ) : null;
-            // Their calculator figures, recomputed from what they entered.
-            const estimate =
-              calc && calcInputs && answers.some((a) => a.answerValue === "calculator")
-                ? (() => {
-                    const r = computeCalc(calc, calcInputs);
-                    const reverse = calc.type === "loan" && calcInputs.mode === "budget";
-                    return (
-                      <div
-                        className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center"
-                        style={tx({ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: theme.cardRadius, boxShadow: theme.cardShadow })}
-                      >
-                        <h3 className="text-base font-semibold" style={{ color: theme.text }}>
-                          Your estimate
-                        </h3>
-                        <p className="font-extrabold mt-2" style={{ fontSize: "clamp(24px, 5vw, 32px)", color: accent }}>
-                          {reverse
-                            ? `Up to ${formatMoney(r.maxPrice ?? 0, calc.currency)}`
-                            : `${formatMoney(r.monthly, calc.currency)} a month`}
-                        </p>
-                        <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.body }}>
-                          {describeCalc(calc, calcInputs, r)}
-                        </p>
-                        <p className="text-xs mt-3" style={{ color: theme.faint }}>
-                          An estimate to guide you, not a loan offer. {org.name} will confirm your exact terms.
-                        </p>
-                      </div>
-                    );
-                  })()
-                : null;
-
-            // ── Template results: an elegant hero card with the WhatsApp CTA inside ──
-            if (themed) {
-              const cardS: React.CSSProperties = {
-                background: theme.cardBg,
-                border: `1px solid ${theme.cardBorder}`,
-                borderRadius: theme.cardRadius,
-                boxShadow: theme.cardShadow,
-              };
-              const heading: React.CSSProperties = {
-                fontFamily: theme.headFont,
-                fontWeight: theme.headWeight ?? 700,
-                color: theme.title,
-                letterSpacing: "-0.01em",
-              };
-              const emphasis = theme.key === "soft-luxe" && !customBrand ? "#C98B7A" : btn;
-              const styledTitle = (text: string) => {
-                const words = text.trim().split(/\s+/);
-                const last = words.pop();
-                return (
-                  <>
-                    {words.join(" ")} <em style={{ fontStyle: "italic", color: emphasis }}>{last}</em>
-                  </>
-                );
-              };
-              const eyebrowS: React.CSSProperties = { color: theme.eyebrow };
-              const bigCta = quiz.cta_url ? (
-                <a
-                  href={quiz.cta_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full px-6 py-4 font-semibold text-[16px] leading-snug text-center transition-transform active:scale-[0.99]"
-                  style={{
-                    background: isWa ? "#25D366" : btn,
-                    color: isWa ? "#ffffff" : btnInk,
-                    borderRadius: theme.pill ? 999 : 12,
-                    boxShadow: isWa ? "0 14px 30px -14px rgba(37,211,102,0.8)" : `0 14px 30px -14px ${btn}`,
-                  }}
-                >
-                  {isWa && <span className="flex-shrink-0">{waIcon}</span>}
-                  <span>{isWa ? ctaLabel : `${ctaLabel} →`}</span>
-                </a>
-              ) : null;
-              const rowsT = (rows: typeof picks) =>
-                rows
-                  .filter((r) => r.o.insight)
-                  .map((r) => (
-                    <div key={r.q.id} className="flex gap-3 py-3.5 border-t first:border-t-0" style={{ borderColor: theme.line }}>
-                      <span
-                        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
-                        style={
-                          r.level === "none"
-                            ? { backgroundColor: btn + "22", color: theme.dark ? "#ffffff" : btn }
-                            : { backgroundColor: marker[r.level].bg, color: marker[r.level].color }
-                        }
-                      >
-                        {marker[r.level].icon}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold" style={{ color: theme.text }}>
-                          {r.topic}
-                          <span className="font-normal" style={{ color: theme.faint }}>
-                            {" "}· {r.o.emoji ? `${r.o.emoji} ` : ""}
-                            {r.o.text}
-                          </span>
-                        </p>
-                        <p className="text-sm mt-1 leading-relaxed" style={{ color: theme.body }}>
-                          {r.o.insight}
-                        </p>
-                      </div>
-                    </div>
-                  ));
-              const section = (title: string, children: React.ReactNode) => (
-                <div className="p-7 md:p-8" style={cardS}>
-                  <h3 className="mb-2" style={{ ...heading, fontSize: 26 }}>
-                    {title}
-                  </h3>
-                  {children}
-                </div>
-              );
-              const nextT = band.next_steps?.length
-                ? section(
-                    "Your next steps",
-                    <ol className="space-y-3 mt-3">
-                      {band.next_steps.map((st, i) => (
-                        <li key={i} className="flex gap-3 items-start">
-                          <span
-                            className="flex-shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
-                            style={{ backgroundColor: btn, color: btnInk }}
-                          >
-                            {i + 1}
-                          </span>
-                          <span className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
-                            {st}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  )
-                : null;
-              const shareT = !preview && shareUrl ? (
-                <div className="text-center">
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`${quiz.start_headline} Take this quick 2-minute check: ${shareUrl}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm border-2"
-                    style={{ borderColor: "#25D366", color: theme.dark ? "#25D366" : "#128C7E", borderRadius: 999 }}
-                  >
-                    {waIcon}
-                    Share with a friend
-                  </a>
-                </div>
-              ) : null;
-              const note = (
-                <p className="text-center text-sm" style={{ color: theme.faint }}>
-                  {org.name} will be in touch at {contactEmail || "the details you shared"}.
-                </p>
-              );
-
-              if (builder.kind === "match" && matchOutcome) {
-                const whyPicks = picks.filter((r) => r.o.outcome === matchOutcome.key && r.o.insight).slice(0, 4);
-                const why = rowsT(whyPicks);
-                // Only answers not already explained above.
-                const good = rowsT(picks.filter((r) => r.q.max_points > 0 && !whyPicks.includes(r)));
-                return (
-                  <div className="space-y-5">
-                    <div className="p-8 md:p-10" style={cardS}>
-                      <p className="text-[12px] font-semibold uppercase tracking-[0.2em]" style={eyebrowS}>
-                        {firstName}, your perfect match
-                      </p>
-                      <h2 className="mt-3" style={{ ...heading, fontSize: "clamp(42px, 8.4vw, 60px)", lineHeight: 1.0 }}>
-                        {styledTitle(matchOutcome.title)}
-                      </h2>
-                      <p className="mt-4 text-[16px] leading-relaxed" style={{ color: theme.body }}>
-                        {matchOutcome.description}
-                      </p>
-                      {bigCta && <div className="mt-7">{bigCta}</div>}
-                    </div>
-                    {estimate}
-                    {why.length ? section("Why this fits you", why) : null}
-                    {matchOutcome.recommendation
-                      ? section(
-                          "Our recommendation",
-                          <p className="text-[15px] leading-relaxed" style={{ color: theme.body }}>
-                            {matchOutcome.recommendation}
-                          </p>
-                        )
-                      : null}
-                    {good.length ? section("Good to know", good) : null}
-                    {nextT}
-                    {shareT}
-                    {note}
-                  </div>
-                );
-              }
-
-              const rows = rowsT(picks);
-              const ring = 2 * Math.PI * 42;
-              return (
-                <div className="space-y-5">
-                  <div className="p-8 md:p-10" style={cardS}>
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.2em]" style={eyebrowS}>
-                      {firstName}, your result
-                    </p>
-                    <div className="mt-5 flex items-center gap-5">
-                      <div className="relative w-[96px] h-[96px] flex-shrink-0">
-                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                          <circle cx="50" cy="50" r="42" fill="none" stroke={theme.track} strokeWidth="8" />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke={btn}
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            strokeDasharray={ring}
-                            strokeDashoffset={ring * (1 - percentage / 100)}
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-[21px] font-bold" style={{ color: theme.title }}>
-                          {percentage}%
-                        </span>
-                      </div>
-                      <span
-                        className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
-                        style={{ backgroundColor: TIER_COLORS[qualification] + "22", color: theme.dark ? "#ffffff" : TIER_COLORS[qualification] }}
-                      >
-                        {band.label}
-                      </span>
-                    </div>
-                    <h2 className="mt-6" style={{ ...heading, fontSize: "clamp(30px, 6vw, 46px)", lineHeight: 1.06 }}>
-                      {styledTitle(band.headline)}
-                    </h2>
-                    <p className="mt-4 text-[16px] leading-relaxed" style={{ color: theme.body }}>
-                      {band.body}
-                    </p>
-                    {bigCta && <div className="mt-7">{bigCta}</div>}
-                  </div>
-                  {estimate}
-                  {rows.length ? section("Your answers, analysed", rows) : null}
-                  {nextT}
-                  {shareT}
-                  {note}
-                </div>
-              );
-            }
-
-            if (builder.kind === "match" && matchOutcome) {
-              return (
-                <div className="space-y-6">
-                  <div
-                    className="rounded-2xl p-8 text-center text-white shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]"
-                    style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
-                      {firstName}, your result
-                    </p>
-                    <h2 className="font-extrabold text-white" style={{ fontSize: "clamp(26px, 5vw, 36px)", lineHeight: 1.2 }}>
-                      {matchOutcome.title}
-                    </h2>
-                    <p className="text-base mt-4 max-w-md mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.92)" }}>
-                      {matchOutcome.description}
-                    </p>
-                  </div>
-                  {estimate}
-                  {(() => {
-                    const why = insightRows(picks.filter((r) => r.o.outcome === matchOutcome.key)).slice(0, 4);
-                    return why.length ? (
-                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                        <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
-                          Why this fits you
-                        </h3>
-                        {why}
-                      </div>
-                    ) : null;
-                  })()}
-                  {(() => {
-                    const good = insightRows(picks.filter((r) => r.q.max_points > 0));
-                    return good.length ? (
-                      <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                        <h3 className="text-base font-semibold mb-1" style={{ color: "#1e293b" }}>
-                          Good to know
-                        </h3>
-                        {good}
-                      </div>
-                    ) : null;
-                  })()}
-                  {nextSteps}
-                  <div className="bg-white rounded-xl p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                    <h3 className="text-base font-semibold mb-2" style={{ color: accent }}>
-                      Our recommendation for you
-                    </h3>
-                    <p className="text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#475569" }}>
-                      {matchOutcome.recommendation}
-                    </p>
-                    {cta && <div className="mt-6">{cta}</div>}
-                  </div>
-                  {shareFriend && <div className="text-center">{shareFriend}</div>}
-                  <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
-                    {org.name} will be in touch at {contactEmail || "the details you shared"}.
-                  </p>
-                </div>
-              );
-            }
-
-            return (
-              <div className="space-y-6">
-                <div
-                  className="rounded-2xl p-8 text-center text-white shadow-[0_12px_30px_-12px_rgba(0,0,0,0.35)]"
-                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
-                    Your result
-                  </p>
-                  <div className="text-6xl font-extrabold leading-none text-white">{percentage}%</div>
-                  <div className="mt-5">
-                    <span
-                      className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-white"
-                      style={{ color: TIER_COLORS[qualification] }}
-                    >
-                      {band.label}
-                    </span>
-                  </div>
-                  <p className="text-sm mt-5" style={{ color: "rgba(255,255,255,0.85)" }}>
-                    {firstName}, here&apos;s what your answers say
-                  </p>
-                  <h2 className="text-xl font-bold mt-1 text-white">{band.headline}</h2>
-                </div>
-                {estimate}
-                <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                  <p className="text-[15px] leading-relaxed" style={{ color: "#334155" }}>
-                    {band.body}
-                  </p>
-                </div>
-                {(() => {
-                  const rows = insightRows(picks);
-                  return rows.length ? (
-                    <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                      <h3 className="text-base font-semibold" style={{ color: "#1e293b" }}>
-                        Your answers, analysed
-                      </h3>
-                      <p className="text-xs mt-1 mb-2" style={{ color: "#94a3b8" }}>
-                        ✓ strength · ! worth working on
-                      </p>
-                      {rows}
-                    </div>
-                  ) : null;
-                })()}
-                {nextSteps}
-                {cta && (
-                  <div className="bg-white rounded-xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center">
-                    {cta}
-                  </div>
-                )}
-                {shareFriend && <div className="text-center">{shareFriend}</div>}
-                <p className="text-center text-sm" style={{ color: "#94a3b8" }}>
-                  {org.name} will be in touch at {contactEmail || "the details you shared"}.
-                </p>
-              </div>
-            );
-          })()}
+          {builderResults}
 
           {/* ASSESSMENT RESULT — diagnosis mode (e.g. Loan Doctor) */}
           {step === "results" && qualification && !builder && quiz.result_mode === "assessment" && (() => {

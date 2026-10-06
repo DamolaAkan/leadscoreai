@@ -12,11 +12,21 @@ export const BUILDER_MODEL = "claude-sonnet-5";
 
 export type QuizKind = "qualify" | "match";
 
+// A line on the results page: "Price range" → "₦4.2m to ₦5.1m", "Step 1" → "Vitamin C serum".
+export interface DetailLine {
+  label: string;
+  value: string;
+}
+
 export interface BuilderBand {
   label: string;
   headline: string;
   body: string;
   next_steps?: string[];
+  // Optional recommendation details shown as a receipt, routine, ticket or list
+  // depending on the style. Only when the owner gave real items or prices.
+  details?: DetailLine[];
+  price?: string;
 }
 
 // A tap-to-answer question the AI asks before or during building.
@@ -30,6 +40,8 @@ export interface BuilderOutcome {
   title: string;
   description: string;
   recommendation: string;
+  details?: DetailLine[];
+  price?: string;
 }
 
 export interface BuilderConfig {
@@ -42,6 +54,8 @@ export interface BuilderConfig {
   topics?: string[];
   // Optional calculator step (question 1, question_type "calculator").
   calculator?: CalculatorConfig | null;
+  // Owner photos for the photo-led styles (start screen, result).
+  images?: { hero?: string | null; result?: string | null };
   // Design template (src/lib/quiz-templates.ts); missing = classic.
   template?: import("./quiz-templates").TemplateKey;
 }
