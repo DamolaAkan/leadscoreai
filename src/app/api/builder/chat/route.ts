@@ -335,7 +335,8 @@ export async function POST(request: Request) {
     start_cta_text: normalized.start_cta_text,
     max_score: normalized.max_score,
     cta_url: normalized.cta_url,
-    builder_config: { ...normalized.builder_config, template },
+    // Owner photos stay with the scorecard across AI edits (and new versions).
+    builder_config: { ...normalized.builder_config, template, ...(current?.builder_config?.images ? { images: current.builder_config.images } : {}) },
     result_mode: "lead",
     collect_company: false,
     updated_at: new Date().toISOString(),

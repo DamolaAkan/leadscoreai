@@ -29,6 +29,32 @@ interface QuizSummary {
   builder: boolean;
   leads: number;
   template?: TemplateKey;
+  images?: { hero?: string | null; result?: string | null } | null;
+}
+
+// Photo slots per style (photo-led styles only), shown under the style picker.
+const PHOTO_SLOTS: Partial<Record<TemplateKey, { slot: "hero" | "result"; label: string; hint: string }[]>> = {
+  "soft-luxe": [{ slot: "hero", label: "Start photo", hint: "Your product, glowing skin or your studio" }],
+  noir: [
+    { slot: "hero", label: "Start photo", hint: "A model or your best look" },
+    { slot: "result", label: "Result photo", hint: "The product they're matched with" },
+  ],
+  stone: [{ slot: "hero", label: "Start photo", hint: "A property or a finished project" }],
+  horizon: [{ slot: "hero", label: "Start photo", hint: "A destination your customers dream of" }],
+  grove: [{ slot: "hero", label: "Your photo", hint: "A friendly photo of you (shown round)" }],
+  citrus: [{ slot: "hero", label: "Start photo", hint: "Your best dish or product" }],
+};
+
+// Shrink a photo in the browser before upload (longest side 1600px, JPEG).
+async function photoToDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 interface TapQuestion {
@@ -559,6 +585,25 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   };
 
   // Quiz style: switching templates is instant and never costs an AI edit.
+  const [photoBusy, setPhotoBusy] = useState<string | null>(null);
+  const [photoErr, setPhotoErr] = useState("");
+  const savePhoto = async (slot: "hero" | "result", file: File | null) => {
+    if (!current) return;
+    setPhotoErr("");
+    setPhotoBusy(slot);
+    try {
+      const data = file
+        ? await api("/api/builder/image", { method: "POST", body: JSON.stringify({ quizId: current.id, slot, dataUrl: await photoToDataUrl(file) }) })
+        : await api("/api/builder/image", { method: "DELETE", body: JSON.stringify({ quizId: current.id, slot }) });
+      setQuizzes((qs) => qs.map((q) => (q.id === current.id ? { ...q, images: data.images } : q)));
+      setPreviewVersion((v) => v + 1);
+    } catch (err) {
+      setPhotoErr(err instanceof Error ? err.message : "Could not save the photo.");
+    } finally {
+      setPhotoBusy(null);
+    }
+  };
+
   const saveTemplate = async (key: TemplateKey) => {
     if (!current) return;
     setQuizzes((qs) => qs.map((q) => (q.id === current.id ? { ...q, template: key } : q)));
@@ -996,6 +1041,48 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
             })}
           </div>
           <p className="text-[12px] text-[#9DA2A6] mt-2.5">{TEMPLATES[current.template ?? "classic"].blurb}</p>
+          {(PHOTO_SLOTS[current.template ?? "classic"] ?? []).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#2B3245]">
+              <p className="text-[14px] text-[#F5F9FC]">Photos</p>
+              <p className="text-[12.5px] text-[#9DA2A6] mt-0.5">This style looks best with your own photo. Free to change.</p>
+              <div className="mt-3 space-y-2.5">
+                {(PHOTO_SLOTS[current.template ?? "classic"] ?? []).map(({ slot, label, hint }) => {
+                  const url = current.images?.[slot] ?? null;
+                  return (
+                    <div key={slot} className="flex items-center gap-3 rounded-xl bg-[#0E1525] border border-[#2B3245] p-2.5">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-[#1C2333] flex items-center justify-center flex-shrink-0 text-[20px]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {url ? <img src={url} alt="" className="w-full h-full object-cover" /> : "🖼️"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#F5F9FC]">{label}</p>
+                        <p className="text-[12px] text-[#9DA2A6] truncate">{hint}</p>
+                      </div>
+                      <label className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white cursor-pointer ${photoBusy ? "opacity-60 pointer-events-none" : ""}`}>
+                        {photoBusy === slot ? "Saving…" : url ? "Replace" : "Upload"}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            e.target.value = "";
+                            if (f) savePhoto(slot, f);
+                          }}
+                        />
+                      </label>
+                      {url && (
+                        <button onClick={() => savePhoto(slot, null)} disabled={!!photoBusy} className="text-[12.5px] text-[#9DA2A6] hover:text-white px-1">
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {photoErr && <p className="mt-2 text-[12.5px] text-red-400">{photoErr}</p>}
+            </div>
+          )}
         </div>
       )}
 

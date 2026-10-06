@@ -51,6 +51,7 @@ export async function GET(request: Request) {
       kind: q.builder_config?.kind ?? null,
       builder: !!q.builder_config,
       template: q.builder_config?.template ?? "classic",
+      images: q.builder_config?.images ?? null,
       leads: counts.get(q.id) || 0,
       updated_at: q.updated_at,
     })),
