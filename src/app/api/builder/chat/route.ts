@@ -272,7 +272,7 @@ export async function POST(request: Request) {
     }
 
     if (!turn.quiz) break; // Claude needs more info; nothing to save.
-    const result = normalizeDraft(turn.quiz, turn.calculator);
+    const result = normalizeDraft(turn.quiz, turn.calculator, turn.result_details);
     if (result.ok) {
       normalized = result.quiz;
       break;

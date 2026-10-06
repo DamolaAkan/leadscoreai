@@ -101,6 +101,8 @@ export interface DraftQuiz {
   suggested_color: string;
   // Only in <current_quiz> for the model: the current calculator as a JSON string ("" = none).
   calculator?: string;
+  // Only in <current_quiz>: the current result details as a JSON string ("" = none).
+  result_details?: string;
 }
 
 export interface BuilderTurn {
@@ -111,6 +113,8 @@ export interface BuilderTurn {
   feature_request: string | null;
   // Calculator settings as a JSON string, or "" for none (absent on the basic schema).
   calculator?: string;
+  // Result details/prices as a JSON string, or "" for none (absent on the basic schema).
+  result_details?: string;
 }
 
 const band = {
@@ -120,10 +124,8 @@ const band = {
     headline: { type: "string" },
     body: { type: "string" },
     next_steps: { type: "array", items: { type: "string" } },
-    details: { type: "string" },
-    price: { type: "string" },
   },
-  required: ["label", "headline", "body", "next_steps", "details", "price"],
+  required: ["label", "headline", "body", "next_steps"],
   additionalProperties: false,
 } as const;
 
@@ -172,10 +174,8 @@ const draftQuizSchema = {
           title: { type: "string" },
           description: { type: "string" },
           recommendation: { type: "string" },
-          details: { type: "string" },
-          price: { type: "string" },
         },
-        required: ["key", "title", "description", "recommendation", "details", "price"],
+        required: ["key", "title", "description", "recommendation"],
         additionalProperties: false,
       },
     },
@@ -234,56 +234,27 @@ const BUILDER_TURN_SCHEMA_BASE = {
 
 export const BUILDER_TURN_SCHEMA = {
   ...BUILDER_TURN_SCHEMA_BASE,
-  properties: { ...BUILDER_TURN_SCHEMA_BASE.properties, calculator: { type: "string" } },
-  required: [...BUILDER_TURN_SCHEMA_BASE.required, "calculator"],
+  // Extras travel as strings (not nested objects) to keep the response grammar
+  // under the API's size limit.
+  properties: { ...BUILDER_TURN_SCHEMA_BASE.properties, calculator: { type: "string" }, result_details: { type: "string" } },
+  required: [...BUILDER_TURN_SCHEMA_BASE.required, "calculator", "result_details"],
 } as const;
 
-// Fallback if the API ever rejects the full schema: the original shape, with no
-// calculator and no result details/price (safeBand treats them as absent).
-const legacyBand = {
-  ...band,
-  properties: { label: band.properties.label, headline: band.properties.headline, body: band.properties.body, next_steps: band.properties.next_steps },
-  required: ["label", "headline", "body", "next_steps"],
-};
-const legacyDraftQuizSchema = {
-  ...draftQuizSchema,
-  properties: {
-    ...draftQuizSchema.properties,
-    outcomes: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          key: { type: "string" },
-          title: { type: "string" },
-          description: { type: "string" },
-          recommendation: { type: "string" },
-        },
-        required: ["key", "title", "description", "recommendation"],
-        additionalProperties: false,
-      },
-    },
-    results: {
-      ...draftQuizSchema.properties.results,
-      properties: { hot: legacyBand, warm: legacyBand, cold: legacyBand, not_qualified: legacyBand },
-    },
-  },
-};
-export const BUILDER_TURN_SCHEMA_BASIC = {
-  ...BUILDER_TURN_SCHEMA_BASE,
-  properties: { ...BUILDER_TURN_SCHEMA_BASE.properties, quiz: { anyOf: [legacyDraftQuizSchema, { type: "null" }] } },
-};
+// Fallback if the API ever rejects the full schema: plain quizzes, no calculator
+// and no result details.
+export const BUILDER_TURN_SCHEMA_BASIC = BUILDER_TURN_SCHEMA_BASE;
 
 export const BUILDER_SYSTEM_PROMPT = `You are the Buyer Scorecard designer inside LeadScoreAI, a product that lets business owners create Buyer Scorecards by chatting. In every reply to the owner call what you build a "Buyer Scorecard" (or "scorecard"); never use the word "quiz". Most users run small and mid-sized businesses in Africa (Nigeria, Ghana, Kenya, South Africa and elsewhere), but anyone can use it. Typical users: skincare and beauty brands, travel consultants, education and study-abroad consultants, solar installers, lenders, real estate agents, coaches, clinics and agencies.
 
 LeadScoreAI's core idea is willingness to pay (WTP): every Buyer Scorecard is not just a form, it helps the owner find their buyers. Each scorecard includes a few questions that reveal whether the person is able and ready to pay, and every lead gets a 0 to 100 willingness-to-pay score from those answers. This applies to every kind of scorecard, including fun personality and product-match scorecards.
 
-Each turn you return JSON with five fields:
+Each turn you return JSON with six fields:
 - "reply": a short message to the business owner (1 to 4 sentences, plain and warm, no markdown headings, no lists). Say what you built or changed, or what you need to know.
 - "questions": tap-to-answer questions for the owner, shown as buttons. Usually an empty array.
 - "scorecard": the complete, current scorecard, or null.
 - "feature_request": null, unless the owner asked for something the builder cannot do (see below).
 - "calculator": the scorecard's calculator settings as a JSON string (see Calculators), or "" when the scorecard has no calculator or scorecard is null.
+- "result_details": real prices and item lines for the results page as a JSON string (see Results), or "" when there are none or scorecard is null.
 
 ## Tap questions (make building feel fast and friendly)
 
@@ -388,7 +359,7 @@ Points measure how ready and able the person is to buy. For each question, the b
 
 - results holds four score bands: hot (80% and above), warm (60 to 79%), cold (40 to 59%) and not_qualified (below 40%). Each has a label (2 to 3 words, for example "Strong fit"), a headline, a body of 2 to 3 sentences explaining what their result means, and next_steps: exactly 3 short, concrete actions for someone in that band (each under 20 words), in the brand's voice. The last step should naturally lead to contacting the business.
 - Be encouraging even to low scorers. Never promise outcomes the business cannot guarantee. For eligibility, visa, medical, legal or financial scorecards, say the result is an indication, not an official decision.
-- details and price (on each result band and each outcome) make the results page concrete, shown as a receipt, routine, ticket or list depending on the style. Fill them ONLY with real items, packages, steps or prices the owner has told you; otherwise return "" for both. Never invent a price, product or figure. details: up to 4 lines, each "Label: value" on its own line, for example "Step 1: Vitamin C serum, morning" or "Price range: ₦4.2m to ₦5.1m" or "Dates: flexible, December". price: the real price or range as the customer should see it, for example "₦38,500" or "From ₦4.5m". Usually only the hot and warm bands (or every outcome on a match scorecard) need them.
+- "result_details" makes the results page concrete (shown as a receipt, routine, ticket or list depending on the style). Fill it ONLY with real items, packages, steps or prices the owner has told you; otherwise return "". Never invent a price, product or figure. Format: a JSON string of an object whose keys are result bands ("hot", "warm", "cold", "not_qualified") or outcome keys, each {"price": string, "details": [up to 4 strings, each "Label: value"]}. Example: {"brightening": {"price": "₦38,500", "details": ["Vitamin C serum: ₦15,000", "Barrier cream: ₦12,500", "SPF 50: ₦11,000"]}}. Usually only the hot and warm bands (or each outcome on a match scorecard) need entries. When editing, keep the current result_details unless the owner changes them.
 - result_cta_text: button text on the results page, for example "Book a free consultation". result_cta_url: a link the owner gave you (website, WhatsApp link like https://wa.me/234..., or booking page), or "" if they have not given one. Never invent a URL.`;
 
 // ── Validation: turn Claude's draft into safe DB rows ─────────────────────
@@ -439,6 +410,28 @@ function safeUrl(u: string): string | null {
   } catch {
     return null;
   }
+}
+
+// The model's result_details JSON string → { key: { price, details[] } }, leniently.
+export function parseResultDetails(raw: unknown): Record<string, { price: string; details: string[] }> | null {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+  let obj: unknown;
+  try {
+    obj = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+  const out: Record<string, { price: string; details: string[] }> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    if (!v || typeof v !== "object") continue;
+    const e = v as { price?: unknown; details?: unknown };
+    const details = Array.isArray(e.details) ? e.details.filter((d): d is string => typeof d === "string" && !!d.trim()).slice(0, 5) : [];
+    const price = typeof e.price === "string" ? e.price.trim() : "";
+    if (details.length || price) out[k] = { price, details };
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 // "Label: value" lines → detail rows (max 5). A line without a colon becomes a value-only row.
@@ -501,9 +494,27 @@ export function normalizeTapQuestions(qs: unknown): TapQuestion[] {
 // Returns either a normalized quiz or a list of problems to send back to Claude.
 export function normalizeDraft(
   draft: DraftQuiz,
-  calculatorJson?: string | null
+  calculatorJson?: string | null,
+  resultDetailsJson?: string | null
 ): { ok: true; quiz: NormalizedQuiz } | { ok: false; errors: string[] } {
   const errors: string[] = [];
+  // Result details (prices, item lines) arrive as one JSON string keyed by band
+  // or outcome; fold them into the bands/outcomes before they are cleaned.
+  const extras = parseResultDetails(resultDetailsJson);
+  if (extras) {
+    const withExtra = <T extends { details?: string; price?: string }>(x: T, key: string): T =>
+      extras[key] ? { ...x, details: extras[key].details.join("\n"), price: extras[key].price } : x;
+    draft = {
+      ...draft,
+      results: {
+        hot: withExtra(draft.results.hot, "hot"),
+        warm: withExtra(draft.results.warm, "warm"),
+        cold: withExtra(draft.results.cold, "cold"),
+        not_qualified: withExtra(draft.results.not_qualified, "not_qualified"),
+      },
+      outcomes: (draft.outcomes || []).map((o) => withExtra(o, o.key)),
+    };
+  }
   const kind: QuizKind = draft.kind === "match" ? "match" : "qualify";
 
   const outcomes: BuilderOutcome[] = [];
@@ -664,14 +675,17 @@ export function toDraftForPrompt(
   color: string | null
 ): DraftQuiz {
   const c = quiz.builder_config;
-  const withSteps = (b: BuilderBand): DraftBand => ({
-    label: b.label,
-    headline: b.headline,
-    body: b.body,
-    next_steps: b.next_steps || [],
-    details: detailsToText(b.details),
-    price: b.price || "",
-  });
+  const withSteps = (b: BuilderBand): DraftBand => ({ label: b.label, headline: b.headline, body: b.body, next_steps: b.next_steps || [] });
+  // Current result details, in the same JSON-string shape the model returns.
+  const extras: Record<string, { price: string; details: string[] }> = {};
+  const addExtra = (key: string, x: { details?: DetailLine[]; price?: string }) => {
+    if (x.details?.length || x.price) extras[key] = { price: x.price || "", details: detailsToText(x.details).split("\n").filter(Boolean) };
+  };
+  addExtra("hot", c.results.HOT_LEAD);
+  addExtra("warm", c.results.WARM_LEAD);
+  addExtra("cold", c.results.COLD_LEAD);
+  addExtra("not_qualified", c.results.NOT_QUALIFIED);
+  for (const o of c.outcomes) addExtra(o.key, o);
   // The calculator step (question 1) goes back as "calculator", not as a question.
   const hasCalc = questions.some((q) => q.question_type === "calculator");
   const offset = hasCalc ? 1 : 0;
@@ -694,7 +708,8 @@ export function toDraftForPrompt(
         insight: o.insight || "",
       })),
     })),
-    outcomes: c.outcomes.map((o) => ({ ...o, details: detailsToText(o.details), price: o.price || "" })),
+    outcomes: c.outcomes.map((o) => ({ key: o.key, title: o.title, description: o.description, recommendation: o.recommendation })),
+    result_details: Object.keys(extras).length ? JSON.stringify(extras) : "",
     results: {
       hot: withSteps(c.results.HOT_LEAD),
       warm: withSteps(c.results.WARM_LEAD),
