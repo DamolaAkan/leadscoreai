@@ -1015,7 +1015,7 @@ export function StyledResultHero({
               {percentage}%
             </p>
             <p className="text-[14px] font-medium" style={{ color: v.sub }}>
-              {tierLabel}
+              {isMatch ? "match for you" : tierLabel}
             </p>
             <h2 className="mt-1.5" style={{ ...head, fontSize: 34, lineHeight: 1.06, color: v.ink }}>
               {headline}
