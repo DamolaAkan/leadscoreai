@@ -1,5 +1,6 @@
 "use client";
 
+import { ResponsesSkeleton } from "./Skeleton";
 import { useState, useEffect, useCallback } from "react";
 import { AuthUser } from "@/lib/dashboard-types";
 import { QuizResponse } from "@/lib/types";
@@ -29,6 +30,8 @@ export default function ResponsesTab({
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  // First load shows a dashboard-shaped placeholder (not zeros, then numbers).
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   // Filters
   const [qualification, setQualification] = useState("");
@@ -89,6 +92,7 @@ export default function ResponsesTab({
       // Ignore
     }
     setLoading(false);
+    setLoadedOnce(true);
   }, [page, qualification, quizId, dateFrom, dateTo, search, getAuthHeaders]);
 
   useEffect(() => {
@@ -279,6 +283,8 @@ export default function ResponsesTab({
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  if (!loadedOnce) return <ResponsesSkeleton />;
 
   return (
     <div className="space-y-6">

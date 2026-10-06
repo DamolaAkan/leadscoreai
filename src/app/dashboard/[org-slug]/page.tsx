@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardSkeleton } from "@/components/dashboard/Skeleton";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
@@ -256,8 +257,10 @@ export default function DashboardPage() {
   }, [loading, user, router, orgSlug]);
 
   // Trial / lock state drives whether the whole dashboard is accessible.
+  // Starts on mount, in parallel with the auth check (it only needs the stored
+  // session), so the dashboard appears in one step instead of two.
   useEffect(() => {
-    if (!user) return;
+    if (!getAuthHeaders().Authorization) return;
     // Back from Stripe Checkout: confirm the payment with Stripe first, so Pro is
     // on before the dashboard loads (the webhook may still be on its way).
     const ref = new URLSearchParams(window.location.search).get("reference") || "";
@@ -273,7 +276,7 @@ export default function DashboardPage() {
       .then((r) => r.json())
       .then((d) => setAccess(d ?? { locked: false }))
       .catch(() => setAccess({ locked: false })); // fail open — never lock on an error
-  }, [user, getAuthHeaders]);
+  }, [getAuthHeaders]);
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -282,11 +285,7 @@ export default function DashboardPage() {
 
   // Wait for both auth and access so we never flash the dashboard before locking.
   if (loading || (user && access === null)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!user) return null;
