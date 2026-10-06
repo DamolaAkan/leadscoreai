@@ -189,6 +189,9 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [freshDraft, setFreshDraft] = useState(false);
+  // Standalone studio: stay on the loader until we know whether to hand a
+  // self-serve owner over to their dashboard (avoids a flash of this page).
+  const [ready, setReady] = useState(embedded);
   // Free to build, pay to publish: billing state + the go-live sheet.
   const [billing, setBilling] = useState<GoLiveInfo | null>(null);
   const cur: Currency = billing?.currency ?? "NGN";
@@ -292,6 +295,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           router.replace(`/dashboard/${data.org.slug}?tab=builder`);
           return;
         }
+        setReady(true);
         // Reopen the most recent quiz so owners land back where they left off,
         // unless they arrived with a new idea from an industry page.
         const latest = (data.quizzes as QuizSummary[]).find((q) => q.builder);
@@ -300,7 +304,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
           setMessages(loadChat(latest.id));
         }
       })
-      .catch(() => {});
+      .catch(() => setReady(true));
   }, [session, refresh, embedded, router]);
 
   useEffect(() => {
@@ -630,7 +634,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     router.replace("/");
   };
 
-  if (!org) {
+  if (!org || !ready) {
     return (
       <div
         className={`${embedded ? "h-full" : "h-[100dvh]"} flex items-center justify-center bg-[#0E1525] text-[#9DA2A6] text-sm`}

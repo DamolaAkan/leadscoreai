@@ -2,7 +2,7 @@
 
 import { DashboardSkeleton } from "@/components/dashboard/Skeleton";
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import TopNav from "@/components/dashboard/TopNav";
 import ResponsesTab from "@/components/dashboard/ResponsesTab";
@@ -227,6 +227,7 @@ function LockScreen({
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const orgSlug = params["org-slug"] as string;
   const { user, loading, logout, getAuthHeaders, isAdmin, isSuperAdmin } =
     useAuth(orgSlug);
@@ -285,7 +286,7 @@ export default function DashboardPage() {
 
   // Wait for both auth and access so we never flash the dashboard before locking.
   if (loading || (user && access === null)) {
-    return <DashboardSkeleton />;
+    return <DashboardSkeleton builder={searchParams.get("tab") === "builder"} />;
   }
 
   if (!user) return null;

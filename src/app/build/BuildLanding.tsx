@@ -175,6 +175,9 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
   const plan = planFor(useVisitorCurrency());
   const router = useRouter();
   const [signedIn, setSignedIn] = useState(false);
+  // Self-serve owners build inside their dashboard; knowing the slug lets the CTA
+  // open it directly instead of loading /build/studio and redirecting.
+  const [dashSlug, setDashSlug] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
   const [starter, setStarter] = useState(page.starter);
   // Coaches & consultants: one page with specialty tabs instead of industry tabs.
@@ -201,9 +204,13 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     const sid = localStorage.getItem("lsai-session");
     if (!sid) return;
     fetch("/api/builder/state", { headers: { Authorization: `Bearer ${sid}` } })
-      .then((r) => {
+      .then(async (r) => {
         setSignedIn(r.ok);
         if (r.status === 401) localStorage.removeItem("lsai-session"); // expired or deleted session
+        if (r.ok) {
+          const d = await r.json().catch(() => null);
+          if (d?.org?.self_serve && d.org.slug) setDashSlug(d.org.slug);
+        }
       })
       .catch(() => {});
   }, []);
@@ -235,13 +242,13 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const goToStudio = (idea: string) => {
+  const goToStudio = (idea: string, slug: string | null = dashSlug) => {
     try {
       if (idea) localStorage.setItem("lsai-builder-starter", idea);
     } catch {
       /* ignore */
     }
-    router.push("/build/studio");
+    router.push(slug ? `/dashboard/${slug}?tab=builder` : "/build/studio");
   };
 
   const start = (idea: string = page.starter, where = "cta") => {
@@ -817,7 +824,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           page={page}
           onClose={() => setSheet(false)}
           // A specific example they tapped wins; otherwise the scorecard's own first message.
-          onDone={(personal) => goToStudio(starter && starter !== page.starter ? starter : personal || starter)}
+          onDone={(personal, slug) => goToStudio(starter && starter !== page.starter ? starter : personal || starter, slug ?? null)}
         />
       )}
     </div>
@@ -847,7 +854,7 @@ function SignUpSheet({
 }: {
   page: IndustryPage;
   onClose: () => void;
-  onDone: (starter?: string) => void;
+  onDone: (starter?: string, dashSlug?: string | null) => void;
 }) {
   const [step, setStep] = useState<"quiz" | "email" | "code">("quiz");
   const [answers, setAnswers] = useState<Answers | null>(null);
@@ -938,7 +945,7 @@ function SignUpSheet({
       } catch {
         /* ignore */
       }
-      onDone(answers ? starterFromAnswers(answers) : undefined);
+      onDone(answers ? starterFromAnswers(answers) : undefined, data.selfServe && data.orgSlug ? data.orgSlug : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error. Try again.");
       setBusy(false);

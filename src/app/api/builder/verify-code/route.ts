@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   // Existing business with this email (including accounts Stella onboarded)?
   let { data: org } = await supabase
     .from("organizations")
-    .select("id, name, slug, phone")
+    .select("id, name, slug, phone, self_serve")
     .ilike("email", escapeLike(norm))
     .eq("is_active", true)
     .order("created_at", { ascending: true })
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         region_signals: signals,
         partner_id: partnerId,
       })
-      .select("id, name, slug, phone")
+      .select("id, name, slug, phone, self_serve")
       .single();
     if (error || !created) {
       console.error("[builder/verify-code] org create error:", error?.message);
@@ -191,5 +191,5 @@ export async function POST(request: Request) {
     ]);
   }
 
-  return NextResponse.json({ session_id: sessionId, orgSlug: org.slug, orgName: org.name, isNew: isNewAccount, metaEventId });
+  return NextResponse.json({ session_id: sessionId, orgSlug: org.slug, orgName: org.name, selfServe: !!org.self_serve, isNew: isNewAccount, metaEventId });
 }

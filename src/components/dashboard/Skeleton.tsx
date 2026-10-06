@@ -34,7 +34,7 @@ export function ResponsesSkeleton() {
   );
 }
 
-export function DashboardSkeleton() {
+export function DashboardSkeleton({ builder = false }: { builder?: boolean }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f8fafc", fontFamily: "var(--font-inter)" }}>
       <div className="bg-white border-b border-[#e9ebf0] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -56,9 +56,16 @@ export function DashboardSkeleton() {
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8">
-        <ResponsesSkeleton />
-      </div>
+      {builder ? (
+        // Same dark loader the builder shows, so landing on it is one continuous load.
+        <div className="flex items-center justify-center bg-[#0E1525] text-[#9DA2A6] text-sm" style={{ height: "calc(100dvh - 118px)" }}>
+          <span className="animate-pulse">Loading your studio…</span>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-8">
+          <ResponsesSkeleton />
+        </div>
+      )}
     </div>
   );
 }
