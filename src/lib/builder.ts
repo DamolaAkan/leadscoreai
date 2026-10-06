@@ -77,6 +77,11 @@ export interface DraftQuestion {
   options: DraftOption[];
 }
 
+// In the model's JSON, result details travel as one string ("Label: value" per
+// line) to keep the response grammar small; normalizeDraft parses them.
+export type DraftBand = Omit<BuilderBand, "details"> & { details?: string; price?: string };
+export type DraftOutcome = Omit<BuilderOutcome, "details"> & { details?: string; price?: string };
+
 export interface DraftQuiz {
   kind: QuizKind;
   name: string;
@@ -84,12 +89,12 @@ export interface DraftQuiz {
   start_subheadline: string;
   start_cta_text: string;
   questions: DraftQuestion[];
-  outcomes: BuilderOutcome[];
+  outcomes: DraftOutcome[];
   results: {
-    hot: BuilderBand;
-    warm: BuilderBand;
-    cold: BuilderBand;
-    not_qualified: BuilderBand;
+    hot: DraftBand;
+    warm: DraftBand;
+    cold: DraftBand;
+    not_qualified: DraftBand;
   };
   result_cta_text: string;
   result_cta_url: string;
@@ -115,8 +120,10 @@ const band = {
     headline: { type: "string" },
     body: { type: "string" },
     next_steps: { type: "array", items: { type: "string" } },
+    details: { type: "string" },
+    price: { type: "string" },
   },
-  required: ["label", "headline", "body", "next_steps"],
+  required: ["label", "headline", "body", "next_steps", "details", "price"],
   additionalProperties: false,
 } as const;
 
@@ -165,8 +172,10 @@ const draftQuizSchema = {
           title: { type: "string" },
           description: { type: "string" },
           recommendation: { type: "string" },
+          details: { type: "string" },
+          price: { type: "string" },
         },
-        required: ["key", "title", "description", "recommendation"],
+        required: ["key", "title", "description", "recommendation", "details", "price"],
         additionalProperties: false,
       },
     },
@@ -346,6 +355,7 @@ Points measure how ready and able the person is to buy. For each question, the b
 
 - results holds four score bands: hot (80% and above), warm (60 to 79%), cold (40 to 59%) and not_qualified (below 40%). Each has a label (2 to 3 words, for example "Strong fit"), a headline, a body of 2 to 3 sentences explaining what their result means, and next_steps: exactly 3 short, concrete actions for someone in that band (each under 20 words), in the brand's voice. The last step should naturally lead to contacting the business.
 - Be encouraging even to low scorers. Never promise outcomes the business cannot guarantee. For eligibility, visa, medical, legal or financial scorecards, say the result is an indication, not an official decision.
+- details and price (on each result band and each outcome) make the results page concrete, shown as a receipt, routine, ticket or list depending on the style. Fill them ONLY with real items, packages, steps or prices the owner has told you; otherwise return "" for both. Never invent a price, product or figure. details: up to 4 lines, each "Label: value" on its own line, for example "Step 1: Vitamin C serum, morning" or "Price range: ₦4.2m to ₦5.1m" or "Dates: flexible, December". price: the real price or range as the customer should see it, for example "₦38,500" or "From ₦4.5m". Usually only the hot and warm bands (or every outcome on a match scorecard) need them.
 - result_cta_text: button text on the results page, for example "Book a free consultation". result_cta_url: a link the owner gave you (website, WhatsApp link like https://wa.me/234..., or booking page), or "" if they have not given one. Never invent a URL.`;
 
 // ── Validation: turn Claude's draft into safe DB rows ─────────────────────
@@ -398,8 +408,38 @@ function safeUrl(u: string): string | null {
   }
 }
 
-function safeBand(b: Partial<BuilderBand> | undefined, fallback: BuilderBand): BuilderBand {
+// "Label: value" lines → detail rows (max 5). A line without a colon becomes a value-only row.
+export function parseDetails(raw: unknown): DetailLine[] {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((d): d is DetailLine => !!d && typeof d.label === "string" && typeof d.value === "string")
+      .map((d) => ({ label: clip(d.label, 40), value: clip(d.value, 80) }))
+      .filter((d) => d.value)
+      .slice(0, 5);
+  }
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(/\n+/)
+    .map((line) => line.trim().replace(/^[-•*]\s*/, ""))
+    .filter(Boolean)
+    .map((line) => {
+      const i = line.indexOf(":");
+      return i > 0 ? { label: clip(line.slice(0, i), 40), value: clip(line.slice(i + 1), 80) } : { label: "", value: clip(line, 80) };
+    })
+    .filter((d) => d.value)
+    .slice(0, 5);
+}
+
+export function detailsToText(d: DetailLine[] | undefined): string {
+  return (d || []).map((x) => (x.label ? `${x.label}: ${x.value}` : x.value)).join("\n");
+}
+
+function safeBand(b: (Partial<Omit<BuilderBand, "details">> & { details?: unknown; price?: unknown }) | undefined, fallback: BuilderBand): BuilderBand {
+  const details = parseDetails(b?.details);
+  const price = clip(typeof b?.price === "string" ? b.price : "", 40);
   return {
+    ...(details.length ? { details } : {}),
+    ...(price ? { price } : {}),
     label: clip(b?.label, 40) || fallback.label,
     headline: clip(b?.headline, 160) || fallback.headline,
     body: clip(b?.body, 700) || fallback.body,
@@ -445,6 +485,8 @@ export function normalizeDraft(
         title: clip(o.title, 80),
         description: clip(o.description, 400),
         recommendation: clip(o.recommendation, 400),
+        ...(parseDetails(o.details).length ? { details: parseDetails(o.details) } : {}),
+        ...(clip(o.price, 40) ? { price: clip(o.price, 40) } : {}),
       });
     }
     if (outcomes.length < 2) errors.push("A match scorecard needs at least 2 distinct outcomes.");
@@ -589,7 +631,14 @@ export function toDraftForPrompt(
   color: string | null
 ): DraftQuiz {
   const c = quiz.builder_config;
-  const withSteps = (b: BuilderBand): BuilderBand => ({ ...b, next_steps: b.next_steps || [] });
+  const withSteps = (b: BuilderBand): DraftBand => ({
+    label: b.label,
+    headline: b.headline,
+    body: b.body,
+    next_steps: b.next_steps || [],
+    details: detailsToText(b.details),
+    price: b.price || "",
+  });
   // The calculator step (question 1) goes back as "calculator", not as a question.
   const hasCalc = questions.some((q) => q.question_type === "calculator");
   const offset = hasCalc ? 1 : 0;
@@ -612,7 +661,7 @@ export function toDraftForPrompt(
         insight: o.insight || "",
       })),
     })),
-    outcomes: c.outcomes,
+    outcomes: c.outcomes.map((o) => ({ ...o, details: detailsToText(o.details), price: o.price || "" })),
     results: {
       hot: withSteps(c.results.HOT_LEAD),
       warm: withSteps(c.results.WARM_LEAD),
