@@ -114,6 +114,8 @@ async function onInvoiceFailed(inv: Obj) {
 async function onSubscriptionChanged(sub: StripeSubscription, type: string, prev: Obj | undefined) {
   const org = (sub.metadata?.app === STRIPE_APP ? await orgById(sub.metadata.lsai_org_id) : null) ?? (await orgByCustomer(sub.customer));
   if (!org) return;
+  // A subscription the org has moved off (plan switch) must not change its status.
+  if (org.stripe_subscription_id && sub.id && org.stripe_subscription_id !== sub.id) return;
   const deleted = type === "customer.subscription.deleted";
   const status = deleted ? "canceled" : billingStatusFor(sub.status);
   await createServiceClient()

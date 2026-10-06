@@ -4,6 +4,7 @@
 // builder_email_log, so re-runs and overlapping runs never send duplicates.
 import { createServiceClient } from "./supabase";
 import { PAY_TO_PUBLISH_FROM, goLiveOffer, isPaid, tierPriceFor, type OrgBilling } from "./paystack";
+import { isSelfServeTier } from "./paystack";
 import { firstBuilderQuizAt } from "./go-live";
 import { sendOwnerEmailOnce, type OwnerEmailKind } from "./builder-emails";
 import type { Currency } from "./money";
@@ -59,8 +60,10 @@ export async function runLifecycleEmails(opts: {
     const paid = isPaid(org);
     const periodEnd = org.current_period_end ? new Date(org.current_period_end).getTime() : null;
     const emailOrg = { id: org.id, name: org.name, slug: org.slug, email: org.email };
-    const price = tierPriceFor("builder", org);
-    const base = { price, currency };
+    // Renewal and lapse emails quote the plan they're on; nudges quote Pro.
+    const plan = isSelfServeTier(org.billing_tier) && org.last_paid_at ? org.billing_tier : "builder";
+    const price = tierPriceFor(plan, org);
+    const base = { price, currency, plan };
 
     // 1. The 7-day series: never-paid owners on the pay-to-publish model. Each
     //    email goes on its day, or the day after if a run was missed.

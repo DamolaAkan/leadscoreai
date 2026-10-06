@@ -173,6 +173,7 @@ export async function POST(request: Request) {
               amountPaid: amountNaira,
               quizLive: typeof meta.publish_quiz_id === "string" && !!meta.publish_quiz_id,
               price: tierPriceFor(tier, org),
+              plan: tier === "starter" ? "starter" : "builder",
             },
             String(d.reference ?? end.toISOString())
           );

@@ -6,12 +6,14 @@ export type Currency = "NGN" | "USD";
 
 export const PRICING = {
   NGN: {
+    starter: 20750, // Starter: 1 live scorecard, 30 AI edits a month
     pro: 59750, // pre-2026-09-28 sign-ups keep ₦53,750 (see tierPriceFor)
     goLiveDiscount: 10000,
     topupStep: 10000, // ₦10,000 = 45 AI edits
     editsPerStep: 45,
   },
   USD: {
+    starter: 20,
     pro: 49,
     goLiveDiscount: 10, // $39 first month
     topupStep: 10, // $10 = 70 AI edits (>50% margin after Stripe fees)

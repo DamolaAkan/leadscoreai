@@ -9,10 +9,20 @@ export const TIERS = {
   // Done-for-you clients (Stella builds the scorecard).
   core: { label: "Core", naira: 130000 },
   pro: { label: "Pro", naira: 250000 },
-  // Self-serve quiz builder: one plan, sold as "Pro".
+  // Self-serve builder plans: Starter, and Pro (stored as "builder").
+  starter: { label: "Starter", naira: 20750 },
   builder: { label: "Pro", naira: 59750 },
 } as const;
 export type Tier = keyof typeof TIERS;
+
+// What each self-serve plan includes. Live scorecards and AI edits are enforced;
+// leads are the headline allowance (not capped in code).
+export const PLAN_LIMITS = {
+  starter: { liveScorecards: 1, edits: 30, leads: 100 },
+  builder: { liveScorecards: 3, edits: 150, leads: 1000 },
+} as const;
+export type SelfServeTier = keyof typeof PLAN_LIMITS;
+export const isSelfServeTier = (t: unknown): t is SelfServeTier => t === "starter" || t === "builder";
 
 // Pro went from ₦53,750 to ₦59,750. Self-serve owners who signed up before the
 // change were quoted the old price (emails, checkout), so they keep it.
@@ -32,6 +42,7 @@ export function isLegacyPrice(org: PricedOrg): boolean {
 
 // What this org pays per month for a tier, in its billing currency.
 export function tierPriceFor(tier: Tier, org: PricedOrg): number {
+  if (tier === "starter") return currencyFor(org) === "USD" ? PRICING.USD.starter : TIERS.starter.naira;
   if (tier === "builder" && currencyFor(org) === "USD") return PRICING.USD.pro;
   return tier === "builder" && isLegacyPrice(org) ? LEGACY_BUILDER_NAIRA : TIERS[tier].naira;
 }
@@ -41,10 +52,10 @@ export function tierPriceFloor(tier: Tier): number {
   return tier === "builder" ? Math.min(LEGACY_BUILDER_NAIRA, TIERS.builder.naira) : TIERS[tier].naira;
 }
 
-// Which plans an org can buy: self-serve builder accounts get the one Pro plan,
+// Which plans an org can buy: self-serve builder accounts get Starter or Pro,
 // done-for-you clients keep Core/Pro.
 export function plansFor(selfServe: boolean): Tier[] {
-  return selfServe ? ["builder"] : ["core", "pro"];
+  return selfServe ? ["starter", "builder"] : ["core", "pro"];
 }
 
 // Self-serve builder model: FREE TO BUILD, PAY TO PUBLISH. Building and

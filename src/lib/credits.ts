@@ -9,6 +9,7 @@ import { isPaid, type OrgBilling } from "./paystack";
 
 export const FREE_EDITS = 30;
 export const PRO_MONTHLY_EDITS = 150;
+export const STARTER_MONTHLY_EDITS = 30;
 // Top-ups come in ₦10,000 steps of 45 edits (≈₦222/edit): >50% margin on real
 // costs (~₦91/edit incl. free turns) even at ₦1,600/$.
 export const TOPUP_STEP_NAIRA = 10000;
@@ -101,7 +102,7 @@ export async function getCreditStatus(org: OrgForCredits): Promise<CreditStatus>
       .lt("credits", 0),
   ]);
 
-  const allowance = paid ? PRO_MONTHLY_EDITS : FREE_EDITS;
+  const allowance = paid ? (org.billing_tier === "starter" ? STARTER_MONTHLY_EDITS : PRO_MONTHLY_EDITS) : FREE_EDITS;
   const used = allowanceUsed || 0;
   const allowanceRemaining = Math.max(0, allowance - used);
   const bought = (topups || []).reduce((s, r) => s + (r.credits || 0), 0);

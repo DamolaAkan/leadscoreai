@@ -404,18 +404,36 @@ export default function SettingsTab({
           </div>
 
           {usd && billing?.stripeManaged ? (
-            <button
-              onClick={handleManageBilling}
-              disabled={!!subBusy}
-              className="w-full rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
-              style={{ borderColor: accent }}
-            >
-              <div className="font-bold text-gray-900">Manage my plan</div>
-              <div className="text-sm text-gray-600">Update your card, download invoices or cancel.</div>
-              <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
-                {subBusy === "portal" ? "Opening…" : "Open billing →"}
-              </div>
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={handleManageBilling}
+                disabled={!!subBusy}
+                className="w-full rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
+                style={{ borderColor: accent }}
+              >
+                <div className="font-bold text-gray-900">Manage my plan</div>
+                <div className="text-sm text-gray-600">Update your card, download invoices or cancel.</div>
+                <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
+                  {subBusy === "portal" ? "Opening…" : "Open billing →"}
+                </div>
+              </button>
+              {billing?.tier === "starter" && (
+                <button
+                  onClick={() => handleSubscribe("builder")}
+                  disabled={!!subBusy}
+                  className="w-full rounded-lg border-2 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  style={{ borderColor: accent }}
+                >
+                  <div className="font-bold text-gray-900">Upgrade to Pro</div>
+                  <div className="text-sm text-gray-600">
+                    {fmt(billing.plans?.find((p) => p.tier === "builder")?.amount ?? 0)}/month: 3 live scorecards, 150 AI edits a month. Your Starter plan ends when Pro starts.
+                  </div>
+                  <div className="mt-2 text-sm font-semibold" style={{ color: accent }}>
+                    {subBusy === "builder" ? "Starting…" : "Upgrade →"}
+                  </div>
+                </button>
+              )}
+            </div>
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(billing?.plans ?? []).map(({ tier: t, label, amount: price }) => {
@@ -430,7 +448,7 @@ export default function SettingsTab({
                 >
                   <div className="font-bold text-gray-900">{label}</div>
                   <div className="text-sm text-gray-600">
-                    {billing?.offer?.eligible ? (
+                    {billing?.offer?.eligible && t !== "starter" ? (
                       <>
                         <s className="text-gray-400">{fmt(price)}</s> {fmt(price - billing.offer.discount)} first month,
                         then {fmt(price)}/month

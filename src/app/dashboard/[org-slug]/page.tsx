@@ -68,7 +68,8 @@ async function startCheckout(tier: string, getAuthHeaders: () => Record<string, 
 function OfferBanner({ info, getAuthHeaders }: { info: AccessInfo; getAuthHeaders: () => Record<string, string> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const plan = info.plans?.[0];
+  // The go-live offer is a Pro offer.
+  const plan = info.plans?.find((p) => p.tier === "builder") ?? info.plans?.[0];
   if (!plan || !info.offer?.eligible || !info.offer.endsAt) return null;
   const msLeft = new Date(info.offer.endsAt).getTime() - Date.now();
   const hoursLeft = Math.max(1, Math.ceil(msLeft / 3600000));
@@ -186,7 +187,7 @@ function LockScreen({
             >
               <div className="font-bold text-gray-900">{label}</div>
               <div className="text-sm text-gray-600">
-                {discount > 0 ? (
+                {discount > 0 && t !== "starter" ? (
                   <>
                     <s className="text-gray-400">{fmt(price)}</s> {fmt(price - discount)} first
                     month, then {fmt(price)}/month

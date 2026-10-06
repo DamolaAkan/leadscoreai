@@ -169,6 +169,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
   const fmt = (n: number) => money(n, cur);
   const [paywall, setPaywall] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [plan, setPlan] = useState<"builder" | "starter">("builder");
   // AI edits meter + top-ups.
   const [credits, setCredits] = useState<Credits | null>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -221,7 +222,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
       .then((b) =>
         setBilling({
           canPublish: b.canPublish !== false,
-          price: b.plans?.[0]?.amount ?? PRICING[asCurrency(b.currency)].pro,
+          price: b.plans?.find((p: { tier: string }) => p.tier === "builder")?.amount ?? PRICING[asCurrency(b.currency)].pro,
           currency: asCurrency(b.currency),
           offer: b.offer ?? { eligible: false, discount: 0, endsAt: null },
         })
@@ -488,7 +489,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
     try {
       const data = await api("/api/dashboard/billing/checkout", {
         method: "POST",
-        body: JSON.stringify({ tier: "builder", quizId: current.id }),
+        body: JSON.stringify({ tier: plan, quizId: current.id }),
       });
       if (data.authorization_url) {
         checkoutStartedPixel(data);
@@ -1371,30 +1372,54 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               Warm or Cold.
             </p>
 
-            <div className="mt-5 rounded-2xl bg-[#0E1525] border border-[#2B3245] p-4">
-              {billing.offer.eligible ? (
-                <>
-                  <div className="flex items-baseline gap-2.5">
-                    <span className="text-[28px] font-extrabold text-[#F5F9FC]">
-                      {fmt(billing.price - billing.offer.discount)}
-                    </span>
-                    <s className="text-[15px] text-[#9DA2A6]">{fmt(billing.price)}</s>
+            <div className="mt-5 space-y-2.5" role="radiogroup" aria-label="Choose a plan">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={plan === "builder"}
+                onClick={() => setPlan("builder")}
+                className={`w-full text-left rounded-2xl bg-[#0E1525] border-2 p-4 transition-colors ${plan === "builder" ? "border-violet-500" : "border-[#2B3245]"}`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[15px] font-bold text-[#F5F9FC]">Pro</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-300">Most popular</span>
+                </div>
+                {billing.offer.eligible ? (
+                  <>
+                    <div className="mt-1 flex items-baseline gap-2.5">
+                      <span className="text-[26px] font-extrabold text-[#F5F9FC]">
+                        {fmt(billing.price - billing.offer.discount)}
+                      </span>
+                      <s className="text-[14px] text-[#9DA2A6]">{fmt(billing.price)}</s>
+                    </div>
+                    <p className="text-[13px] text-[#C2C8CC]">for your first month, then {fmt(billing.price)}/month</p>
+                    <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 text-amber-300 text-[12px] font-semibold px-3 py-1">
+                      🎁 {fmt(billing.offer.discount)} off · ends in {hoursLeft(billing.offer.endsAt)}h
+                    </p>
+                  </>
+                ) : (
+                  <div className="mt-1">
+                    <span className="text-[26px] font-extrabold text-[#F5F9FC]">{fmt(billing.price)}</span>
+                    <span className="text-[14px] text-[#9DA2A6]"> /month</span>
                   </div>
-                  <p className="text-[13px] text-[#C2C8CC]">
-                    for your first month, then {fmt(billing.price)}/month
-                  </p>
-                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 text-amber-300 text-[12px] font-semibold px-3 py-1">
-                    🎁 {fmt(billing.offer.discount)} off · ends in {hoursLeft(billing.offer.endsAt)}h
-                  </p>
-                </>
-              ) : (
-                <>
-                  <span className="text-[28px] font-extrabold text-[#F5F9FC]">{fmt(billing.price)}</span>
+                )}
+                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">3 live scorecards · 150 AI edits a month · no LeadScoreAI branding</p>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={plan === "starter"}
+                onClick={() => setPlan("starter")}
+                className={`w-full text-left rounded-2xl bg-[#0E1525] border-2 p-4 transition-colors ${plan === "starter" ? "border-violet-500" : "border-[#2B3245]"}`}
+              >
+                <span className="text-[15px] font-bold text-[#F5F9FC]">Starter</span>
+                <div className="mt-1">
+                  <span className="text-[22px] font-extrabold text-[#F5F9FC]">{fmt(price.starter)}</span>
                   <span className="text-[14px] text-[#9DA2A6]"> /month</span>
-                </>
-              )}
-              <p className="mt-3 text-[12px] text-[#9DA2A6]">
-                Includes 150 AI edits a month.{" "}
+                </div>
+                <p className="mt-2 text-[12.5px] text-[#9DA2A6]">1 live scorecard · 30 AI edits a month</p>
+              </button>
+              <p className="pt-1 text-[12px] text-[#9DA2A6]">
                 {cur === "USD" ? "Pay by card, renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD. Cancel anytime."}
               </p>
             </div>
@@ -1405,7 +1430,7 @@ export default function BuilderStudio({ embedded = false }: { embedded?: boolean
               disabled={paying}
               className="mt-5 w-full py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[16px] font-bold disabled:opacity-60 active:scale-[0.99] transition"
             >
-              {paying ? "Opening secure checkout…" : "Go live now →"}
+              {paying ? "Opening secure checkout…" : `Go live on ${plan === "starter" ? "Starter" : "Pro"} →`}
             </button>
             <button
               onClick={() => setPaywall(false)}

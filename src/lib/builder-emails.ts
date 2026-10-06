@@ -73,6 +73,7 @@ export interface EmailContext {
   quizLive?: boolean;
   price?: number; // this owner's Pro price (tierPriceFor); defaults to the current price
   currency?: Currency; // NGN (Paystack) or USD (Stripe); defaults to NGN
+  plan?: "starter" | "builder"; // which self-serve plan; defaults to Pro
 }
 
 // Prices in the owner's billing currency.
@@ -83,6 +84,11 @@ function pricing(ctx: EmailContext) {
     fmt: (n: number) => money(n, cur),
     PRO: ctx.price ?? PRICING[cur].pro,
     OFF: PRICING[cur].goLiveDiscount,
+    PLAN: ctx.plan === "starter" ? "Starter" : "Pro",
+    INCLUDES:
+      ctx.plan === "starter"
+        ? "100 leads a month, 1 live scorecard and 30 AI edits a month"
+        : "1,000 leads a month, 3 live scorecards and 150 AI edits a month",
   };
 }
 
@@ -110,7 +116,7 @@ function offerLine(ctx: EmailContext): string {
 
 export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext): { subject: string; html: string } {
   const name = esc(o.name);
-  const { usd, fmt, PRO, OFF } = pricing(ctx);
+  const { usd, fmt, PRO, OFF, PLAN, INCLUDES } = pricing(ctx);
   switch (kind) {
     case "welcome":
       return {
@@ -202,26 +208,26 @@ export function ownerEmail(kind: OwnerEmailKind, o: EmailOrg, ctx: EmailContext)
       };
     case "pro_welcome":
       return {
-        subject: "You're in: LeadScoreAI Pro is active 🎉",
+        subject: `You're in: LeadScoreAI ${PLAN} is active 🎉`,
         html: layout({
-          heading: "Congratulations, you're on Pro 🎉",
+          heading: `Congratulations, you're on ${PLAN} 🎉`,
           body: [
-            `Thanks, ${name}. ${ctx.amountPaid ? `We've received your payment of <b>${fmt(ctx.amountPaid)}</b> and ` : ""}Pro is active${ctx.periodEnd ? ` until <b>${day(ctx.periodEnd)}</b>` : ""}.`,
+            `Thanks, ${name}. ${ctx.amountPaid ? `We've received your payment of <b>${fmt(ctx.amountPaid)}</b> and ` : ""}${PLAN} is active${ctx.periodEnd ? ` until <b>${day(ctx.periodEnd)}</b>` : ""}.`,
             ctx.quizLive
               ? `Your scorecard is now <b>live</b>. Share it on WhatsApp from the builder and watch your leads come in.`
               : `You can now publish your scorecards. Open the builder, tap Publish, and share it on WhatsApp.`,
-            `Your plan includes 1,000 leads a month, 3 live scorecards and 150 AI edits a month. ${usd ? "It renews automatically each month, and you can update your card or cancel any time in Settings." : "We'll remind you a few days before it's time to renew."}`,
+            `Your plan includes ${INCLUDES}. ${usd ? "It renews automatically each month, and you can update your card or cancel any time in Settings." : "We'll remind you a few days before it's time to renew."}`,
           ],
           cta: { label: "Open my dashboard", href: builderUrl(o) },
         }),
       };
     case "renewal_due":
       return {
-        subject: `Your Pro plan renews on ${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}`,
+        subject: `Your ${PLAN} plan renews on ${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}`,
         html: layout({
-          heading: "Your Pro plan is due for renewal",
+          heading: `Your ${PLAN} plan is due for renewal`,
           body: [
-            `Hi ${name}, your LeadScoreAI Pro plan runs until <b>${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}</b>.`,
+            `Hi ${name}, your LeadScoreAI ${PLAN} plan runs until <b>${ctx.periodEnd ? day(ctx.periodEnd) : "soon"}</b>.`,
             usd
               ? `It renews automatically for ${fmt(PRO)} on your card, so there's nothing to do. To update your card or cancel, go to Settings.`
               : `Renew for ${fmt(PRO)} to keep your scorecards live and your leads coming in. Pay by bank transfer, card or USSD in Settings.`,

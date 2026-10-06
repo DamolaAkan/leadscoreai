@@ -5,7 +5,7 @@
 // (conditional update) and only it sends emails and alerts.
 import { createServiceClient } from "./supabase";
 import { recordPartnerEarning } from "./partners";
-import { STRIPE_APP, billingStatusFor, getSubscription, periodEndOf } from "./stripe";
+import { STRIPE_APP, billingStatusFor, cancelSubscription, getSubscription, periodEndOf } from "./stripe";
 import { PRICING, editsFor, money } from "./money";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "./builder-emails";
 import { track } from "./track";
@@ -90,6 +90,11 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
   const sub = await getSubscription(subId);
   if (!sub.ok) throw new Error(sub.data.error?.message || "Could not load subscription");
   const end = periodEndOf(sub.data) ?? new Date(Date.now() + 30 * 24 * 3600 * 1000);
+  const tier = meta.tier === "starter" ? "starter" : "builder";
+  const listPrice = tier === "starter" ? PRICING.USD.starter : PRICING.USD.pro;
+  const planLabel = tier === "starter" ? "Starter" : "Pro";
+  // Switching plan (e.g. Starter → Pro): the old subscription is ended below.
+  const previousSub = org.stripe_subscription_id && org.stripe_subscription_id !== subId ? org.stripe_subscription_id : null;
   // Claim this subscription once: only the first caller (webhook or return
   // page) gets a row back, so emails and alerts are sent exactly once.
   const { data: claimed } = await supabase
@@ -105,14 +110,19 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
     .update({
       stripe_customer_id: customer,
       stripe_subscription_id: subId,
-      billing_tier: "builder",
+      billing_tier: tier,
       billing_status: billingStatusFor(sub.data.status),
       current_period_end: end.toISOString(),
       last_paid_at: new Date().toISOString(),
     })
     .eq("id", org.id);
-  console.log(`[stripe] Pro active for org ${org.id} until ${end.toISOString()}`);
+  console.log(`[stripe] ${planLabel} active for org ${org.id} until ${end.toISOString()}`);
   if (!firstTime) return "already"; // state is set; side effects already ran
+
+  if (previousSub) {
+    const cancelled = await cancelSubscription(previousSub);
+    if (!cancelled.ok) console.error(`[stripe] could not end previous subscription ${previousSub}:`, cancelled.data.error?.message);
+  }
 
   const publishQuizId = meta.publish_quiz_id || null;
   if (publishQuizId) {
@@ -125,10 +135,10 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
     if (pubErr) console.error("[stripe] auto-publish error:", pubErr.message);
   }
 
-  const discount = Math.max(0, PRICING.USD.pro - paidUsd);
+  const discount = Math.max(0, listPrice - paidUsd);
   await track("paid", {
     orgId: org.id,
-    props: { tier: "builder", amount: paidUsd, currency: "USD", discount, self_serve: !!org.self_serve, provider: "stripe" },
+    props: { tier, amount: paidUsd, currency: "USD", discount, self_serve: !!org.self_serve, provider: "stripe" },
   });
 
   // Meta Purchase, same event id as the browser pixel on the success page.
@@ -147,7 +157,7 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
     externalId: org.id,
     value: paidUsd,
     currency: "USD",
-    contentName: "quiz_builder_builder",
+    contentName: `quiz_builder_${tier}`,
     eventSourceUrl: `${APP_URL}/dashboard/${org.slug}`,
     fbp: withCookies?.fbp ?? null,
     fbc: withCookies?.fbc ?? null,
@@ -162,17 +172,18 @@ export async function applyCheckoutSession(s: Obj): Promise<"activated" | "alrea
       periodEnd: end.toISOString(),
       amountPaid: paidUsd,
       quizLive: !!publishQuizId,
-      price: PRICING.USD.pro,
+      price: listPrice,
       currency: "USD",
+      plan: tier,
     },
     sessionId
   );
   await recordPartnerEarning({ orgId: org.id, paymentRef: sessionId, clientPaid: usd(paidUsd), settled: false });
-  await sendTeamAlert(`💰 New payment: ${org.name} is on Pro (USD)`, [
+  await sendTeamAlert(`💰 New payment: ${org.name} is on ${planLabel} (USD)`, [
     ["Business", org.name],
     ["Email", org.email ?? ""],
     ["Paid", `${usd(paidUsd)} via Stripe${discount > 0 ? ` (${usd(discount)} go-live discount)` : ""}`],
-    ["Renews", `${usd(PRICING.USD.pro)} a month on their card, automatically`],
+    ["Renews", `${usd(listPrice)} a month on their card, automatically`],
     ["Paid until", dateStr(end)],
     ["Reference", sessionId],
     ["When", lagosNow()],

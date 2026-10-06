@@ -89,7 +89,7 @@ const TOPUP_FEATURE = "__topup_feature__";
 const FAQS = [
   {
     q: "What is an AI edit?",
-    a: "Each time the builder creates or changes your scorecard, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your scorecard, Pro includes 150 a month, and Pro accounts that run out can top up in ₦10,000 steps (₦10,000 = 45 edits).",
+    a: "Each time the builder creates or changes your scorecard, it uses 1 AI edit. Answering its tap questions is free, and previewing, sharing and publishing never use edits. You get 30 free edits to build your scorecard, Starter includes 30 a month, Pro includes 150 a month, and Pro accounts that run out can top up in ₦10,000 steps (₦10,000 = 45 edits).",
   },
   {
     q: "What is a willingness-to-pay score?",
@@ -129,16 +129,30 @@ function planFor(cur: Currency) {
   const fmt = (n: number) => money(n, cur);
   return {
     price: fmt(p.pro),
+    starter: fmt(p.starter),
     firstMonth: fmt(p.pro - p.goLiveDiscount),
     discount: fmt(p.goLiveDiscount),
     topup: `${fmt(p.topupStep)} = ${p.editsPerStep} edits`,
     payWith: cur === "USD" ? "Pay by card · Renews monthly" : "Bank transfer, card or USSD",
     payAnswer:
-      `No. Building and previewing your scorecard is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.pro)} a month on Pro. ` +
-      `Go live within 48 hours of building your first scorecard and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
+      `No. Building and previewing your scorecard is free, no card needed. You only pay when you publish it for real customers: ${fmt(p.starter)} a month on Starter (1 live scorecard) or ${fmt(p.pro)} a month on Pro. ` +
+      `Go live on Pro within 48 hours of building your first scorecard and your first month is ${fmt(p.pro - p.goLiveDiscount)}. ` +
       (cur === "USD" ? "Pay by card; it renews monthly. Cancel anytime." : "Pay by bank transfer, card or USSD through Paystack. Cancel anytime."),
   };
 }
+
+const STARTER = {
+  name: "Starter",
+  blurb: "Try it on one offer.",
+  features: [
+    "100 leads a month",
+    "1 live scorecard",
+    "30 AI edits a month",
+    "Willingness-to-pay score on every lead",
+    "Every lead scored Hot, Warm or Cold",
+    "WhatsApp sharing and website embed",
+  ],
+};
 
 const PLAN = {
   name: "Pro",
@@ -622,16 +636,42 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-violet-600">Pricing</p>
             <h2 className="mt-3 text-[32px] sm:text-[48px] font-extrabold tracking-[-0.03em] leading-[1.08]">
-              One plan. Everything included.
+              Two simple plans.
             </h2>
             <p className="mt-4 text-[17px] text-slate-600">
-              Build and preview free. Pay only when you publish, and save {plan.discount} when you go live within 48
-              hours.
+              Build and preview free. Pay only when you publish, and save {plan.discount} on Pro when you go live
+              within 48 hours.
             </p>
           </div>
-          <div className="mt-14 max-w-lg mx-auto rounded-[2rem] bg-slate-50 p-3 sm:p-4">
+          <div className="mt-14 max-w-4xl mx-auto grid gap-5 md:grid-cols-2 items-start">
+            <div className="rounded-3xl bg-white p-7 sm:p-9 ring-1 ring-slate-200">
+              <p className="text-[22px] font-bold">{STARTER.name}</p>
+              <p className="text-[15px] text-slate-500">{STARTER.blurb}</p>
+              <p className="mt-6">
+                <span className="text-[48px] font-extrabold tracking-[-0.03em]">{plan.starter}</span>
+                <span className="text-slate-500">/month</span>
+              </p>
+              <ul className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-[15px]">
+                {STARTER.features.map((f) => (
+                  <li key={f} className="flex gap-2.5">
+                    <span className="text-violet-600">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => start(undefined, "pricing_starter")}
+                className="mt-8 w-full rounded-full py-4 font-semibold text-[16px] bg-white hover:bg-violet-50 text-violet-700 ring-1 ring-violet-300"
+              >
+                {signedIn ? "Open my studio" : CTA}
+              </button>
+            </div>
+          <div className="rounded-[2rem] bg-slate-50 p-3 sm:p-4">
             <div className="rounded-3xl bg-white p-7 sm:p-9 shadow-[0_20px_50px_-20px_rgba(76,29,149,0.35)] ring-1 ring-violet-200">
-              <p className="text-[22px] font-bold">{PLAN.name}</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[22px] font-bold">{PLAN.name}</p>
+                <span className="rounded-full bg-violet-100 text-violet-700 text-[12px] font-semibold px-3 py-1">Most popular</span>
+              </div>
               <p className="text-[15px] text-slate-500">{PLAN.blurb}</p>
               <p className="mt-6">
                 <span className="text-[48px] font-extrabold tracking-[-0.03em]">{plan.price}</span>
@@ -659,6 +699,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
                 No card needed to start · {plan.payWith} · Cancel anytime
               </p>
             </div>
+          </div>
           </div>
           <p className="mt-6 text-center text-[15px] text-slate-500">
             Questions before you start?{" "}

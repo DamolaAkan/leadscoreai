@@ -37,7 +37,8 @@ export async function POST(request: Request) {
     .single();
   if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
   const currency = currencyFor(org);
-  const usd = currency === "USD" && tier === "builder";
+  // Self-serve plans (Starter, Pro) bill in USD through Stripe outside Nigeria.
+  const usd = currency === "USD" && (tier === "builder" || tier === "starter");
   if (usd ? !stripeConfigured() : !paystackConfigured()) {
     return NextResponse.json({ error: "Billing isn't set up yet." }, { status: 503 });
   }
@@ -83,7 +84,9 @@ export async function POST(request: Request) {
   try {
     const firstQuizAt = org.self_serve ? await firstBuilderQuizAt(org.id) : null;
     const offer = goLiveOffer(org as OrgBilling, firstQuizAt);
-    amount = price - offer.discount;
+    // The go-live discount is a Pro offer; Starter is already the low price.
+    const discount = tier === "builder" ? offer.discount : 0;
+    amount = price - discount;
     if (usd) {
       // Stripe fills {CHECKOUT_SESSION_ID}; ?reference= matches Paystack's return
       // so the Purchase pixel fires the same way.
@@ -91,8 +94,9 @@ export async function POST(request: Request) {
         orgId: org.id,
         email,
         customerId: org.stripe_customer_id,
+        tier: tier === "starter" ? "starter" : "builder",
         priceUsd: price,
-        discountUsd: offer.discount,
+        discountUsd: discount,
         publishQuizId,
         successUrl: `${callbackUrl}&reference={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/dashboard/${org.slug}${publishQuizId ? "?tab=builder" : ""}`,
@@ -122,9 +126,9 @@ export async function POST(request: Request) {
         priceNaira: price,
         orgId: org.id,
         callbackUrl,
-        discountNaira: offer.discount,
+        discountNaira: discount,
         publishQuizId,
-        split: await paystackSplitFor(org.id, price - offer.discount),
+        split: await paystackSplitFor(org.id, price - discount),
       });
       if (!init?.status || !init?.data?.authorization_url) {
         console.error("[billing/checkout] paystack init failed:", init?.message);

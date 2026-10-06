@@ -65,7 +65,7 @@ export interface StripeResult<T = Record<string, unknown>> {
 }
 
 export async function stripe<T = Record<string, unknown>>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   path: string,
   params: Record<string, unknown> = {},
   idempotencyKey?: string
@@ -124,6 +124,7 @@ const orgMeta = (orgId: string, purpose: string, extra: Record<string, string> =
 // Hosted Checkout for the monthly Pro subscription.
 export async function createSubscriptionCheckout(opts: {
   orgId: string;
+  tier: "starter" | "builder";
   email: string;
   customerId?: string | null;
   priceUsd: number;
@@ -132,7 +133,10 @@ export async function createSubscriptionCheckout(opts: {
   successUrl: string;
   cancelUrl: string;
 }) {
-  const meta = orgMeta(opts.orgId, "leadscoreai_subscription", opts.publishQuizId ? { publish_quiz_id: opts.publishQuizId } : {});
+  const meta = orgMeta(opts.orgId, "leadscoreai_subscription", {
+    tier: opts.tier,
+    ...(opts.publishQuizId ? { publish_quiz_id: opts.publishQuizId } : {}),
+  });
   return stripe<{ id: string; url: string }>("POST", "checkout/sessions", {
     mode: "subscription",
     client_reference_id: opts.orgId,
@@ -144,7 +148,7 @@ export async function createSubscriptionCheckout(opts: {
           currency: "usd",
           unit_amount: Math.round(opts.priceUsd * 100),
           recurring: { interval: "month" },
-          product_data: { name: "LeadScoreAI Pro" },
+          product_data: { name: opts.tier === "starter" ? "LeadScoreAI Starter" : "LeadScoreAI Pro" },
         },
       },
     ],
@@ -205,6 +209,12 @@ export interface StripeSubscription {
 
 export async function getSubscription(id: string) {
   return stripe<StripeSubscription>("GET", `subscriptions/${id}`);
+}
+
+// End a subscription now (used when an owner switches plan, so they're never
+// billed for two subscriptions at once).
+export async function cancelSubscription(id: string) {
+  return stripe<StripeSubscription>("DELETE", `subscriptions/${id}`);
 }
 
 // Period end moved from the subscription to its items in newer API versions.
