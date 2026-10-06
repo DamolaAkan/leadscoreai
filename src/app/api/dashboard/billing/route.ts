@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
+import { getOrgAccess } from "@/lib/access";
 import { stripeConfigured } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import {
   isPaid,
-  computeAccess,
   TIERS,
   tierPriceFor,
   currencyFor,
@@ -14,7 +14,6 @@ import {
   trialDaysFor,
   goLiveOffer,
   canPublish,
-  billingPeriodStart,
 } from "@/lib/paystack";
 import { firstBuilderQuizAt } from "@/lib/go-live";
 
@@ -36,49 +35,12 @@ export async function GET(request: Request) {
     .single();
 
   const b = (org || {}) as OrgBilling;
-  const orgEmail = (org as { email?: string | null })?.email ?? null;
 
-  // Real leads = all responses EXCEPT test leads (a lead whose email matches the
-  // org's own account email — i.e. the client testing their own scorecard).
-  const { count: totalLeads } = await supabase
-    .from("quiz_responses")
-    .select("id", { count: "exact", head: true })
-    .eq("organization_id", user.organizationId);
-  let testLeads = 0;
-  if (orgEmail) {
-    const { count } = await supabase
-      .from("quiz_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", user.organizationId)
-      .ilike("contact_email", orgEmail); // no wildcards = case-insensitive exact
-    testLeads = count ?? 0;
-  }
-  const realLeadCount = Math.max(0, (totalLeads ?? 0) - testLeads);
+  // Same rule the server enforces on lead-data routes (lib/access).
+  const { access, periodLeads } = await getOrgAccess(user.organizationId);
+  const periodStart = periodLeads !== null;
+  const periodLeadCount = periodLeads ?? 0;
 
-  // Starter's monthly lead allowance: real leads since this month's payment.
-  let periodLeadCount = 0;
-  const periodStart = b.billing_tier === "starter" && isPaid(b) ? billingPeriodStart(b) : null;
-  if (periodStart) {
-    const since = periodStart.toISOString();
-    const { count: inPeriod } = await supabase
-      .from("quiz_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", user.organizationId)
-      .gte("created_at", since);
-    let testInPeriod = 0;
-    if (orgEmail) {
-      const { count } = await supabase
-        .from("quiz_responses")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", user.organizationId)
-        .gte("created_at", since)
-        .ilike("contact_email", orgEmail);
-      testInPeriod = count ?? 0;
-    }
-    periodLeadCount = Math.max(0, (inPeriod ?? 0) - testInPeriod);
-  }
-
-  const access = computeAccess(b, realLeadCount, periodLeadCount);
   const firstQuizAt = b.self_serve ? await firstBuilderQuizAt(user.organizationId) : null;
 
   return NextResponse.json({

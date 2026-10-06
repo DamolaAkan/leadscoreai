@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getOrgAccess } from "@/lib/access";
 import { createServiceClient } from "@/lib/supabase";
 import { computeWtpIndex } from "@/lib/wtp";
 import { track } from "@/lib/track";
@@ -138,7 +139,24 @@ export async function POST(request: Request) {
             const phone = body.contact_phone || "—";
             const email = body.contact_email || "—";
             const pct = body.percentage ?? Math.round(((body.score ?? 0) / (body.max_score || 100)) * 100);
-            const html = `
+            // Dashboard locked (trial over, or Starter past its monthly leads): say a hot
+            // lead arrived, but keep who it is behind the upgrade, like the dashboard.
+            const { access } = await getOrgAccess(existing.organization_id);
+            const lockedHtml = `
+<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2533;">
+  <div style="background:#dc2626;border-radius:12px;padding:16px 20px;color:#fff;">
+    <div style="font-size:18px;font-weight:700;">🔥 A new hot lead is waiting for ${org.name}</div>
+    <div style="font-size:13px;opacity:.9;margin-top:2px;">Score ${pct}%: ready and able to buy.</div>
+  </div>
+  <div style="padding:16px 4px;font-size:14px;line-height:1.6;">
+    ${access.reason === "plan_leads_exhausted"
+      ? "You've reached your Starter limit of leads this month. Your Buyer Scorecard is still collecting them. Upgrade to Pro to see who this lead is and call them while they're keen."
+      : "Your dashboard is locked. Subscribe to see who this lead is and call them while they're keen."}
+    <br />
+    <a href="${dash}" style="display:inline-block;margin-top:14px;background:#6d28d9;color:#fff;text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600;">See my lead →</a>
+  </div>
+</div>`;
+            const html = access.locked ? lockedHtml : `
 <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2533;">
   <div style="background:#dc2626;border-radius:12px;padding:16px 20px;color:#fff;">
     <div style="font-size:18px;font-weight:700;">🔥 New hot lead for ${org.name}</div>
@@ -156,7 +174,7 @@ export async function POST(request: Request) {
 </div>`;
             await sendSequenceEmail({
               to,
-              subject: `🔥 New hot lead: ${name} (${pct}%)`,
+              subject: access.locked ? `🔥 A new hot lead is waiting (${pct}%)` : `🔥 New hot lead: ${name} (${pct}%)`,
               html,
               apiKey,
               fromEmail: "hello@leadscoreai.com",

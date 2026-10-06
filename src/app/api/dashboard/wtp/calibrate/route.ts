@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lockedResponse } from "@/lib/access";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest, hasRole } from "@/lib/auth";
 import { calibrateOrg } from "@/lib/wtp-calibrate";
@@ -13,6 +14,8 @@ export async function POST(request: Request) {
   if (!user || !hasRole(user, "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const locked = await lockedResponse(user.organizationId);
+  if (locked) return locked;
 
   try {
     const result = await calibrateOrg(createServiceClient(), user.organizationId);

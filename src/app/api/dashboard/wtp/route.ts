@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lockedResponse } from "@/lib/access";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import { isClaudeConfigured } from "@/lib/claude";
@@ -18,6 +19,8 @@ export async function GET(request: Request) {
   if (!sessionId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const user = await validateSession(sessionId);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const locked = await lockedResponse(user.organizationId);
+  if (locked) return locked;
 
   const supabase = createServiceClient();
   const orgId = user.organizationId;

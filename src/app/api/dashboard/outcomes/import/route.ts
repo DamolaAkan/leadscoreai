@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lockedResponse } from "@/lib/access";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import { calibrateOrg } from "@/lib/wtp-calibrate";
@@ -20,6 +21,8 @@ const MAX_ROWS = 20000;
 export async function POST(request: Request) {
   const user = await validateSession(getSessionIdFromRequest(request) || "");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const locked = await lockedResponse(user.organizationId);
+  if (locked) return locked;
 
   const { rows } = await request.json();
   if (!Array.isArray(rows) || rows.length === 0) {

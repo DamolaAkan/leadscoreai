@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lockedResponse } from "@/lib/access";
 import { createServiceClient } from "@/lib/supabase";
 import { validateSession, getSessionIdFromRequest } from "@/lib/auth";
 import { QuizResponse } from "@/lib/types";
@@ -13,6 +14,8 @@ export async function GET(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const locked = await lockedResponse(user.organizationId);
+  if (locked) return locked;
 
   const { searchParams } = new URL(request.url);
   const qualification = searchParams.get("qualification") || "";
