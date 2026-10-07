@@ -646,8 +646,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
               Two simple plans.
             </h2>
             <p className="mt-4 text-[17px] text-slate-600">
-              Build and preview free. Pay only when you publish, and save {plan.discount} on Pro when you go live
-              within 48 hours.
+              Build and preview free. Pay only when you publish.
             </p>
           </div>
           <div className="mt-14 max-w-4xl mx-auto grid gap-5 md:grid-cols-2 items-start">
@@ -753,7 +752,7 @@ export default function BuildLanding({ page }: { page: IndustryPage }) {
         >
           {signedIn ? "Open my studio" : CTA}
         </button>
-        <p className="mt-4 text-[13px] text-slate-500">Free to build · {plan.discount} off when you go live within 48 hours</p>
+        <p className="mt-4 text-[13px] text-slate-500">Free to build · Pay only when you publish</p>
       </section>
 
       {/* Footer */}
