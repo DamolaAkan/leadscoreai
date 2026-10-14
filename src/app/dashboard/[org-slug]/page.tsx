@@ -12,6 +12,7 @@ import SettingsTab from "@/components/dashboard/SettingsTab";
 import PredictiveInsightsTab from "@/components/dashboard/PredictiveInsightsTab";
 import DemoTab from "@/components/dashboard/DemoTab";
 import StartHereTab from "@/components/dashboard/StartHereTab";
+import AcademyTab from "@/components/dashboard/AcademyTab";
 import BuilderStudio from "@/components/builder/BuilderStudio";
 import MetaPixel, { checkoutStartedPixel, purchaseReturnPixel } from "@/components/MetaPixel";
 import InstallAppPrompt from "@/components/pwa/InstallAppPrompt";
@@ -25,9 +26,10 @@ export type DashboardTab =
   | "demo"
   | "users"
   | "settings"
-  | "builder";
+  | "builder"
+  | "academy";
 
-const SELF_SERVE_TABS: DashboardTab[] = ["responses", "analytics", "builder", "users", "settings"];
+const SELF_SERVE_TABS: DashboardTab[] = ["responses", "analytics", "builder", "academy", "users", "settings"];
 
 interface AccessInfo {
   locked: boolean;
@@ -380,6 +382,7 @@ export default function DashboardPage() {
           {activeTab === "demo" && (
             <DemoTab user={user} accent={accent} getAuthHeaders={getAuthHeaders} />
           )}
+          {activeTab === "academy" && <AcademyTab accent={accent} />}
           {activeTab === "users" && isAdmin && (
             <UsersTab
               user={user}

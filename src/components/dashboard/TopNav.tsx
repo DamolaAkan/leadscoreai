@@ -23,11 +23,12 @@ const tabs: { key: DashboardTab; label: string; minRole: string }[] = [
   { key: "settings", label: "Settings", minRole: "superadmin" },
 ];
 
-// Self-serve (quiz builder) accounts: five tabs, Builder in the middle.
+// Self-serve (quiz builder) accounts: Builder in the middle, then the Academy lessons.
 const selfServeTabs: { key: DashboardTab; label: string; minRole: string }[] = [
   { key: "responses", label: "Responses", minRole: "staff" },
   { key: "analytics", label: "Analytics", minRole: "staff" },
   { key: "builder", label: "Builder", minRole: "staff" },
+  { key: "academy", label: "Academy", minRole: "staff" },
   { key: "users", label: "Users", minRole: "admin" },
   { key: "settings", label: "Settings", minRole: "superadmin" },
 ];
@@ -162,7 +163,7 @@ export default function TopNav({
               key={t.key}
               onClick={() => onTabChange(t.key)}
               aria-current={active ? "page" : undefined}
-              className="flex-1 min-w-[64px] flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] transition-colors"
+              className="flex-1 min-w-[56px] flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] transition-colors"
               style={{ color, fontWeight: active ? 700 : 500 }}
             >
               <span
@@ -192,6 +193,7 @@ function TabIcon({ tab, className }: { tab: DashboardTab; className?: string }) 
     demo: "M8 5.5v13l10-6.5-10-6.5z",
     builder: "M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z",
     users: "M16 19v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 17.5V19M10 10.5a3 3 0 100-6 3 3 0 000 6zM20 19v-1.5a3.5 3.5 0 00-2.5-3.35M15.5 4.6a3 3 0 010 5.8",
+    academy: "M2 9l10-5 10 5-10 5L2 9zM6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6",
     settings: "M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 13.5l1.6 1.2-2 3.4-1.9-.7a7 7 0 01-2 1.2L14.8 21h-4l-.3-2.4a7 7 0 01-2-1.2l-1.9.7-2-3.4 1.6-1.2a7 7 0 010-2.4L4.6 9.9l2-3.4 1.9.7a7 7 0 012-1.2L10.8 3.6h4l.3 2.4a7 7 0 012 1.2l1.9-.7 2 3.4-1.6 1.2a7 7 0 010 2.4z",
   };
   return (
