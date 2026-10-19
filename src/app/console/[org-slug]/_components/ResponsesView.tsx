@@ -11,7 +11,6 @@ interface Analytics {
 }
 
 type Range = "all" | "today" | "7" | "30" | "90";
-type Deposit = "all" | "paid" | "pending";
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -28,8 +27,6 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
   const [search, setSearch] = useState("");
   const [qual, setQual] = useState("");
   const [range, setRange] = useState<Range>("all");
-  const [deposit, setDeposit] = useState<Deposit>("all");
-  const [showFilters, setShowFilters] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [interval, setIntervalSec] = useState(30);
   const [status, setStatus] = useState("Checking for new leads...");
@@ -38,13 +35,13 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
   const loadingRef = useRef(false);
 
   const query = useMemo(() => {
-    const p = new URLSearchParams({ page: String(page), pageSize: String(deposit === "all" ? pageSize : 1000) });
+    const p = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (search.trim()) p.set("search", search.trim());
     if (qual) p.set("qualification", qual);
     if (range === "today") p.set("dateFrom", daysAgo(0));
     else if (range !== "all") p.set("dateFrom", daysAgo(Number(range)));
     return p.toString();
-  }, [page, search, qual, range, deposit]);
+  }, [page, search, qual, range]);
 
   const load = useCallback(async () => {
     if (loadingRef.current) return;
@@ -78,12 +75,6 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
     const t = setInterval(load, interval * 1000);
     return () => clearInterval(t);
   }, [autoRefresh, interval, load]);
-
-  // Deposit status is filtered on the page (the list API filters everything else).
-  const shown = useMemo(() => {
-    if (deposit === "all") return rows;
-    return rows.filter((r) => (deposit === "paid" ? r.converted_to_sale : !r.converted_to_sale));
-  }, [rows, deposit]);
 
   const exportCsv = async () => {
     const p = new URLSearchParams(query);
@@ -151,49 +142,6 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
           <Icon name="download" className="w-4 h-4" />
           Export CSV
         </button>
-      </div>
-
-      {/* Advanced filters */}
-      <div>
-        <button
-          onClick={() => setShowFilters((v) => !v)}
-          className="flex items-center gap-2 rounded-md border border-blue-200 bg-white px-4 py-2.5 text-[15px] text-blue-700"
-        >
-          <Icon name="filter" className="w-4 h-4" />
-          Advanced Filters
-          <Icon name="chevron" className={`w-4 h-4 transition ${showFilters ? "rotate-180" : ""}`} />
-        </button>
-        {showFilters && (
-          <div className="mt-3 flex flex-wrap items-end gap-4 rounded-lg border border-gray-200 bg-white p-4">
-            <label className="text-sm text-gray-600">
-              Deposit status
-              <select
-                value={deposit}
-                onChange={(e) => {
-                  setDeposit(e.target.value as Deposit);
-                  setPage(1);
-                }}
-                className="mt-1 block rounded-md border border-gray-200 px-3 py-2 text-[14px] text-gray-900"
-              >
-                <option value="all">All</option>
-                <option value="paid">Deposit paid</option>
-                <option value="pending">Not paid yet</option>
-              </select>
-            </label>
-            <button
-              onClick={() => {
-                setDeposit("all");
-                setQual("");
-                setRange("all");
-                setSearch("");
-                setPage(1);
-              }}
-              className="rounded-md border border-gray-200 px-3 py-2 text-[14px] text-gray-600 hover:bg-gray-50"
-            >
-              Clear filters
-            </button>
-          </div>
-        )}
       </div>
 
       {/* KPI cards */}
@@ -279,7 +227,7 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
             </tr>
           </thead>
           <tbody>
-            {shown.map((r) => (
+            {rows.map((r) => (
               <tr key={r.id} className="border-t border-gray-100 hover:bg-amber-50/40">
                 <td className="px-3 py-3 text-gray-900">{r.contact_name || "—"}</td>
                 <td className="px-3 py-3 text-gray-800">{r.contact_email || "—"}</td>
@@ -312,7 +260,7 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
                 </td>
               </tr>
             ))}
-            {shown.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-3 py-10 text-center text-gray-500">
                   No responses match these filters.
@@ -321,7 +269,7 @@ export default function ResponsesView({ orgSlug, onQuizName }: { orgSlug: string
             )}
           </tbody>
         </table>
-        {deposit === "all" && totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between px-3 text-[14px] text-gray-600">
             <span>
               Page {page} of {totalPages} · {total} responses
