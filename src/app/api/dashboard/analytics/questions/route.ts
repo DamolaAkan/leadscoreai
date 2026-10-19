@@ -19,6 +19,8 @@ interface QuestionMeta {
 interface AnswerRow {
   question_id: string;
   answer_value: Record<string, unknown> | null;
+  points_awarded: number | null;
+  quiz_responses: { converted_to_sale: boolean | null } | null;
 }
 
 export async function GET(request: Request) {
@@ -62,7 +64,7 @@ export async function GET(request: Request) {
     let aQuery = supabase
       .from("response_answers")
       .select(
-        "question_id, answer_value, quiz_responses!inner(organization_id, completed_at, quiz_id)"
+        "question_id, answer_value, points_awarded, quiz_responses!inner(organization_id, completed_at, quiz_id, converted_to_sale)"
       )
       .eq("quiz_responses.organization_id", orgId)
       .not("quiz_responses.completed_at", "is", null);
@@ -81,6 +83,10 @@ export async function GET(request: Request) {
 
   // Tally answers per question by their human-readable label.
   const tallies: Record<string, Record<string, number>> = {};
+  // Alongside each answer count: how many of those leads went on to convert
+  // (deposit / sale), and the points earned per question for its average.
+  const convertedTallies: Record<string, Record<string, number>> = {};
+  const pointSums: Record<string, { sum: number; n: number }> = {};
   for (const a of answers) {
     const label =
       a.answer_value && typeof a.answer_value.text === "string"
@@ -91,11 +97,20 @@ export async function GET(request: Request) {
     if (!label) continue;
     (tallies[a.question_id] ||= {})[label] =
       (tallies[a.question_id]?.[label] || 0) + 1;
+    if (a.quiz_responses?.converted_to_sale) {
+      (convertedTallies[a.question_id] ||= {})[label] =
+        (convertedTallies[a.question_id]?.[label] || 0) + 1;
+    }
+    const ps = (pointSums[a.question_id] ||= { sum: 0, n: 0 });
+    ps.sum += a.points_awarded ?? 0;
+    ps.n += 1;
   }
 
   const breakdowns = questions
     .map((q) => {
       const counts = tallies[q.id] || {};
+      const conv = convertedTallies[q.id] || {};
+      const ps = pointSums[q.id];
       const total = Object.values(counts).reduce((a, b) => a + b, 0);
       // Preserve the scorecard's own option order; append any stragglers.
       const ordered = q.options.map((o) => o.text);
@@ -109,10 +124,15 @@ export async function GET(request: Request) {
         text: q.question_text,
         type: q.question_type,
         total,
+        avgPoints: ps && ps.n > 0 ? Math.round((ps.sum / ps.n) * 10) / 10 : 0,
+        maxPoints: Math.max(0, ...q.options.map((o) => o.points || 0)),
         options: labels.map((label) => ({
           label,
           count: counts[label] || 0,
           pct: total > 0 ? Math.round((counts[label] || 0) / total * 100) : 0,
+          converted: conv[label] || 0,
+          conversionRate:
+            counts[label] > 0 ? Math.round(((conv[label] || 0) / counts[label]) * 100) : 0,
         })),
       };
     })
