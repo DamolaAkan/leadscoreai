@@ -19,13 +19,6 @@ function answerText(a: Answer): string {
   return v.selected != null ? String(v.selected) : "—";
 }
 
-function wtpBand(score: number): { label: string; color: string; bg: string } {
-  if (score >= 80) return { label: "Very likely to pay", color: "text-green-700", bg: "bg-green-500" };
-  if (score >= 60) return { label: "Likely to pay", color: "text-amber-700", bg: "bg-amber-500" };
-  if (score >= 40) return { label: "Unsure", color: "text-blue-700", bg: "bg-blue-500" };
-  return { label: "Unlikely to pay", color: "text-red-700", bg: "bg-red-500" };
-}
-
 export default function DetailModal({
   orgSlug,
   id,
@@ -88,7 +81,6 @@ export default function DetailModal({
       ["Completed", fmtDate(r.completed_at, true)],
       ["Score", `${r.percentage ?? 0}%`],
       ["Qualification", r.qualification],
-      ["Willingness to pay", r.wtp_score],
       ["Deposit paid", r.converted_to_sale ? "Yes" : "No"],
       [],
       ["Question", "Answer"],
@@ -186,30 +178,7 @@ export default function DetailModal({
                   <div className="text-[15px] text-gray-500">Qualification</div>
                 </div>
               </div>
-
-              {r.wtp_score != null && (
-                <div className="mt-6 rounded-lg bg-[#FFF8EC] p-5">
-                  <div className="flex flex-wrap items-baseline gap-3">
-                    <span className="text-[15px] font-semibold text-gray-700">Willingness to pay</span>
-                    <span className="text-[28px] font-bold">{r.wtp_score}</span>
-                    <span className="text-[15px] text-gray-500">/ 100</span>
-                    <span className={`text-[15px] font-semibold ${wtpBand(r.wtp_score).color}`}>{wtpBand(r.wtp_score).label}</span>
-                  </div>
-                  {r.wtp_factors && r.wtp_factors.length > 0 && (
-                    <div className="mt-4 space-y-2.5">
-                      <div className="text-[13px] text-gray-500">What&apos;s driving it</div>
-                      {r.wtp_factors.map((f) => (
-                        <div key={f.question}>
-                          <div className="text-[14px] text-gray-700">{f.question}</div>
-                          <div className="mt-1 h-2 rounded-full bg-white">
-                            <div className={`h-2 rounded-full ${wtpBand(f.pct).bg}`} style={{ width: `${Math.max(4, f.pct)}%` }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Willingness to pay lives in Padaflow, where it can fuse these answers with deposit and repayment data. */}
             </section>
 
             {/* Scorecard answers */}
