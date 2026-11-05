@@ -22,6 +22,7 @@ import {
 } from "./meta-ads";
 import { AREAS, DEFAULT_INSTALLER_CAP, PRESS_PLAY_PIXEL_ID, geoFor } from "./press-play-config";
 import { DEFAULT_MULTIPLIER, campaignEndTime, metaLifetimeBudgetKobo } from "./wallet-math";
+import { canPublish, type OrgBilling } from "./paystack";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.leadscoreai.com";
 // The least a campaign may have left to spend: above Meta's ₦1,345.70 daily minimum.
@@ -162,6 +163,11 @@ export async function play(user: AuthUser, quizId: string, areaSlugs: string[]) 
     .eq("organization_id", user.organizationId)
     .maybeSingle();
   if (!quiz || !quiz.is_active) throw new PressPlayError("Pick one of your live scorecards.", "no_scorecard");
+  // The ad must land on a page that loads: unpaid builder accounts' scorecards don't.
+  const { data: orgRow } = await supabase.from("organizations").select("*").eq("id", user.organizationId).single();
+  if (!canPublish(orgRow as OrgBilling)) {
+    throw new PressPlayError("Your scorecard isn't live on this account. Contact us to switch it on.", "not_publishable");
+  }
 
   const position = await orgPosition(user.organizationId);
   if (position.campaigns.some((c) => LIVE.includes(c.row.status))) {
