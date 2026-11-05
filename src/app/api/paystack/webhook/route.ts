@@ -6,6 +6,7 @@ import { editsForNaira } from "@/lib/credits";
 import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-emails";
 import { track } from "@/lib/track";
 import { sendMetaEvent } from "@/lib/meta-capi";
+import { creditWalletFromPaystack } from "@/lib/wallet";
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
@@ -38,12 +39,33 @@ export async function POST(request: Request) {
       publish_quiz_id?: string | null;
       amount_naira?: number;
       credits?: number;
+      balance_kobo?: number;
     };
     const orgId = meta.orgId;
     const tier = meta.tier as Tier;
     const amountNaira = (Number(d.amount) || 0) / 100;
     // Metadata is set server-side at checkout; cap the discount at the offer anyway.
     const discount = Math.min(Math.max(Number(meta.discount_naira) || 0, 0), GO_LIVE_DISCOUNT_NAIRA);
+
+    // Press-play wallet top-up: credit the balance, never the VAT.
+    if (meta.purpose === "leadscoreai_wallet" && orgId && d.status === "success") {
+      try {
+        const result = await creditWalletFromPaystack({
+          orgId,
+          balanceKobo: Number(meta.balance_kobo) || 0,
+          paidKobo: Number(d.amount) || 0,
+          reference: (d.reference as string) || "",
+        });
+        if (result === "rejected") console.error(`[paystack] wallet top-up rejected, ref ${String(d.reference ?? "")}`);
+        if (result === "credited") {
+          await track("wallet_topup_paid", { orgId, props: { balance_kobo: Number(meta.balance_kobo) || 0 } });
+        }
+      } catch (e) {
+        console.error("[paystack] wallet top-up error:", e);
+        // A 500 makes Paystack retry, so a paid top-up isn't lost to a database blip.
+        return NextResponse.json({ error: "Wallet credit failed" }, { status: 500 });
+      }
+    }
 
     // Builder AI-edit top-up: add the credits once per Paystack reference.
     const credits = Math.floor(Number(meta.credits) || 0);

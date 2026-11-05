@@ -294,6 +294,34 @@ export async function initTopupTransaction(opts: {
   return res.json();
 }
 
+// Checkout for a press-play wallet top-up: charges balance + VAT, credits only the balance.
+export async function initWalletTopup(opts: {
+  email: string;
+  orgId: string;
+  checkout: { balanceKobo: number; vatKobo: number; totalKobo: number };
+  callbackUrl: string;
+}) {
+  const secret = process.env.PAYSTACK_SECRET_KEY!;
+  const res = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: opts.email,
+      amount: opts.checkout.totalKobo,
+      currency: "NGN",
+      callback_url: opts.callbackUrl,
+      metadata: {
+        orgId: opts.orgId,
+        purpose: "leadscoreai_wallet",
+        balance_kobo: opts.checkout.balanceKobo,
+        vat_kobo: opts.checkout.vatKobo,
+      },
+      channels: ["bank_transfer", "card", "ussd", "qr"],
+    }),
+  });
+  return res.json();
+}
+
 // Paystack rejects placeholder/demo domains: first genuinely valid email wins.
 export function pickBillingEmail(...candidates: (string | null | undefined)[]): string | null {
   for (const e of candidates) {
