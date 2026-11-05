@@ -7,6 +7,7 @@ import { lagosNow, sendOwnerEmailOnce, sendTeamAlert } from "@/lib/builder-email
 import { track } from "@/lib/track";
 import { sendMetaEvent } from "@/lib/meta-capi";
 import { creditWalletFromPaystack } from "@/lib/wallet";
+import { refreshBudget } from "@/lib/press-play";
 
 const naira = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
@@ -59,6 +60,8 @@ export async function POST(request: Request) {
         if (result === "rejected") console.error(`[paystack] wallet top-up rejected, ref ${String(d.reference ?? "")}`);
         if (result === "credited") {
           await track("wallet_topup_paid", { orgId, props: { balance_kobo: Number(meta.balance_kobo) || 0 } });
+          // A running campaign can now spend more. Best effort: the money is already safe.
+          await refreshBudget(orgId).catch((e) => console.error("[paystack] budget refresh failed:", e));
         }
       } catch (e) {
         console.error("[paystack] wallet top-up error:", e);

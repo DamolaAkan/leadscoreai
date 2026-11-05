@@ -7,6 +7,13 @@ import crypto from "crypto";
 const PIXEL_ID = "1351695133750893"; // Siteflipmarket dataset (matches the ads)
 const API_VERSION = "v21.0";
 
+// Our own funnels use the Siteflipmarket token. Press-play sends to its own pixel
+// with the system user's token, which has access to that dataset.
+function tokenFor(pixelId?: string): string | undefined {
+  if (pixelId && pixelId !== PIXEL_ID) return process.env.META_ADS_TOKEN || process.env.META_CAPI_TOKEN;
+  return process.env.META_CAPI_TOKEN;
+}
+
 function sha256(v: string): string {
   return crypto.createHash("sha256").update(v).digest("hex");
 }
@@ -38,11 +45,14 @@ export interface MetaLeadInput {
   eventSourceUrl?: string;
   clientIp?: string;
   userAgent?: string;
-  funnel?: string; // "solar" | "mortgage"
+  funnel?: string; // "solar" | "mortgage" | "press_play"
+  pixelId?: string; // defaults to Siteflipmarket
+  fbp?: string | null;
+  fbc?: string | null;
 }
 
 export async function sendMetaLead(input: MetaLeadInput): Promise<void> {
-  const token = process.env.META_CAPI_TOKEN;
+  const token = tokenFor(input.pixelId);
   if (!token || !input.eventId) return; // not configured yet — safe no-op
 
   const { fn, ln } = nameParts(input.name);
@@ -56,6 +66,8 @@ export async function sendMetaLead(input: MetaLeadInput): Promise<void> {
   user_data.external_id = [sha256(input.eventId)];
   if (input.clientIp) user_data.client_ip_address = input.clientIp;
   if (input.userAgent) user_data.client_user_agent = input.userAgent;
+  if (input.fbp) user_data.fbp = input.fbp;
+  if (input.fbc) user_data.fbc = input.fbc;
 
   const body: Record<string, unknown> = {
     data: [
@@ -76,7 +88,7 @@ export async function sendMetaLead(input: MetaLeadInput): Promise<void> {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`,
+      `https://graph.facebook.com/${API_VERSION}/${input.pixelId || PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
     );
     if (!res.ok) {
@@ -112,15 +124,19 @@ export interface MetaEventInput {
   userAgent?: string;
   fbp?: string | null; // _fbp cookie
   fbc?: string | null; // _fbc cookie (set when they arrive from an ad click)
+  pixelId?: string; // defaults to Siteflipmarket
+  phone?: string | null;
 }
 
 export async function sendMetaEvent(input: MetaEventInput): Promise<void> {
-  const token = process.env.META_CAPI_TOKEN;
+  const token = tokenFor(input.pixelId);
   if (!token || !input.eventId) return; // not configured yet: safe no-op
 
   const user_data: Record<string, unknown> = {};
   const em = normEmail(input.email || "");
   if (em) user_data.em = [sha256(em)];
+  const phone = normPhone(input.phone || "");
+  if (phone) user_data.ph = [sha256(phone)];
   if (input.externalId) user_data.external_id = [sha256(input.externalId)];
   if (input.clientIp) user_data.client_ip_address = input.clientIp;
   if (input.userAgent) user_data.client_user_agent = input.userAgent;
@@ -150,7 +166,7 @@ export async function sendMetaEvent(input: MetaEventInput): Promise<void> {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`,
+      `https://graph.facebook.com/${API_VERSION}/${input.pixelId || PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
     );
     if (!res.ok) {

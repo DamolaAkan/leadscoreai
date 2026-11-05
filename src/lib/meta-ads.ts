@@ -64,7 +64,9 @@ async function graph<T>(path: string, init: { method: "GET" | "POST"; params?: R
 export interface CreateCampaignInput {
   adAccountId: string; // numeric, without "act_"
   pageId: string;
-  pixelId: string;
+  // With a pixel, Meta optimises for website leads. Without one, for link clicks,
+  // because the Lead event can't be seen until the pixel is on the scorecard page.
+  pixelId?: string | null;
   name: string;
   geoLocations: Record<string, unknown>;
   lifetimeBudgetKobo: number;
@@ -103,9 +105,13 @@ export async function createCustomerCampaign(input: CreateCampaignInput): Promis
         lifetime_budget: input.lifetimeBudgetKobo,
         end_time: input.endTime.toISOString(),
         billing_event: "IMPRESSIONS",
-        optimization_goal: "OFFSITE_CONVERSIONS",
         bid_strategy: "LOWEST_COST_WITHOUT_CAP",
-        promoted_object: { pixel_id: input.pixelId, custom_event_type: "LEAD" },
+        ...(input.pixelId
+          ? {
+              optimization_goal: "OFFSITE_CONVERSIONS",
+              promoted_object: { pixel_id: input.pixelId, custom_event_type: "LEAD" },
+            }
+          : { optimization_goal: "LINK_CLICKS" }),
         destination_type: "WEBSITE",
         targeting: { geo_locations: input.geoLocations },
       },
@@ -166,6 +172,12 @@ export async function setLifetimeBudget(adSetId: string, lifetimeBudgetKobo: num
     method: "POST",
     params: { lifetime_budget: lifetimeBudgetKobo, end_time: endTime.toISOString() },
   });
+}
+
+// The ad's own status shows review: PENDING_REVIEW, ACTIVE, DISAPPROVED and so on.
+export async function getAdStatus(adId: string): Promise<string> {
+  const res = await graph<{ effective_status?: string }>(adId, { method: "GET", params: { fields: "effective_status" } });
+  return res.effective_status || "UNKNOWN";
 }
 
 export interface AccessCheck {
