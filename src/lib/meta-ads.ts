@@ -174,6 +174,31 @@ export async function setLifetimeBudget(adSetId: string, lifetimeBudgetKobo: num
   });
 }
 
+export interface DailySpend {
+  date: string; // YYYY-MM-DD in the ad account's time zone
+  spendKobo: number;
+  impressions: number;
+  clicks: number;
+}
+
+// One row per day the campaign ran.
+export async function getCampaignDaily(campaignId: string): Promise<DailySpend[]> {
+  const res = await graph<{
+    data?: { date_start?: string; spend?: string; impressions?: string; inline_link_clicks?: string }[];
+  }>(`${campaignId}/insights`, {
+    method: "GET",
+    params: { date_preset: "maximum", time_increment: 1, fields: "spend,impressions,inline_link_clicks", limit: 500 },
+  });
+  return (res.data || [])
+    .filter((r) => r.date_start)
+    .map((r) => ({
+      date: r.date_start as string,
+      spendKobo: nairaStringToKobo(r.spend),
+      impressions: Number(r.impressions) || 0,
+      clicks: Number(r.inline_link_clicks) || 0,
+    }));
+}
+
 // The ad's own status shows review: PENDING_REVIEW, ACTIVE, DISAPPROVED and so on.
 export async function getAdStatus(adId: string): Promise<string> {
   const res = await graph<{ effective_status?: string }>(adId, { method: "GET", params: { fields: "effective_status" } });

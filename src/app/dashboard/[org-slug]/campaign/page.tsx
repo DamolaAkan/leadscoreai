@@ -6,11 +6,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import { WalletBilling, type WalletActivity } from "@/components/dashboard/WalletBilling";
-import { money } from "@/lib/money";
+import { CampaignAnalytics, type DayPoint } from "@/components/dashboard/CampaignAnalytics";
 
 interface State {
   balanceKobo: number;
   spentKobo: number;
+  daily: DayPoint[];
   activity: WalletActivity[];
   ready: boolean;
   areas: { slug: string; name: string }[];
@@ -95,26 +96,32 @@ export default function CampaignPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="mx-auto w-full max-w-2xl space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Your campaign</h1>
+      <div className="mx-auto w-full max-w-5xl space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Your campaign</h1>
+            <span className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${s.tone}`}>{s.label}</span>
+            {data.campaign && <span className="ml-2 text-xs text-gray-500">started {data.campaign.since}</span>}
+          </div>
+          {running && (
+            <button
+              type="button"
+              onClick={() => act("pause")}
+              disabled={busy}
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 disabled:opacity-60"
+            >
+              {busy ? "Pausing..." : "Pause"}
+            </button>
+          )}
+        </div>
+        {error && running && <p className="text-sm text-red-600">{error}</p>}
 
+        <CampaignAnalytics daily={data.daily} />
+
+        {!running && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${s.tone}`}>{s.label}</span>
-
-          <dl className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Spent</dt>
-              <dd className="text-2xl font-bold text-gray-900">{money(data.spentKobo / 100)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Leads</dt>
-              <dd className="text-2xl font-bold text-gray-900">{data.campaign?.leads ?? 0}</dd>
-              {data.campaign && <p className="text-xs text-gray-500">since {data.campaign.since}</p>}
-            </div>
-          </dl>
-
-          {!running && (
-            <div className="mt-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">{data.campaign ? "Start again" : "Start your campaign"}</h2>
+            <div className="mt-4 space-y-4">
               <label className="block text-sm font-medium text-gray-900">
                 Scorecard
                 <select
@@ -149,22 +156,11 @@ export default function CampaignPage() {
                 </div>
               </fieldset>
             </div>
-          )}
 
           {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
           {!data.ready && <p className="mt-4 text-sm text-gray-500">Campaigns open soon.</p>}
 
           <div className="mt-6 flex justify-end">
-            {running ? (
-              <button
-                type="button"
-                onClick={() => act("pause")}
-                disabled={busy}
-                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-900 disabled:opacity-60"
-              >
-                {busy ? "Pausing..." : "Pause"}
-              </button>
-            ) : (
               <button
                 type="button"
                 onClick={() => act("play")}
@@ -173,9 +169,9 @@ export default function CampaignPage() {
               >
                 {busy ? "Starting..." : "Press play"}
               </button>
-            )}
           </div>
         </section>
+        )}
 
         <WalletBilling balanceKobo={data.balanceKobo} activity={data.activity} onTopUp={topUp} />
       </div>

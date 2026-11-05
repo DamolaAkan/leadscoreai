@@ -14,6 +14,7 @@ import {
   activateCampaign,
   createCustomerCampaign,
   getAdStatus,
+  getCampaignDaily,
   getCampaignSpend,
   metaAdsConfigured,
   pauseCampaign,
@@ -286,6 +287,63 @@ export async function refreshBudget(orgId: string) {
   await supabase.from("ad_campaigns").update({ meta_spend_limit_kobo: b.lifetime, updated_at: new Date().toISOString() }).eq("id", live.row.id);
 }
 
+export interface DayPoint {
+  date: string; // YYYY-MM-DD, Lagos
+  spentKobo: number; // what the customer pays: Meta spend x multiplier
+  leads: number;
+  qualified: number; // Hot and Warm
+  impressions: number;
+  clicks: number;
+}
+
+const lagosDay = (d: Date | string) => new Date(d).toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
+
+// Day by day since the first campaign: spend at the customer's price, leads, and
+// qualified leads. Days with nothing are kept as zeros so the chart has no gaps.
+async function dailySeries(orgId: string, campaigns: { row: CampaignRow }[]): Promise<DayPoint[]> {
+  if (!campaigns.length) return [];
+  const first = campaigns.reduce((a, c) => (c.row.created_at < a ? c.row.created_at : a), campaigns[0].row.created_at);
+  const days = new Map<string, DayPoint>();
+  const day = (date: string) => {
+    if (!days.has(date)) days.set(date, { date, spentKobo: 0, leads: 0, qualified: 0, impressions: 0, clicks: 0 });
+    return days.get(date) as DayPoint;
+  };
+  for (let t = new Date(lagosDay(first)).getTime(); t <= new Date(lagosDay(new Date())).getTime(); t += 86_400_000) {
+    day(new Date(t).toISOString().slice(0, 10));
+  }
+
+  if (metaAdsConfigured()) {
+    for (const c of campaigns) {
+      if (!c.row.meta_campaign_id) continue;
+      const mult = Number(c.row.price_multiplier || DEFAULT_MULTIPLIER);
+      for (const r of await getCampaignDaily(c.row.meta_campaign_id)) {
+        const p = day(r.date);
+        p.spentKobo += Math.round(r.spendKobo * mult);
+        p.impressions += r.impressions;
+        p.clicks += r.clicks;
+      }
+    }
+  }
+
+  const supabase = createServiceClient();
+  const quizIds = Array.from(new Set(campaigns.map((c) => c.row.quiz_id)));
+  const { data: rows } = await supabase
+    .from("quiz_responses")
+    .select("created_at, qualification")
+    .eq("organization_id", orgId)
+    .in("quiz_id", quizIds)
+    .gte("created_at", first)
+    .not("completed_at", "is", null)
+    .limit(10000);
+  for (const r of rows || []) {
+    const p = day(lagosDay(r.created_at as string));
+    p.leads += 1;
+    if (r.qualification === "HOT_LEAD" || r.qualification === "WARM_LEAD") p.qualified += 1;
+  }
+
+  return Array.from(days.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
 const REVIEW_STATUS: Record<string, string> = {
   PENDING_REVIEW: "in_review",
   IN_PROCESS: "in_review",
@@ -343,9 +401,15 @@ export async function state(user: AuthUser) {
     })),
   ];
 
+  const daily = await dailySeries(user.organizationId, position.campaigns).catch((e) => {
+    console.error("[press-play] daily series failed:", e);
+    return [] as DayPoint[];
+  });
+
   return {
     balanceKobo: position.balanceKobo,
     spentKobo: position.spentKobo,
+    daily,
     activity,
     ready: Boolean(adConfig()) && metaAdsConfigured(),
     areas: AREAS.map((a) => ({ slug: a.slug, name: a.name })),
