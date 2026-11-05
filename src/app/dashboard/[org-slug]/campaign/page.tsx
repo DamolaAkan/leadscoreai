@@ -33,7 +33,7 @@ export default function CampaignPage() {
   const router = useRouter();
   const { user, loading, getAuthHeaders } = useAuth(orgSlug);
   const [data, setData] = useState<State | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
+  const [unavailable, setUnavailable] = useState<string | null>(null);
   const [quizId, setQuizId] = useState("");
   const [areas, setAreas] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -41,8 +41,8 @@ export default function CampaignPage() {
 
   const load = useCallback(async () => {
     const res = await fetch("/api/dashboard/press-play", { headers: getAuthHeaders() });
-    if (res.status === 404) return setUnavailable(true);
-    const d = await res.json();
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 404) return setUnavailable(d.detail || "");
     if (!res.ok) return setError(d.error || "Could not load your campaign.");
     setData(d);
     setQuizId((q) => q || d.campaign?.quizId || d.quizzes[0]?.id || "");
@@ -79,8 +79,13 @@ export default function CampaignPage() {
     window.location.href = d.authorization_url;
   }
 
-  if (unavailable) {
-    return <p className="p-8 text-center text-sm text-gray-500">Campaigns aren&apos;t available on this account yet.</p>;
+  if (unavailable !== null) {
+    return (
+      <div className="p-8 text-center text-sm text-gray-500">
+        <p>Campaigns aren&apos;t available on this account yet.</p>
+        {unavailable && <p className="mt-2 text-xs text-gray-400">{unavailable}</p>}
+      </div>
+    );
   }
   if (!data) return <p className="p-8 text-center text-sm text-gray-500">{error ?? "Loading..."}</p>;
 

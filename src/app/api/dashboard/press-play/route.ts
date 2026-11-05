@@ -6,9 +6,17 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 async function guard(request: Request) {
-  if (!pressPlayEnabled()) return { error: NextResponse.json({ error: "Not found" }, { status: 404 }) };
   const user = await orgOwnerFromRequest(request);
   if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  // Signed-in owners get told why it's off, so a missing setting is easy to spot.
+  if (!pressPlayEnabled()) {
+    const raw = process.env.PRESS_PLAY_ENABLED;
+    const detail =
+      raw === undefined
+        ? "PRESS_PLAY_ENABLED is not set on this deployment."
+        : `PRESS_PLAY_ENABLED is set to ${JSON.stringify(raw)} here; it needs to be exactly "1".`;
+    return { error: NextResponse.json({ error: "Not found", detail }, { status: 404 }) };
+  }
   return { user };
 }
 
