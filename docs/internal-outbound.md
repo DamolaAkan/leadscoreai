@@ -17,6 +17,4 @@ Route: `/internal-outbound` in the staff workspace (sidebar: Outbound). Gated li
 
 ## Database
 
-Migration: `supabase/migrations/20261106120000_internal_outbound.sql`. **Not applied.** It needs Damola's explicit OK before it runs on the live database. Additive only: `outbound_companies`, `outbound_contacts`, `outbound_dnc`, two functions and three views. RLS on with no policies (service role only).
-
-Until it is applied, the page loads and shows "Outbound tables are not set up yet".
+Migration: `supabase/migrations/20261106120000_internal_outbound.sql`. Applied to the live database on 2026-11-06 with Damola's OK. Additive only: `outbound_companies`, `outbound_contacts`, `outbound_dnc`, two functions and three views. RLS on with no policies (service role only).

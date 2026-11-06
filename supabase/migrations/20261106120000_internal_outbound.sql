@@ -1,5 +1,5 @@
 -- LeadScoreAI internal outbound: lender companies, their contacts, and a do-not-contact list.
--- NOT APPLIED. Needs Damola's explicit OK before it touches the live database.
+-- Applied to the live database 2026-11-06 on Damola's explicit OK ("yes apply the migration and test it").
 -- Additive only: new tables, two functions and three views. No existing table is changed.
 -- RLS on with no policies: service role only, like the rest of the app.
 -- This app never sends email, SMS or WhatsApp. Sending happens in a separate tool from a CSV export.
