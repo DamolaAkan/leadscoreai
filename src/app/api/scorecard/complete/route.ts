@@ -5,6 +5,8 @@ import { computeWtpIndex } from "@/lib/wtp";
 import { track } from "@/lib/track";
 import { decrypt } from "@/lib/encryption";
 import { sendSequenceEmail } from "@/lib/email";
+import { clientSignals, metaCookies, sendMetaEvent, sendMetaLead } from "@/lib/meta-capi";
+import { pressPlayPixelFor } from "@/lib/press-play";
 
 // The internal LeadScoreAI /solar funnel org has its own team notification
 // (solar-notify), so skip the per-client hot-lead email for it.
@@ -58,6 +60,44 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[scorecard/complete] update error:", error.message);
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+    }
+
+    // Press-play scorecards: the server copy of the browser Lead (same event id,
+    // so Meta counts it once, and it still lands when the browser pixel is blocked).
+    // Hot and Warm leads also send QualifiedLead, so campaigns can optimise for those.
+    try {
+      const pixelId = await pressPlayPixelFor(existing.quiz_id);
+      if (pixelId) {
+        const signals = clientSignals(request);
+        const { fbp, fbc } = metaCookies(request);
+        await sendMetaLead({
+          pixelId,
+          eventId: responseId,
+          email: body.contact_email || undefined,
+          phone: body.contact_phone || undefined,
+          name: body.contact_name || undefined,
+          funnel: "press_play",
+          fbp,
+          fbc,
+          ...signals,
+        });
+        if (body.qualification === "HOT_LEAD" || body.qualification === "WARM_LEAD") {
+          await sendMetaEvent({
+            pixelId,
+            eventName: "QualifiedLead",
+            eventId: `qualified_${responseId}`,
+            email: body.contact_email || null,
+            phone: body.contact_phone || null,
+            externalId: responseId,
+            contentName: "press_play",
+            fbp,
+            fbc,
+            ...signals,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[scorecard/complete] press-play Meta event error:", e);
     }
 
     // Activity log: leads captured by self-serve (builder) accounts.
