@@ -135,8 +135,17 @@ export default function InternalOutboundPage() {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ company_id: companyId }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not write a first line");
+      const raw = await res.text();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let data: any = {};
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        // Not JSON: usually Vercel's own page for a timeout or crash. Show what it said.
+        const hint = res.status === 504 ? "the server ran out of time" : raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+        throw new Error(`Server error ${res.status}${hint ? `: ${hint}` : ""}`);
+      }
+      if (!res.ok || !data.first_line) throw new Error(data.error || `Server error ${res.status}`);
       setRows((rs) =>
         rs.map((r) => {
           if (view === "contacts" && (r as ContactRow).company_id === companyId) {

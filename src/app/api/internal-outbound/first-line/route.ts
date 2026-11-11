@@ -15,7 +15,18 @@ export const maxDuration = 60;
 //
 // PATCH /api/internal-outbound/first-line  { company_id, first_line }
 // Staff edit of the company's first line.
+// Any uncaught error still comes back as JSON, so the page can show what went wrong.
 export async function POST(request: Request) {
+  const started = Date.now();
+  try {
+    return await writeOne(request, started);
+  } catch (e) {
+    console.error("[outbound/first-line] failed after", Date.now() - started, "ms:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: `Server error: ${e instanceof Error ? e.message : "unknown"}`.slice(0, 200) }, { status: 500 });
+  }
+}
+
+async function writeOne(request: Request, started: number) {
   const user = await requireAdmin(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isClaudeConfigured()) return NextResponse.json({ error: "Claude is not configured" }, { status: 503 });
@@ -47,6 +58,7 @@ export async function POST(request: Request) {
   try {
     siteText = await readWebsite(company.domain);
   } catch (e) {
+    console.error("[outbound/first-line] site read failed:", company.domain, Date.now() - started, "ms");
     return NextResponse.json(
       { error: `Could not read ${company.domain}: ${e instanceof Error ? e.message : "unknown error"}` },
       { status: 502 }
@@ -67,6 +79,8 @@ export async function POST(request: Request) {
       niche: company.niche,
       segment: company.segment as Segment,
       siteText,
+      // Leave room inside Vercel's 60 s for the two saves below.
+      deadline: started + 53000,
     });
     const now = new Date().toISOString();
     const summary = [out.finances, out.where].filter(Boolean).join(" | ") + (out.confident ? "" : " (unsure)");
@@ -81,6 +95,7 @@ export async function POST(request: Request) {
       .eq("stage", "new");
     return NextResponse.json({ ...out, summary });
   } catch (e) {
+    console.error("[outbound/first-line] claude step failed:", company.domain, Date.now() - started, "ms:", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: e instanceof Error ? e.message : "Claude could not write this one" }, { status: 502 });
   }
 }

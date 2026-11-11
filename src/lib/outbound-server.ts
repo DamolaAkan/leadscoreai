@@ -43,14 +43,18 @@ async function assertPublicHost(host: string): Promise<void> {
 
 const MAX_BYTES = 1_500_000;
 
-async function fetchHtml(url: string, redirectsLeft = 4): Promise<string> {
+// `deadline` is an absolute time (ms). It is shared by every redirect hop and the
+// body read, so one page can never take longer than its budget.
+async function fetchHtml(url: string, deadline: number, redirectsLeft = 4): Promise<string> {
   const u = new URL(url);
   if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("Bad URL");
+  const left = deadline - Date.now();
+  if (left < 500) throw new Error("Website took too long to answer");
   await assertPublicHost(u.hostname);
   const res = await fetch(u.toString(), {
     redirect: "manual",
     cache: "no-store",
-    signal: AbortSignal.timeout(9000),
+    signal: AbortSignal.timeout(Math.max(500, deadline - Date.now())),
     headers: {
       "User-Agent": "Mozilla/5.0 (compatible; LeadScoreAI-research/1.0)",
       Accept: "text/html,application/xhtml+xml",
@@ -59,7 +63,7 @@ async function fetchHtml(url: string, redirectsLeft = 4): Promise<string> {
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get("location");
     if (!loc || redirectsLeft <= 0) throw new Error("Too many redirects");
-    return fetchHtml(new URL(loc, u).toString(), redirectsLeft - 1);
+    return fetchHtml(new URL(loc, u).toString(), deadline, redirectsLeft - 1);
   }
   if (!res.ok) throw new Error(`Website returned ${res.status}`);
   const type = res.headers.get("content-type") || "";
@@ -106,29 +110,30 @@ export function htmlToText(html: string): { title: string; description: string; 
 }
 
 // Home page plus an about page if there is one, as plain text, capped.
+// Time budget (the whole route must finish inside Vercel's 60 s): the home page and
+// both about pages are fetched at the same time, each with at most 12 s; if https
+// fails fast, http gets whatever is left of 15 s. Worst case about 15 s in total.
 export async function readWebsite(domain: string): Promise<string> {
   const d = normDomain(domain);
   if (!d) throw new Error("No usable website on file");
+  const start = Date.now();
+  const aboutPages = ["about-us", "about"].map((path) =>
+    fetchHtml(`https://${d}/${path}`, start + 12000)
+      .then((html) => ({ path, text: htmlToText(html).text }))
+      .catch(() => null)
+  );
   let home: string;
   try {
-    home = await fetchHtml(`https://${d}/`);
-  } catch {
-    home = await fetchHtml(`http://${d}/`);
+    home = await fetchHtml(`https://${d}/`, start + 12000);
+  } catch (e) {
+    if (Date.now() - start > 9000) throw e;
+    home = await fetchHtml(`http://${d}/`, start + 15000);
   }
   const parts: string[] = [];
   const h = htmlToText(home);
   parts.push(`PAGE: ${d}/\nTITLE: ${h.title}\nDESCRIPTION: ${h.description}\n${h.text.slice(0, 9000)}`);
-  for (const path of ["about-us", "about"]) {
-    try {
-      const a = htmlToText(await fetchHtml(`https://${d}/${path}`));
-      if (a.text.length > 300) {
-        parts.push(`PAGE: ${d}/${path}\n${a.text.slice(0, 4000)}`);
-        break;
-      }
-    } catch {
-      // No about page; the home page is enough.
-    }
-  }
+  const about = (await Promise.all(aboutPages)).find((a) => a && a.text.length > 300);
+  if (about) parts.push(`PAGE: ${d}/${about.path}\n${about.text.slice(0, 4000)}`);
   return parts.join("\n\n---\n\n").slice(0, 14000);
 }
 
@@ -178,6 +183,8 @@ export async function writeFirstLine(input: {
   niche: string | null;
   segment: Segment;
   siteText: string;
+  // Absolute time (ms) by which Claude must have answered.
+  deadline: number;
 }): Promise<FirstLineResult> {
   const userMsg = `Lender: ${input.companyName}
 Website: ${input.domain}
@@ -191,17 +198,31 @@ ${input.siteText}
 
   let note = "";
   for (let attempt = 0; attempt < 2; attempt++) {
-    const resp = await getClaude().messages.create(
-      {
-        model: CLAUDE_MODEL,
-        max_tokens: 1024,
-        system: SYSTEM,
-        tools: [TOOL],
-        tool_choice: { type: "tool", name: "report_first_line" },
-        messages: [{ role: "user", content: userMsg + note }],
-      },
-      { timeout: 45000, maxRetries: 1 }
-    );
+    const left = input.deadline - Date.now();
+    // A second attempt only runs when there is clearly time for it.
+    if (left < (attempt === 0 ? 5000 : 12000)) {
+      throw new Error(attempt === 0 ? "Ran out of time before asking Claude. Try again." : "The draft broke a wording rule. Write this one by hand.");
+    }
+    let resp: Anthropic.Message;
+    try {
+      resp = await getClaude().messages.create(
+        {
+          model: CLAUDE_MODEL,
+          max_tokens: 1024,
+          system: SYSTEM,
+          tools: [TOOL],
+          tool_choice: { type: "tool", name: "report_first_line" },
+          messages: [{ role: "user", content: userMsg + note }],
+        },
+        { timeout: Math.min(35000, left - 1000), maxRetries: 0 }
+      );
+    } catch (e) {
+      if (e instanceof Anthropic.AuthenticationError) throw new Error("The Claude key on the server is not working (401).");
+      if (e instanceof Anthropic.RateLimitError) throw new Error("Claude is rate limited right now. Try again in a minute.");
+      if (e instanceof Anthropic.APIConnectionTimeoutError) throw new Error("Claude took too long to answer. Try again.");
+      if (e instanceof Anthropic.APIError) throw new Error(`Claude error ${e.status ?? ""}: ${e.message}`.slice(0, 200));
+      throw e;
+    }
     if (resp.stop_reason === "refusal") throw new Error("Claude declined to write this one");
     const call = resp.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     if (!call) throw new Error("No first line came back");
@@ -218,5 +239,5 @@ ${input.siteText}
     }
     note = "\n\nYour last line broke a wording rule (it mentioned scoring mechanics or used a banned word). Write it again without that.";
   }
-  throw new Error("The draft kept breaking a wording rule. Write this one by hand.");
+  throw new Error("The draft broke a wording rule. Write this one by hand.");
 }
