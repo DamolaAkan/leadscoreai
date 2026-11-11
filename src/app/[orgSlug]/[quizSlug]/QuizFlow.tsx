@@ -41,6 +41,8 @@ interface Props {
   preview?: boolean;
   // Embedded in another website via iframe: reports its height to the parent.
   embed?: boolean;
+  // Press-play scorecards: the pixel to record the Lead on (same id as the server).
+  leadPixelId?: string | null;
 }
 
 type Step = "start" | "questions" | "contact" | "results";
@@ -72,7 +74,7 @@ function heroGradientFor(org: { slug: string; primary_color: string }): string {
   return `linear-gradient(135deg, ${s(0.16)} 0%, ${s(0.32)} 50%, ${s(0.55)} 100%)`;
 }
 
-export default function QuizFlow({ org, quiz, questions, preview = false, embed = false }: Props) {
+export default function QuizFlow({ org, quiz, questions, preview = false, embed = false, leadPixelId = null }: Props) {
   const builder = quiz.builder_config || null;
   const rootRef = useRef<HTMLDivElement>(null);
   const [matchOutcome, setMatchOutcome] = useState<BuilderOutcome | null>(null);
@@ -414,6 +416,17 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
           fullName: contactName,
           externalId: responseId || undefined,
         });
+      } else if (leadPixelId && !preview) {
+        // Press-play: the server sends the same Lead (same responseId), so Meta counts it once.
+        trackLead(
+          {
+            email: contactEmail,
+            phone: contactPhone || undefined,
+            fullName: contactName,
+            externalId: responseId || undefined,
+          },
+          leadPixelId
+        );
       }
 
       // Fire-and-forget: trigger email sequence server-side
@@ -436,7 +449,7 @@ export default function QuizFlow({ org, quiz, questions, preview = false, embed 
         }),
       }).catch(() => {});
     },
-    [preview, builder, responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, contactCompany, contactWebsite, org.slug, org.id]
+    [preview, builder, responseId, answers, quiz.max_score, contactName, contactEmail, contactPhone, contactCompany, contactWebsite, org.slug, org.id, leadPixelId]
   );
 
   const progress =

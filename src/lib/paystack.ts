@@ -111,6 +111,8 @@ function legacyTrialActive(org: OrgBilling | null | undefined): boolean {
 // lock handles billing). Self-serve: only on a paid plan, or during a legacy trial.
 export function canPublish(org: OrgBilling | null | undefined): boolean {
   if (!org?.self_serve) return true;
+  // Press-play installers pay per campaign from their wallet, not a plan.
+  if (org.signup_source === "press_play") return true;
   return isPaid(org) || legacyTrialActive(org);
 }
 
@@ -129,6 +131,7 @@ export interface OrgBilling {
   signup_date?: string | null;
   // Self-serve builder sign-ups get a shorter trial (SELF_SERVE_TRIAL_DAYS).
   self_serve?: boolean | null;
+  signup_source?: string | null; // "builder" | "press_play" | ...
   last_paid_at?: string | null;
   billing_currency?: string | null; // "NGN" (Paystack) | "USD" (Stripe)
 }
@@ -287,6 +290,34 @@ export async function initTopupTransaction(opts: {
         purpose: "leadscoreai_topup",
         amount_naira: opts.amountNaira,
         credits: opts.credits,
+      },
+      channels: ["bank_transfer", "card", "ussd", "qr"],
+    }),
+  });
+  return res.json();
+}
+
+// Checkout for a press-play wallet top-up: charges balance + VAT, credits only the balance.
+export async function initWalletTopup(opts: {
+  email: string;
+  orgId: string;
+  checkout: { balanceKobo: number; vatKobo: number; totalKobo: number };
+  callbackUrl: string;
+}) {
+  const secret = process.env.PAYSTACK_SECRET_KEY!;
+  const res = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: opts.email,
+      amount: opts.checkout.totalKobo,
+      currency: "NGN",
+      callback_url: opts.callbackUrl,
+      metadata: {
+        orgId: opts.orgId,
+        purpose: "leadscoreai_wallet",
+        balance_kobo: opts.checkout.balanceKobo,
+        vat_kobo: opts.checkout.vatKobo,
       },
       channels: ["bank_transfer", "card", "ussd", "qr"],
     }),

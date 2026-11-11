@@ -4,6 +4,7 @@ import { Organization, Quiz, QuizQuestion } from "@/lib/types";
 import { notFound } from "next/navigation";
 import QuizFlow from "./QuizFlow";
 import MetaPixel from "@/components/MetaPixel";
+import { pressPlayPixelFor } from "@/lib/press-play";
 import { canPublish, type OrgBilling } from "@/lib/paystack";
 
 // Always fetch fresh org/quiz config so branding + questions reflect immediately.
@@ -82,14 +83,19 @@ export default async function QuizPage({ params, searchParams }: PageProps) {
 
   if (!questions || questions.length === 0) notFound();
 
+  // Press-play scorecards carry our customers' pixel, so every lead reaches Meta.
+  const leadPixelId = await pressPlayPixelFor(quiz.id).catch(() => null);
+
   return (
     <>
       {org.slug === "loandoctor" && <MetaPixel />}
+      {leadPixelId && <MetaPixel pixelId={leadPixelId} />}
       <QuizFlow
         org={org}
         quiz={quiz}
         questions={questions}
         embed={embed}
+        leadPixelId={leadPixelId}
       />
     </>
   );
