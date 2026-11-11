@@ -15,15 +15,17 @@ repayment block, three next steps, 90-day plan Track/Fix/Predict, PDF download, 
 - `src/lib/repayment-score-server.ts`: points per answer, part scoring, weakest part, hot rule,
   plan text. Server only; the browser sends option ids and never sees points.
 - `src/lib/repayment-score-pdf.ts`: the plan PDF (browser download, and the email attachment).
-- `src/lib/repayment-score-email.ts`: DRAFT email wording, not approved.
+- `src/lib/repayment-score-email.ts`: the lead plan email and the team alert email.
 - `src/app/api/repayment-score/submit/route.ts`: validates, scores, saves, returns the result.
-- `supabase/migrations/20261111120000_repayment_score_leads.sql`: the leads table. NOT APPLIED.
+- `supabase/migrations/20261111120000_repayment_score_leads.sql`: the leads table (applied 2026-11-11).
 
 ## Switches and safety
 - Saving fails open: until the migration is applied, visitors still get results and the
   insert error is logged.
-- Emailing the plan only happens when `REPAYMENT_SCORE_EMAIL=on` in the environment. Leave it
-  unset until the wording in `repayment-score-email.ts` is approved. No SMS or WhatsApp is sent.
+- Every lead gets their plan PDF by email (reply-to akanbi@leadscoreai.com), and akanbi@leadscoreai.com
+  gets an alert for every lead (HOT in the subject when hot). Both on by default; set
+  `REPAYMENT_SCORE_EMAIL=off` or `REPAYMENT_SCORE_ALERT=off` to stop one, `REPAYMENT_SCORE_ALERT_TO` to
+  change who gets alerts. No SMS or WhatsApp is sent.
 
 ## Hot leads
 `is_hot` = (weakest part low OR raising money this year OR book over $1M) AND role is
