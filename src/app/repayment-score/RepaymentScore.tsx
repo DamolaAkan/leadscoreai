@@ -410,7 +410,7 @@ export default function RepaymentScore() {
           </div>
           <div className="rs-pdfrow">
             <button className="rs-pdf" onClick={downloadPdf} disabled={pdfBusy}>{pdfBusy ? "Preparing…" : "Download my plan (PDF)"}</button>
-            {result.emailEnabled && <span className="rs-muted">A copy is on its way to your inbox.</span>}
+            {result.emailSent && <span className="rs-muted">We have also emailed your plan to you.</span>}
           </div>
         </section>
 

@@ -147,7 +147,7 @@ export type DetailsIn = {
 };
 
 export type Scored = {
-  result: Omit<RSResult, "emailEnabled" | "saved">;
+  result: Omit<RSResult, "emailSent" | "saved">;
   answers: Record<string, string>; // question id -> option id
   partScores: Record<PartKey, number>;
   isHot: boolean;
@@ -233,8 +233,11 @@ export function scoreSubmission(rawAnswers: unknown, d: DetailsIn): Scored | nul
   };
 }
 
-// The email-the-plan switch. OFF unless the env var is exactly "on".
-// Stays off until Damola approves the wording in repayment-score-email.ts.
+// Email switches. Both ON by default (Damola, 2026-11-11: alert on every lead,
+// and every lead gets their plan by email). Set the env var to "off" to stop one.
 export function isPlanEmailEnabled(): boolean {
-  return process.env.REPAYMENT_SCORE_EMAIL === "on";
+  return process.env.REPAYMENT_SCORE_EMAIL !== "off";
+}
+export function isLeadAlertEnabled(): boolean {
+  return process.env.REPAYMENT_SCORE_ALERT !== "off";
 }

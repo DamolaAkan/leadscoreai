@@ -253,6 +253,6 @@ export type RSResult = {
   firstName: string;
   company: string;
   bookOver1m: boolean;
-  emailEnabled: boolean;
+  emailSent: boolean; // the plan email actually went out
   saved: boolean;
 };

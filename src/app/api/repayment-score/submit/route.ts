@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { BOOK_SIZES, COUNTRIES, FINANCES, ROLES } from "@/lib/repayment-score";
-import { isPlanEmailEnabled, scoreSubmission, type DetailsIn } from "@/lib/repayment-score-server";
+import { decrypt } from "@/lib/encryption";
+import { isLeadAlertEnabled, isPlanEmailEnabled, scoreSubmission, type DetailsIn } from "@/lib/repayment-score-server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,26 @@ export const dynamic = "force-dynamic";
 // Saving FAILS OPEN: if the table is missing (migration not applied yet) or the
 // insert errors, the visitor still gets their result and we log the error.
 //
-// Email: the plan PDF is only emailed when REPAYMENT_SCORE_EMAIL=on. It is off
-// until Damola approves the wording. No SMS or WhatsApp is ever sent from here.
+// Email: the lead gets their plan PDF, and akanbi@leadscoreai.com gets an alert
+// for every lead. Turn either off with REPAYMENT_SCORE_EMAIL=off or
+// REPAYMENT_SCORE_ALERT=off. No SMS or WhatsApp is ever sent from here.
+
+// Same key lookup as the solar alerts: the stored LeadScoreAI Resend key
+// (leadscoreai.com is verified on that account), env key as a last resort.
+async function resendKey(): Promise<string | undefined> {
+  try {
+    const { data } = await createServiceClient()
+      .from("org_features")
+      .select("resend_api_key")
+      .not("resend_api_key", "is", null)
+      .limit(1)
+      .single();
+    if (data?.resend_api_key) return decrypt(data.resend_api_key);
+  } catch (e) {
+    console.error("[repayment-score/submit] key lookup error:", e);
+  }
+  return process.env.RESEND_API_KEY || undefined;
+}
 
 const ROLE_IDS = new Set(ROLES.map((r) => r.id));
 const FIN_IDS = new Set(FINANCES.map((f) => f.id));
@@ -101,38 +120,62 @@ export async function POST(request: Request) {
       console.error("[repayment-score/submit] save exception:", e);
     }
 
-    // Email the plan: only behind the switch, only with consent, never blocks.
-    if (emailEnabled && details.consent) {
+    // Emails: the plan to the lead (with consent) and an alert to the team for
+    // every lead. Both are best-effort and never block the result.
+    let emailSent = false;
+    const alertEnabled = isLeadAlertEnabled();
+    if ((emailEnabled && details.consent) || alertEnabled) {
       try {
-        const [{ buildRepaymentPlanPdf }, { planEmail }, { sendSequenceEmail }] = await Promise.all([
+        const [{ buildRepaymentPlanPdf }, emails, { sendSequenceEmail }] = await Promise.all([
           import("@/lib/repayment-score-pdf"),
           import("@/lib/repayment-score-email"),
           import("@/lib/email"),
         ]);
-        const apiKey = process.env.RESEND_API_KEY;
-        if (apiKey) {
-          const pdf = Buffer.from(buildRepaymentPlanPdf(scored.result).output("arraybuffer"));
-          const { subject, html } = planEmail(scored.result);
-          const sent = await sendSequenceEmail({
-            to: details.email,
-            subject,
-            html,
-            apiKey,
-            fromEmail: "hello@leadscoreai.com",
-            fromName: "LeadScoreAI",
-            attachments: [{ filename: "repayment-score-90-day-plan.pdf", content: pdf }],
-          });
-          if (!sent.error && leadId) {
-            const supabase = createServiceClient();
-            await supabase.from("repayment_score_leads").update({ plan_emailed_at: new Date().toISOString() }).eq("id", leadId);
+        const apiKey = await resendKey();
+        if (!apiKey) {
+          console.error("[repayment-score/submit] no Resend key available");
+        } else {
+          const base = { apiKey, fromEmail: "hello@leadscoreai.com", fromName: "LeadScoreAI" };
+          const jobs: Promise<void>[] = [];
+          if (emailEnabled && details.consent) {
+            const pdf = Buffer.from(buildRepaymentPlanPdf(scored.result).output("arraybuffer"));
+            const { subject, html } = emails.planEmail(scored.result);
+            jobs.push(
+              sendSequenceEmail({
+                ...base,
+                to: details.email,
+                subject,
+                html,
+                replyTo: emails.REPLY_TO,
+                attachments: [{ filename: "repayment-score-90-day-plan.pdf", content: pdf }],
+              }).then(async (sent) => {
+                if (sent.error) return console.error("[repayment-score/submit] plan email error:", sent.error);
+                emailSent = true;
+                if (leadId) {
+                  await createServiceClient()
+                    .from("repayment_score_leads")
+                    .update({ plan_emailed_at: new Date().toISOString() })
+                    .eq("id", leadId);
+                }
+              })
+            );
           }
+          if (alertEnabled && emails.ALERT_TO.length) {
+            const { subject, html } = emails.alertEmail(scored.result, details, scored.isHot, scored.hotReasons);
+            jobs.push(
+              sendSequenceEmail({ ...base, to: emails.ALERT_TO, subject, html, replyTo: details.email }).then((sent) => {
+                if (sent.error) console.error("[repayment-score/submit] alert email error:", sent.error);
+              })
+            );
+          }
+          await Promise.allSettled(jobs);
         }
       } catch (e) {
         console.error("[repayment-score/submit] email exception:", e);
       }
     }
 
-    return NextResponse.json({ result: { ...scored.result, emailEnabled, saved } });
+    return NextResponse.json({ result: { ...scored.result, emailSent, saved } });
   } catch (err) {
     console.error("[repayment-score/submit] error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
