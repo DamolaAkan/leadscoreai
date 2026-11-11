@@ -1,8 +1,7 @@
 -- LeadScoreAI Repayment Score (public lead magnet at /repayment-score).
--- NOT APPLIED. Needs Damola's explicit OK before it runs on the live database.
+-- Applied to the live database 2026-11-11 on Damola's explicit OK ("merge it and apply the migration").
 -- Additive only: one new table and one view. No existing table is changed.
 -- RLS on with no policies: service role only, like the rest of the app.
--- Until this is applied the page still works: results show, the save fails open and is logged.
 
 create table public.repayment_score_leads (
   id uuid primary key default gen_random_uuid(),
