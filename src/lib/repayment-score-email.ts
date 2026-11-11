@@ -17,7 +17,7 @@ export function planEmail(r: Pick<RSResult, "firstName" | "total" | "weakest">) 
 <p>Thanks for taking the seven-part repayment review. Your Repayment Score is <b>${r.total} out of 100</b>, and your number one repayment block is <b>${esc(r.weakest.name)}</b>.</p>
 <p>Your 90-day plan is attached as a PDF: days 1 to 30 to track, 31 to 60 to fix, 61 to 90 to predict.</p>
 <p>If you'd like us to go through your own repayment history with you, you can book a private Repayment Diagnostic here: <a href="${DIAGNOSTIC_BOOKING_URL}">${DIAGNOSTIC_BOOKING_URL}</a></p>
-<p>Damola Akanbi<br/>LeadScoreAI</p>
+<p>The LeadScoreAI team</p>
 </div>`;
   return { subject, html };
 }

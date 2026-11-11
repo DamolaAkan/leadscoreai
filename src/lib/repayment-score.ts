@@ -11,7 +11,7 @@
 // ---- Copy Damola may want to change (all in one place) ----
 export const RS_COPY = {
   headline: "WHAT IS THE #1 THING HOLDING BACK YOUR COLLECTIONS?",
-  byline: "The seven-part repayment review, by Damola Akanbi, LeadScoreAI",
+  byline: "The seven-part repayment review, by LeadScoreAI",
   sub:
     "See how your lending business performs across the seven parts of a complete repayment system. Get your Repayment Score, find your number one repayment block, and get a 90-day plan built from your answers.",
   button: "Get My Repayment Score",

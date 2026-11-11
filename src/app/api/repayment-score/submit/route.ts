@@ -119,7 +119,7 @@ export async function POST(request: Request) {
             html,
             apiKey,
             fromEmail: "hello@leadscoreai.com",
-            fromName: "Damola at LeadScoreAI",
+            fromName: "LeadScoreAI",
             attachments: [{ filename: "repayment-score-90-day-plan.pdf", content: pdf }],
           });
           if (!sent.error && leadId) {
